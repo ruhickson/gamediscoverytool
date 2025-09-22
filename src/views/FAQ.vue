@@ -34,6 +34,9 @@
         
         <h4>Q: A game came out five minutes ago and I can't find it in the app</h4>
         <p>A: The app refreshes once a day. If it's not there today, your game will be there tomorrow.</p>
+        
+        <h4>Q: Are you going to be building out this tool more?</h4>
+        <p>A: Yes! First I want to build a proper recommender here, but I also want to expand the tool to different places in time, like the Nintendo store.</p>
       </div>
     </div>
   </div>

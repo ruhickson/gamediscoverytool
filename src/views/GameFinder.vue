@@ -577,12 +577,46 @@ export default {
     }
 
     const shareGame = (game) => {
-      const shareText = `${game.name} - ${game.reviewScoreDesc} - https://store.steampowered.com/app/${game.appId}`
+      const gameLink = `https://store.steampowered.com/app/${game.appId}`
+      const shareText = `I found ${game.name} (${gameLink}) using https://gamediscoverytool.com`
+      
       navigator.clipboard.writeText(shareText).then(() => {
-        alert('Game information copied to clipboard!')
+        showCopyMessage()
       }).catch(() => {
-        alert('Unable to copy to clipboard. Please copy manually: ' + shareText)
+        showCopyMessage('Failed to copy')
       })
+    }
+
+    const showCopyMessage = (message = 'Copied!') => {
+      // Create a temporary toast element
+      const toast = document.createElement('div')
+      toast.textContent = message
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: var(--steam-blue);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: opacity 0.3s ease;
+      `
+      
+      document.body.appendChild(toast)
+      
+      // Remove the toast after 2 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0'
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast)
+          }
+        }, 300)
+      }, 2000)
     }
 
     const formatDate = (date) => {
@@ -714,7 +748,8 @@ export default {
       addTagFromSearch,
       addExcludeTagFromSearch,
       clearTagSearch,
-      clearExcludeTagSearch
+      clearExcludeTagSearch,
+      showCopyMessage
     }
   }
 }
