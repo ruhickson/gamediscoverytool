@@ -1,0 +1,669 @@
+import axios from 'axios'
+
+// Cube.js API configuration
+const CUBEJS_API_URL = import.meta.env.VITE_CUBEJS_API_URL || ''
+const CUBEJS_AUTH_TOKEN = import.meta.env.VITE_CUBEJS_AUTH_TOKEN || ''
+
+// Create axios instance with default configuration
+const cubeApi = axios.create({
+  baseURL: CUBEJS_API_URL,
+  timeout: 30000,
+  headers: {
+    'Authorization': CUBEJS_AUTH_TOKEN,
+    'Content-Type': 'application/json'
+  }
+})
+
+// Review score order for proper sorting
+const reviewDescOrder = [
+  'Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Positive',
+  'Mixed',
+  'Negative', 'Mostly Negative', 'Very Negative', 'Overwhelmingly Negative'
+]
+
+// Helper function to make Cube.js API calls with retry logic
+async function queryCube(query, maxRetries = 3, baseDelay = 1) {
+  const queryJson = JSON.stringify(query)
+  const queryParam = encodeURIComponent(queryJson)
+  const url = `/load?query=${queryParam}`
+  
+  console.log('Cube.js Query:', query)
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      const response = await cubeApi.get(url)
+      
+      if (response.data.error) {
+        const errorMsg = response.data.error
+        
+        // Check if it's a timeout-related error
+        if (errorMsg.toLowerCase().includes('timeout') || 
+            errorMsg.toLowerCase().includes('continue wait')) {
+          if (attempt <= maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random()
+            console.log(`Cube.js timeout error. Retrying in ${delay.toFixed(2)} seconds... (Attempt ${attempt} of ${maxRetries})`)
+            await new Promise(resolve => setTimeout(resolve, delay * 1000))
+            continue
+          } else {
+            throw new Error(`Cube.js returned an error after ${maxRetries} retries: ${errorMsg}`)
+          }
+        } else {
+          throw new Error(`Cube.js returned an error: ${errorMsg}`)
+        }
+      }
+      
+      if (response.data.data) {
+        console.log('Cube.js Response:', response.data.data)
+        return response.data.data
+      } else {
+        throw new Error(`No 'data' field in response. Response structure: ${Object.keys(response.data).join(', ')}`)
+      }
+      
+    } catch (error) {
+      // Handle network-level errors
+      if (error.message.toLowerCase().includes('timeout') || 
+          error.message.toLowerCase().includes('network') ||
+          error.message.toLowerCase().includes('connection')) {
+        if (attempt <= maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random()
+          console.log(`Network error detected. Retrying in ${delay.toFixed(2)} seconds... (Attempt ${attempt} of ${maxRetries})`)
+          await new Promise(resolve => setTimeout(resolve, delay * 1000))
+          continue
+        } else {
+          throw new Error(`Network error after ${maxRetries} retries: ${error.message}`)
+        }
+      } else {
+        throw error
+      }
+    }
+  }
+}
+
+// Helper function to standardize column names
+function standardizeColumnNames(result, expectedNames) {
+  const standardized = { ...result }
+  
+  expectedNames.forEach(expectedName => {
+    if (!(expectedName in standardized)) {
+      // Try different variations of the column name
+      const baseName = expectedName.replace(/^[^.]+\./, '') // Remove prefix like "Games."
+      
+      if (baseName in standardized) {
+        standardized[expectedName] = standardized[baseName]
+        delete standardized[baseName]
+      } else {
+        // Try to find numeric columns if this is a measure
+        if (/count|reviews|score|metacritic|recommendations/i.test(expectedName)) {
+          const numericCols = Object.keys(standardized).filter(key => 
+            typeof standardized[key] === 'number'
+          )
+          if (numericCols.length > 0) {
+            const firstNumericCol = numericCols[0]
+            standardized[expectedName] = standardized[firstNumericCol]
+            delete standardized[firstNumericCol]
+          }
+        }
+      }
+    }
+  })
+  
+  return standardized
+}
+
+// Helper function to ensure numeric columns
+function ensureNumeric(data, columns) {
+  const result = [...data]
+  
+  columns.forEach(col => {
+    if (col in result[0] && typeof result[0][col] !== 'number') {
+      result.forEach(row => {
+        if (row[col] !== null && row[col] !== undefined) {
+          row[col] = parseFloat(String(row[col]).replace(/,/g, '')) || 0
+        }
+      })
+    }
+  })
+  
+  return result
+}
+
+// Get all tags for the filter dropdown
+export async function getAllTags() {
+  try {
+    const query = {
+      dimensions: ['all_tags.name'],
+      measures: ['all_tags.popularity'],
+      order: [['all_tags.popularity', 'desc']]
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      const standardized = result.map(row => standardizeColumnNames(row, ['all_tags.name', 'all_tags.popularity']))
+      const numeric = ensureNumeric(standardized, ['all_tags.popularity'])
+      
+      // Sort by popularity descending, then by name ascending
+      return numeric.sort((a, b) => {
+        const popA = a['all_tags.popularity'] || 0
+        const popB = b['all_tags.popularity'] || 0
+        if (popA !== popB) return popB - popA
+        return (a['all_tags.name'] || '').localeCompare(b['all_tags.name'] || '')
+      })
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching tags:', error)
+    throw error
+  }
+}
+
+// Get recent top games for initial load
+export async function getRecentTopGames(limit = 100) {
+  try {
+    // First try the materialized view/relation
+    const query = {
+      dimensions: [
+        'recent_top_games.name',
+        'recent_top_games.appId',
+        'recent_top_games.reviewScoreDesc',
+        'recent_top_games.releaseDate',
+        'recent_top_games.total_reviews'
+      ],
+      order: [['recent_top_games.total_reviews', 'desc']],
+      limit
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      // Standardize to Games.* column names
+      const standardized = result.map(row => {
+        const newRow = { ...row }
+        const renameMap = {
+          'recent_top_games.name': 'Games.name',
+          'recent_top_games.appId': 'Games.appId',
+          'recent_top_games.reviewScoreDesc': 'Games.reviewScoreDesc',
+          'recent_top_games.releaseDate': 'Games.releaseDate',
+          'recent_top_games.total_reviews': 'Games.totalReviewsValue'
+        }
+        
+        Object.entries(renameMap).forEach(([oldKey, newKey]) => {
+          if (oldKey in newRow) {
+            newRow[newKey] = newRow[oldKey]
+            delete newRow[oldKey]
+          }
+        })
+        
+        return newRow
+      })
+      
+      return ensureNumeric(standardized, ['Games.totalReviewsValue'])
+    }
+    
+    return []
+  } catch (error) {
+    console.log('Recent top games materialized view failed, falling back to regular search:', error.message)
+    
+    // Fallback: use previous 90-day search ordered by total reviews
+    try {
+      const threeMonthsAgo = new Date()
+      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90)
+      
+      const fallbackResult = await findGames({
+        tags: null,
+        reviewScore: 'Very Positive',
+        minReviews: 1,
+        maxReviews: 1000000,
+        minDate: threeMonthsAgo.toISOString().split('T')[0],
+        maxDate: new Date().toISOString().split('T')[0],
+        limit: limit,
+        reviewScoreOrBetter: true
+      })
+      
+      console.log('Fallback search returned', fallbackResult.length, 'games')
+      return fallbackResult
+    } catch (fallbackError) {
+      console.error('Fallback search also failed:', fallbackError)
+      throw fallbackError
+    }
+  }
+}
+
+// Find games with filters
+export async function findGames({
+  tags = null,
+  reviewScore = 'Any',
+  minReviews = 0,
+  maxReviews = 1000000,
+  minDate = null,
+  maxDate = null,
+  limit = null,
+  reviewScoreOrBetter = true
+}) {
+  try {
+    const filters = [
+      { member: 'Games.type', operator: 'equals', values: ['game'] }
+    ]
+
+    // Tag intersection logic
+    if (tags && tags.length > 0) {
+      if (tags.length === 1) {
+        filters.push({ member: 'GameTags.tag', operator: 'equals', values: [tags[0]] })
+      } else {
+        // For multiple tags, run separate queries and find intersection
+        return await findGamesWithMultipleTags({
+          tags,
+          reviewScore,
+          minReviews,
+          maxReviews,
+          minDate,
+          maxDate,
+          limit,
+          reviewScoreOrBetter
+        })
+      }
+    }
+
+    // Review score filter
+    if (reviewScore !== 'Any') {
+      if (reviewScoreOrBetter) {
+        const idx = reviewDescOrder.indexOf(reviewScore)
+        if (idx !== -1) {
+          const betterScores = reviewDescOrder.slice(0, idx + 1)
+          filters.push({ member: 'Games.reviewScoreDesc', operator: 'in', values: betterScores })
+        } else {
+          filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+        }
+      } else {
+        filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+      }
+    }
+
+    // Review count filters
+    if (minReviews > 0) {
+      filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [minReviews] })
+    }
+    if (maxReviews < 1000000) {
+      filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [maxReviews] })
+    }
+
+    // Handle date range
+    const timeDimensions = []
+    if (minDate && maxDate) {
+      timeDimensions.push({
+        dimension: 'Games.releaseDate',
+        dateRange: [minDate, maxDate]
+      })
+    }
+
+    // Construct the final query
+    const query = {
+      measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
+      dimensions: [
+        'Games.name',
+        'Games.reviewScoreDesc',
+        'Games.releaseDate',
+        'Games.appId',
+        'Games.totalReviewsValue'
+      ],
+      filters,
+      order: [['Games.releaseDate', 'desc']]
+    }
+
+    // Add timeDimensions only if not empty
+    if (timeDimensions.length > 0) {
+      query.timeDimensions = timeDimensions
+    }
+
+    // Add limit only if specified
+    if (limit !== null) {
+      query.limit = limit
+    }
+
+    console.log('Cube.js Query Sent:', query)
+
+    // Execute the query with error handling
+    let result
+    try {
+      result = await queryCube(query)
+    } catch (error) {
+      console.log('Initial query failed:', error.message)
+      
+      // Try a simplified version without the new measures
+      console.log('Trying simplified query without positive/negative review measures...')
+      
+      const simplifiedQuery = {
+        measures: [],
+        dimensions: [
+          'Games.name',
+          'Games.reviewScoreDesc',
+          'Games.releaseDate',
+          'Games.appId',
+          'Games.totalReviewsValue'
+        ],
+        filters,
+        order: [['Games.releaseDate', 'desc']]
+      }
+      
+      if (timeDimensions.length > 0) {
+        simplifiedQuery.timeDimensions = timeDimensions
+      }
+      
+      console.log('Simplified Cube.js Query:', simplifiedQuery)
+      
+      try {
+        result = await queryCube(simplifiedQuery)
+      } catch (error2) {
+        console.log('Even simplified query failed, trying most basic version...')
+        
+        const basicQuery = {
+          measures: [],
+          dimensions: [
+            'Games.name',
+            'Games.reviewScoreDesc',
+            'Games.releaseDate',
+            'Games.appId',
+            'Games.totalReviewsValue'
+          ],
+          filters: [{ member: 'Games.type', operator: 'equals', values: ['game'] }],
+          order: [['Games.releaseDate', 'desc']]
+        }
+        
+        console.log('Most Basic Cube.js Query:', basicQuery)
+        result = await queryCube(basicQuery)
+      }
+    }
+
+    // Process and return results
+    if (Array.isArray(result) && result.length > 0) {
+      const standardized = result.map(row => 
+        standardizeColumnNames(row, [
+          'Games.totalReviewsValue',
+          'Games.name',
+          'Games.reviewScoreDesc',
+          'Games.releaseDate',
+          'Games.appId',
+          'Games.totalPositiveReviews',
+          'Games.totalNegativeReviews'
+        ])
+      )
+      
+      const numeric = ensureNumeric(standardized, [
+        'Games.totalReviewsValue',
+        'Games.totalPositiveReviews',
+        'Games.totalNegativeReviews'
+      ])
+      
+      // Convert releaseDate to Date and sort
+      const processed = numeric.map(row => ({
+        ...row,
+        'Games.releaseDate': row['Games.releaseDate'] ? new Date(row['Games.releaseDate']) : null
+      }))
+      
+      // Sort by release date (desc), nulls last, then by total reviews, then by name
+      return processed.sort((a, b) => {
+        // Handle null dates
+        const dateA = a['Games.releaseDate']
+        const dateB = b['Games.releaseDate']
+        
+        if (dateA && !dateB) return -1
+        if (!dateA && dateB) return 1
+        if (!dateA && !dateB) return 0
+        
+        // Compare dates
+        const dateCompare = dateB - dateA
+        if (dateCompare !== 0) return dateCompare
+        
+        // Compare total reviews
+        const reviewsA = a['Games.totalReviewsValue'] || 0
+        const reviewsB = b['Games.totalReviewsValue'] || 0
+        const reviewsCompare = reviewsB - reviewsA
+        if (reviewsCompare !== 0) return reviewsCompare
+        
+        // Compare names
+        return (a['Games.name'] || '').localeCompare(b['Games.name'] || '')
+      })
+    } else {
+      // Return empty array with correct structure
+      return []
+    }
+  } catch (error) {
+    console.error('Error finding games:', error)
+    throw error
+  }
+}
+
+// Find games with multiple tags by running separate queries and joining results
+async function findGamesWithMultipleTags({
+  tags,
+  reviewScore,
+  minReviews,
+  maxReviews,
+  minDate,
+  maxDate,
+  limit,
+  reviewScoreOrBetter
+}) {
+  console.log('Multi-Tag Search Debug')
+  console.log('Tags:', tags.join(', '))
+  console.log('Review Score:', reviewScore)
+  console.log('Date Range:', minDate, 'to', maxDate)
+
+  // Get results for each tag and find intersection
+  const tagResults = []
+
+  for (let i = 0; i < tags.length; i++) {
+    console.log(`Querying tag ${i + 1}:`, tags[i])
+    const tagResult = await findGamesSingleTag({
+      tag: tags[i],
+      reviewScore,
+      minReviews,
+      maxReviews,
+      minDate,
+      maxDate,
+      limit,
+      reviewScoreOrBetter
+    })
+
+    console.log(`Tag ${tags[i]} returned ${tagResult.length} games`)
+
+    if (!Array.isArray(tagResult) || tagResult.length === 0) {
+      console.log(`No games found for tag: ${tags[i]} - returning empty result`)
+      return []
+    }
+
+    tagResults.push(tagResult)
+  }
+
+  // Find intersection of all app IDs
+  const appIdSets = tagResults.map(result => result.map(row => row['Games.appId']))
+  console.log('App ID counts:', appIdSets.map(set => set.length))
+
+  let intersectingAppIds = appIdSets[0]
+  for (let i = 1; i < appIdSets.length; i++) {
+    intersectingAppIds = intersectingAppIds.filter(id => appIdSets[i].includes(id))
+  }
+
+  console.log('Intersecting app IDs:', intersectingAppIds.length)
+
+  if (intersectingAppIds.length === 0) {
+    console.log('No intersection found between tags')
+    return []
+  }
+
+  // Get the full game data for the intersecting app IDs
+  const baseResult = tagResults[0]
+  const finalResult = baseResult.filter(row => intersectingAppIds.includes(row['Games.appId']))
+
+  console.log('Final result:', finalResult.length, 'games')
+  console.log('------------------------')
+
+  return finalResult
+}
+
+// Helper function to run findGames for a single tag
+async function findGamesSingleTag({
+  tag,
+  reviewScore,
+  minReviews,
+  maxReviews,
+  minDate,
+  maxDate,
+  limit,
+  reviewScoreOrBetter
+}) {
+  // Build the same query structure as findGames but for a single tag
+  const filters = [
+    { member: 'Games.type', operator: 'equals', values: ['game'] },
+    { member: 'GameTags.tag', operator: 'equals', values: [tag] }
+  ]
+
+  // Add review score filter
+  if (reviewScore !== 'Any') {
+    if (reviewScoreOrBetter) {
+      const idx = reviewDescOrder.indexOf(reviewScore)
+      if (idx !== -1) {
+        const betterScores = reviewDescOrder.slice(0, idx + 1)
+        filters.push({ member: 'Games.reviewScoreDesc', operator: 'in', values: betterScores })
+      } else {
+        filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+      }
+    } else {
+      filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+    }
+  }
+
+  // Add review count filters
+  if (minReviews > 0) {
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [minReviews] })
+  }
+  if (maxReviews < 1000000) {
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [maxReviews] })
+  }
+
+  // Handle date range
+  const timeDimensions = []
+  if (minDate && maxDate) {
+    timeDimensions.push({
+      dimension: 'Games.releaseDate',
+      dateRange: [minDate, maxDate]
+    })
+  }
+
+  // Build query
+  const query = {
+    measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
+    dimensions: [
+      'Games.name',
+      'Games.reviewScoreDesc',
+      'Games.releaseDate',
+      'Games.appId',
+      'Games.totalReviewsValue'
+    ],
+    filters,
+    order: [['Games.releaseDate', 'desc']]
+  }
+
+  if (timeDimensions.length > 0) {
+    query.timeDimensions = timeDimensions
+  }
+
+  if (limit !== null) {
+    query.limit = limit
+  }
+
+  // Execute query
+  console.log('Single tag query for:', tag)
+  const result = await queryCube(query)
+
+  if (Array.isArray(result) && result.length > 0) {
+    const standardized = result.map(row => 
+      standardizeColumnNames(row, [
+        'Games.totalReviewsValue',
+        'Games.name',
+        'Games.reviewScoreDesc',
+        'Games.releaseDate',
+        'Games.appId',
+        'Games.totalPositiveReviews',
+        'Games.totalNegativeReviews'
+      ])
+    )
+    
+    const numeric = ensureNumeric(standardized, [
+      'Games.totalReviewsValue',
+      'Games.totalPositiveReviews',
+      'Games.totalNegativeReviews'
+    ])
+    
+    // Convert date column
+    const processed = numeric.map(row => ({
+      ...row,
+      'Games.releaseDate': row['Games.releaseDate'] ? new Date(row['Games.releaseDate']) : null
+    }))
+    
+    console.log('Single tag query returned', processed.length, 'games')
+    return processed
+  } else {
+    console.log('Single tag query returned no results')
+    return []
+  }
+}
+
+// Get app IDs for a given tag (for exclude functionality)
+export async function getAppIdsForTag(tag) {
+  try {
+    const query = {
+      dimensions: ['GameTags.appId'],
+      filters: [
+        { member: 'GameTags.tag', operator: 'equals', values: [tag] }
+      ]
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      const appIds = [...new Set(result.map(row => row['GameTags.appId']))]
+      return appIds
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching app IDs for tag:', error)
+    throw error
+  }
+}
+
+// Get tags for a given app ID
+export async function getTagsForAppId(appId, limit = 5) {
+  try {
+    const query = {
+      dimensions: ['GameTags.tag'],
+      filters: [
+        { member: 'GameTags.appId', operator: 'equals', values: [appId] }
+      ],
+      order: [['GameTags.tag', 'asc']],
+      limit
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      const tags = [...new Set(result.map(row => row['GameTags.tag']))]
+      return tags.filter(tag => tag && tag !== '')
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching tags for app ID:', error)
+    throw error
+  }
+}
+
+export default {
+  getAllTags,
+  getRecentTopGames,
+  findGames,
+  getAppIdsForTag,
+  getTagsForAppId
+}
