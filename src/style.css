@@ -7,6 +7,40 @@
   --steam-accent: #28a745;
 }
 
+/* High-contrast accessibility mode */
+.hc-contrast, .hc-contrast * {
+  color: #fff !important;
+  background: #000 !important;
+  border-color: #fff !important;
+  box-shadow: none !important;
+}
+
+.hc-contrast .steam-score-fill {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+.hc-contrast a,
+.hc-contrast .nav-link,
+.hc-contrast .navbar-brand,
+.hc-contrast .share-btn,
+.hc-contrast .game-link {
+  color: #fff !important;
+  text-decoration: underline !important;
+}
+
+.hc-contrast .form-check-input:checked {
+  background-color: #fff !important;
+  border-color: #fff !important;
+}
+
+.hc-contrast .tag-badge,
+.hc-contrast .tag-badge.exclude-tag {
+  background: #000 !important;
+  color: #fff !important;
+  border: 1px solid #fff !important;
+}
+
 body {
   background-color: #1a1a1a;
   color: #e0e0e0;

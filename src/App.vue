@@ -1,11 +1,21 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ 'hc-contrast': isHighContrast }">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
           <i class="fas fa-gamepad me-2"></i>
           Game Discovery Tool
         </a>
+        <div class="d-flex ms-auto">
+          <button
+            class="btn btn-outline-light btn-sm"
+            @click="toggleContrast"
+            aria-pressed="isHighContrast.toString()"
+            aria-label="Toggle high-contrast accessibility mode"
+          >
+            {{ isHighContrast ? 'Disable Accessibility' : 'Accessibility' }}
+          </button>
+        </div>
       </div>
     </nav>
     
@@ -70,6 +80,16 @@
 
 <script>
 export default {
-  name: 'App'
+  name: 'App',
+  data() {
+    return {
+      isHighContrast: false
+    }
+  },
+  methods: {
+    toggleContrast() {
+      this.isHighContrast = !this.isHighContrast
+    }
+  }
 }
 </script>
