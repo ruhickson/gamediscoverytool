@@ -205,17 +205,17 @@ export async function getRecentTopGames(limit = 100) {
   } catch (error) {
     console.log('Recent top games materialized view failed, falling back to regular search:', error.message)
     
-    // Fallback: use previous 90-day search ordered by total reviews
+    // Fallback: use updated defaults ordered by total reviews
     try {
-      const threeMonthsAgo = new Date()
-      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90)
+      const twoWeeksAgo = new Date()
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
       
       const fallbackResult = await findGames({
         tags: null,
-        reviewScore: 'Very Positive',
-        minReviews: 1,
-        maxReviews: 1000000,
-        minDate: threeMonthsAgo.toISOString().split('T')[0],
+        reviewScore: 'Positive',
+        minReviews: 11,
+        maxReviews: 10000,
+        minDate: twoWeeksAgo.toISOString().split('T')[0],
         maxDate: new Date().toISOString().split('T')[0],
         limit: limit,
         reviewScoreOrBetter: true
