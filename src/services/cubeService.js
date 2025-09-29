@@ -161,16 +161,20 @@ export async function getAllTags() {
 // Get recent top games for initial load
 export async function getRecentTopGames(limit = 100) {
   try {
-    // First try the materialized view/relation
+    // First try the materialized view/relation (Cube: RecentTopGames)
     const query = {
-      dimensions: [
-        'recent_top_games.name',
-        'recent_top_games.appId',
-        'recent_top_games.reviewScoreDesc',
-        'recent_top_games.releaseDate',
-        'recent_top_games.total_reviews'
+      measures: [
+        'RecentTopGames.totalPositiveReviews',
+        'RecentTopGames.totalNegativeReviews',
+        'RecentTopGames.totalReviews'
       ],
-      order: [['recent_top_games.total_reviews', 'desc']],
+      dimensions: [
+        'RecentTopGames.name',
+        'RecentTopGames.appId',
+        'RecentTopGames.reviewScoreDesc',
+        'RecentTopGames.releaseDate'
+      ],
+      order: [['RecentTopGames.totalReviews', 'desc']],
       limit
     }
     
@@ -181,11 +185,13 @@ export async function getRecentTopGames(limit = 100) {
       const standardized = result.map(row => {
         const newRow = { ...row }
         const renameMap = {
-          'recent_top_games.name': 'Games.name',
-          'recent_top_games.appId': 'Games.appId',
-          'recent_top_games.reviewScoreDesc': 'Games.reviewScoreDesc',
-          'recent_top_games.releaseDate': 'Games.releaseDate',
-          'recent_top_games.total_reviews': 'Games.totalReviewsValue'
+          'RecentTopGames.name': 'Games.name',
+          'RecentTopGames.appId': 'Games.appId',
+          'RecentTopGames.reviewScoreDesc': 'Games.reviewScoreDesc',
+          'RecentTopGames.releaseDate': 'Games.releaseDate',
+          'RecentTopGames.totalReviews': 'Games.totalReviewsValue',
+          'RecentTopGames.totalPositiveReviews': 'Games.totalPositiveReviews',
+          'RecentTopGames.totalNegativeReviews': 'Games.totalNegativeReviews'
         }
         
         Object.entries(renameMap).forEach(([oldKey, newKey]) => {
@@ -198,7 +204,7 @@ export async function getRecentTopGames(limit = 100) {
         return newRow
       })
       
-      return ensureNumeric(standardized, ['Games.totalReviewsValue'])
+      return ensureNumeric(standardized, ['Games.totalReviewsValue', 'Games.totalPositiveReviews', 'Games.totalNegativeReviews'])
     }
     
     return []
