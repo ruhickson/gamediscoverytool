@@ -328,10 +328,10 @@ export default {
     // Reactive data
     const selectedTags = ref([])
     const excludeTags = ref([])
-    const reviewScore = ref('Very Positive')
+    const reviewScore = ref('Positive')
     const reviewScoreOrBetter = ref(true)
-    const minReviews = ref(1)
-    const maxReviews = ref(1000000)
+    const minReviews = ref(11)
+    const maxReviews = ref(10000)
     const orderBy = ref('total_reviews_desc')
     const minDate = ref('')
     const maxDate = ref('')
@@ -350,8 +350,8 @@ export default {
 
     // Initialize dates
     const today = new Date()
-    const threeMonthsAgo = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000))
-    minDate.value = threeMonthsAgo.toISOString().split('T')[0]
+    const twoWeeksAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000))
+    minDate.value = twoWeeksAgo.toISOString().split('T')[0]
     maxDate.value = today.toISOString().split('T')[0]
 
     // Methods
@@ -565,12 +565,12 @@ export default {
     const resetFilters = () => {
       selectedTags.value = []
       excludeTags.value = []
-      reviewScore.value = 'Very Positive'
+      reviewScore.value = 'Positive'
       reviewScoreOrBetter.value = true
-      minReviews.value = 1
-      maxReviews.value = 1000000
+      minReviews.value = 11
+      maxReviews.value = 10000
       orderBy.value = 'total_reviews_desc'
-      minDate.value = threeMonthsAgo.toISOString().split('T')[0]
+      minDate.value = twoWeeksAgo.toISOString().split('T')[0]
       maxDate.value = today.toISOString().split('T')[0]
       games.value = []
       error.value = ''
