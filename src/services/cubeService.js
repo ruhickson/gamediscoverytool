@@ -729,50 +729,92 @@ export async function searchGamesByName(searchTerm, limit = 100) {
   }
 }
 
-// Find similar games using the SQL query logic
+// Find similar games using proper tag intersection logic
 export async function findSimilarGames(appId) {
   try {
-    // This is a complex query that would need to be implemented as a custom Cube.js query
-    // For now, we'll use a simplified approach with tag intersection
-    const query = {
-      measures: ['GameTags.count'],
-      dimensions: [
-        'Games.name',
-        'Games.appId'
-      ],
-      filters: [
-        { member: 'Games.type', operator: 'equals', values: ['game'] },
-        { member: 'GameTags.appId', operator: 'notEquals', values: [appId] }
-      ],
-      order: [['GameTags.count', 'desc']],
-      limit: 20
+    // Get tags for the input game
+    const inputGameTags = await getTagsForAppId(appId, 100)
+    console.log('Input game tags:', inputGameTags)
+    
+    if (inputGameTags.length === 0) {
+      return []
     }
     
-    const result = await queryCube(query)
+    // Get all games that share at least one tag with the input game
+    const similarGames = []
     
-    if (Array.isArray(result) && result.length > 0) {
-      // Get tags for the input game to calculate similarity
-      const inputGameTags = await getTagsForAppId(appId, 50)
-      
-      return result.map(row => {
-        const gameAppId = row['Games.appId']
-        const gameName = row['Games.name']
-        const commonTags = row['GameTags.count'] || 0
-        
-        // Calculate similarity score (simplified)
-        const similarityScore = Math.min(100, Math.round((commonTags / 20) * 100))
-        
-        return {
-          name: gameName,
-          appId: gameAppId,
-          commonTags: commonTags,
-          similarityScore: similarityScore,
-          commonTagList: [] // Would need additional query to get actual tags
+    // For each tag of the input game, find games that also have that tag
+    for (const tag of inputGameTags) {
+      try {
+        const query = {
+          dimensions: [
+            'Games.name',
+            'Games.appId'
+          ],
+          filters: [
+            { member: 'Games.type', operator: 'equals', values: ['game'] },
+            { member: 'GameTags.tag', operator: 'equals', values: [tag] },
+            { member: 'GameTags.appId', operator: 'notEquals', values: [appId] }
+          ],
+          order: [['Games.name', 'asc']]
         }
-      }).filter(game => game.commonTags >= 15) // Filter by minimum common tags
+        
+        const result = await queryCube(query)
+        
+        if (Array.isArray(result) && result.length > 0) {
+          for (const row of result) {
+            const gameAppId = row['Games.appId']
+            const gameName = row['Games.name']
+            
+            // Check if we already have this game
+            let existingGame = similarGames.find(g => g.appId === gameAppId)
+            
+            if (!existingGame) {
+              existingGame = {
+                name: gameName,
+                appId: gameAppId,
+                commonTags: 0,
+                commonTagList: []
+              }
+              similarGames.push(existingGame)
+            }
+            
+            // Add this tag to the common tags
+            if (!existingGame.commonTagList.includes(tag)) {
+              existingGame.commonTagList.push(tag)
+              existingGame.commonTags++
+            }
+          }
+        }
+      } catch (tagError) {
+        console.warn(`Error processing tag ${tag}:`, tagError)
+        continue
+      }
     }
     
-    return []
+    // Calculate similarity scores and filter
+    const results = similarGames
+      .filter(game => game.commonTags >= 3) // Minimum 3 common tags
+      .map(game => {
+        const similarityScore = Math.round((100 * game.commonTags / 20) * 100) / 100 // round(100 * common_tags / 20, 2)
+        return {
+          ...game,
+          similarityScore,
+          commonTagList: game.commonTagList.sort()
+        }
+      })
+      .sort((a, b) => {
+        // Sort by similarity score, then by common tags count
+        if (b.similarityScore !== a.similarityScore) {
+          return b.similarityScore - a.similarityScore
+        }
+        return b.commonTags - a.commonTags
+      })
+      .slice(0, 20) // Limit to 20 results
+    
+    console.log('Found', results.length, 'similar games')
+    return results
+    
   } catch (error) {
     console.error('Error finding similar games:', error)
     throw error
