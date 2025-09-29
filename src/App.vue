@@ -37,6 +37,16 @@
               </li>
               <li class="nav-item">
                 <router-link 
+                  to="/recommender" 
+                  class="nav-link"
+                  :class="{ active: $route.name === 'Recommender' }"
+                >
+                  <i class="fas fa-magic"></i>
+                  Recommender
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link 
                   to="/how-to-use" 
                   class="nav-link"
                   :class="{ active: $route.name === 'HowToUse' }"

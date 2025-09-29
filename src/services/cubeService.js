@@ -666,10 +666,93 @@ export async function getTagsForAppId(appId, limit = 5) {
   }
 }
 
+// Get all games for search (simplified query)
+export async function getAllGames(limit = 1000) {
+  try {
+    const query = {
+      dimensions: [
+        'Games.name',
+        'Games.appId'
+      ],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] }
+      ],
+      order: [['Games.name', 'asc']],
+      limit
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      return result.map(row => ({
+        name: row['Games.name'],
+        appId: row['Games.appId']
+      }))
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching all games:', error)
+    throw error
+  }
+}
+
+// Find similar games using the SQL query logic
+export async function findSimilarGames(appId) {
+  try {
+    // This is a complex query that would need to be implemented as a custom Cube.js query
+    // For now, we'll use a simplified approach with tag intersection
+    const query = {
+      measures: ['GameTags.count'],
+      dimensions: [
+        'Games.name',
+        'Games.appId'
+      ],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] },
+        { member: 'GameTags.appId', operator: 'notEquals', values: [appId] }
+      ],
+      order: [['GameTags.count', 'desc']],
+      limit: 20
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      // Get tags for the input game to calculate similarity
+      const inputGameTags = await getTagsForAppId(appId, 50)
+      
+      return result.map(row => {
+        const gameAppId = row['Games.appId']
+        const gameName = row['Games.name']
+        const commonTags = row['GameTags.count'] || 0
+        
+        // Calculate similarity score (simplified)
+        const similarityScore = Math.min(100, Math.round((commonTags / 20) * 100))
+        
+        return {
+          name: gameName,
+          appId: gameAppId,
+          commonTags: commonTags,
+          similarityScore: similarityScore,
+          commonTagList: [] // Would need additional query to get actual tags
+        }
+      }).filter(game => game.commonTags >= 15) // Filter by minimum common tags
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error finding similar games:', error)
+    throw error
+  }
+}
+
 export default {
   getAllTags,
   getRecentTopGames,
   findGames,
   getAppIdsForTag,
-  getTagsForAppId
+  getTagsForAppId,
+  getAllGames,
+  findSimilarGames
 }
