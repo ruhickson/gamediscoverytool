@@ -20,7 +20,7 @@
             >
             <div v-if="showGameDropdown && filteredGames.length > 0" class="game-dropdown">
               <div 
-                v-for="game in filteredGames.slice(0, 10)" 
+                v-for="game in filteredGames" 
                 :key="game.appId"
                 class="game-option"
                 @click="selectGame(game)"
@@ -147,15 +147,19 @@ export default {
       }
 
       try {
+        // Use server-side search for better results
+        const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
+        filteredGames.value = results
+        showGameDropdown.value = true
+      } catch (error) {
+        console.error('Error searching games:', error)
+        // Fallback to client-side search
         const query = gameSearchQuery.value.toLowerCase()
         const results = allGames.value.filter(game => 
           game.name.toLowerCase().includes(query)
         )
-        
-        filteredGames.value = results.slice(0, 20) // Limit to 20 results
+        filteredGames.value = results.slice(0, 50)
         showGameDropdown.value = true
-      } catch (error) {
-        console.error('Error searching games:', error)
       }
     }
 
@@ -193,8 +197,8 @@ export default {
     const loadAllGames = async () => {
       try {
         isLoading.value = true
-        // Get a large sample of games for search
-        const games = await cubeService.getAllGames(1000)
+        // Get a larger sample of games for search
+        const games = await cubeService.getAllGames(5000)
         allGames.value = games
         console.log('Loaded', games.length, 'games for search')
       } catch (error) {

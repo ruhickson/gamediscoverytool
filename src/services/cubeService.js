@@ -667,7 +667,7 @@ export async function getTagsForAppId(appId, limit = 5) {
 }
 
 // Get all games for search (simplified query)
-export async function getAllGames(limit = 1000) {
+export async function getAllGames(limit = 5000) {
   try {
     const query = {
       dimensions: [
@@ -693,6 +693,38 @@ export async function getAllGames(limit = 1000) {
     return []
   } catch (error) {
     console.error('Error fetching all games:', error)
+    throw error
+  }
+}
+
+// Search games by name (server-side search)
+export async function searchGamesByName(searchTerm, limit = 100) {
+  try {
+    const query = {
+      dimensions: [
+        'Games.name',
+        'Games.appId'
+      ],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] },
+        { member: 'Games.name', operator: 'contains', values: [searchTerm] }
+      ],
+      order: [['Games.name', 'asc']],
+      limit
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      return result.map(row => ({
+        name: row['Games.name'],
+        appId: row['Games.appId']
+      }))
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error searching games:', error)
     throw error
   }
 }
@@ -754,5 +786,6 @@ export default {
   getAppIdsForTag,
   getTagsForAppId,
   getAllGames,
+  searchGamesByName,
   findSimilarGames
 }
