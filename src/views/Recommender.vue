@@ -58,8 +58,28 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="card">
+      <div class="card-body text-center py-5">
+        <div class="loading-spinner mb-3">
+          <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+        </div>
+        <h5>Finding Similar Games...</h5>
+        <p class="text-muted">This may take a moment as we analyze game tags and similarities.</p>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" 
+               style="width: 100%"
+               aria-valuenow="100" 
+               aria-valuemin="0" 
+               aria-valuemax="100">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Similar Games Results -->
-    <div v-if="similarGames.length > 0" class="card">
+    <div v-else-if="similarGames.length > 0" class="card">
       <div class="card-header">
         <h5><i class="fas fa-thumbs-up"></i> Similar Games ({{ similarGames.length }})</h5>
       </div>
@@ -138,6 +158,9 @@ export default {
     const hasSearched = ref(false)
     const allGames = ref([])
 
+    // Debounce timer
+    let searchTimeout = null
+
     // Methods
     const searchGames = async () => {
       if (gameSearchQuery.value.trim().length < 2) {
@@ -146,21 +169,29 @@ export default {
         return
       }
 
-      try {
-        // Use server-side search for better results
-        const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
-        filteredGames.value = results
-        showGameDropdown.value = true
-      } catch (error) {
-        console.error('Error searching games:', error)
-        // Fallback to client-side search
-        const query = gameSearchQuery.value.toLowerCase()
-        const results = allGames.value.filter(game => 
-          game.name.toLowerCase().includes(query)
-        )
-        filteredGames.value = results.slice(0, 50)
-        showGameDropdown.value = true
+      // Clear previous timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
       }
+
+      // Debounce search by 300ms
+      searchTimeout = setTimeout(async () => {
+        try {
+          // Use server-side search for better results
+          const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
+          filteredGames.value = results
+          showGameDropdown.value = true
+        } catch (error) {
+          console.error('Error searching games:', error)
+          // Fallback to client-side search
+          const query = gameSearchQuery.value.toLowerCase()
+          const results = allGames.value.filter(game => 
+            game.name.toLowerCase().includes(query)
+          )
+          filteredGames.value = results.slice(0, 50)
+          showGameDropdown.value = true
+        }
+      }, 300)
     }
 
     const selectGame = (game) => {
@@ -181,8 +212,10 @@ export default {
 
       isLoading.value = true
       hasSearched.value = true
+      similarGames.value = [] // Clear previous results
       
       try {
+        console.log('Starting similarity search for:', selectedGame.value.name)
         const results = await cubeService.findSimilarGames(selectedGame.value.appId)
         similarGames.value = results
         console.log('Found', results.length, 'similar games')

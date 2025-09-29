@@ -729,31 +729,38 @@ export async function searchGamesByName(searchTerm, limit = 100) {
   }
 }
 
-// Find similar games using proper tag intersection logic
+// Find similar games using optimized tag intersection logic
 export async function findSimilarGames(appId) {
   try {
-    // Get tags for the input game
-    const inputGameTags = await getTagsForAppId(appId, 100)
-    console.log('Input game tags:', inputGameTags)
+    console.log('Starting similarity search for appId:', appId)
+    
+    // Get tags for the input game (limit to most relevant tags)
+    const inputGameTags = await getTagsForAppId(appId, 50)
+    console.log('Input game tags:', inputGameTags.length)
     
     if (inputGameTags.length === 0) {
       return []
     }
     
-    // Get all games that share at least one tag with the input game
-    const similarGames = []
+    // Optimize: Process tags in batches to reduce API calls
+    const batchSize = 5
+    const similarGames = new Map() // Use Map for better performance
     
-    // For each tag of the input game, find games that also have that tag
-    for (const tag of inputGameTags) {
+    for (let i = 0; i < inputGameTags.length; i += batchSize) {
+      const tagBatch = inputGameTags.slice(i, i + batchSize)
+      console.log(`Processing tag batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(inputGameTags.length/batchSize)}`)
+      
       try {
+        // Query for games that have any of the tags in this batch
         const query = {
           dimensions: [
             'Games.name',
-            'Games.appId'
+            'Games.appId',
+            'GameTags.tag'
           ],
           filters: [
             { member: 'Games.type', operator: 'equals', values: ['game'] },
-            { member: 'GameTags.tag', operator: 'equals', values: [tag] },
+            { member: 'GameTags.tag', operator: 'in', values: tagBatch },
             { member: 'GameTags.appId', operator: 'notEquals', values: [appId] }
           ],
           order: [['Games.name', 'asc']]
@@ -765,35 +772,35 @@ export async function findSimilarGames(appId) {
           for (const row of result) {
             const gameAppId = row['Games.appId']
             const gameName = row['Games.name']
+            const tag = row['GameTags.tag']
             
-            // Check if we already have this game
-            let existingGame = similarGames.find(g => g.appId === gameAppId)
-            
-            if (!existingGame) {
-              existingGame = {
+            // Get or create game entry
+            let game = similarGames.get(gameAppId)
+            if (!game) {
+              game = {
                 name: gameName,
                 appId: gameAppId,
                 commonTags: 0,
                 commonTagList: []
               }
-              similarGames.push(existingGame)
+              similarGames.set(gameAppId, game)
             }
             
-            // Add this tag to the common tags
-            if (!existingGame.commonTagList.includes(tag)) {
-              existingGame.commonTagList.push(tag)
-              existingGame.commonTags++
+            // Add this tag to the common tags (avoid duplicates)
+            if (!game.commonTagList.includes(tag)) {
+              game.commonTagList.push(tag)
+              game.commonTags++
             }
           }
         }
       } catch (tagError) {
-        console.warn(`Error processing tag ${tag}:`, tagError)
+        console.warn(`Error processing tag batch:`, tagError)
         continue
       }
     }
     
-    // Calculate similarity scores and filter
-    const results = similarGames
+    // Convert Map to Array and calculate similarity scores
+    const results = Array.from(similarGames.values())
       .filter(game => game.commonTags >= 3) // Minimum 3 common tags
       .map(game => {
         const similarityScore = Math.round((100 * game.commonTags / 20) * 100) / 100 // round(100 * common_tags / 20, 2)
