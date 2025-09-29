@@ -729,12 +729,12 @@ export async function searchGamesByName(searchTerm, limit = 100) {
   }
 }
 
-// Find similar games using proper tag intersection logic (matching SQL query)
+// Find similar games using a single optimized query (matching SQL query)
 export async function findSimilarGames(appId) {
   try {
     console.log('Starting similarity search for appId:', appId)
     
-    // Get all tags for the input game
+    // First get the tags for the input game
     const inputGameTags = await getTagsForAppId(appId, 100)
     console.log('Input game tags:', inputGameTags.length)
     
@@ -742,46 +742,47 @@ export async function findSimilarGames(appId) {
       return []
     }
     
-    // For each tag, find all games that also have that tag
-    const gameTagMap = new Map() // appId -> { name, tags: Set }
+    // Single query to get all games that share tags with the input game
+    // This mimics the SQL JOIN logic in one query
+    const query = {
+      measures: ['GameTags.count'],
+      dimensions: [
+        'Games.name',
+        'Games.appId',
+        'GameTags.tag'
+      ],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] },
+        { member: 'GameTags.appId', operator: 'notEquals', values: [appId] },
+        { member: 'GameTags.tag', operator: 'in', values: inputGameTags }
+      ],
+      order: [['Games.name', 'asc']]
+    }
     
-    for (const tag of inputGameTags) {
-      try {
-        const query = {
-          dimensions: [
-            'Games.name',
-            'Games.appId'
-          ],
-          filters: [
-            { member: 'Games.type', operator: 'equals', values: ['game'] },
-            { member: 'GameTags.tag', operator: 'equals', values: [tag] },
-            { member: 'GameTags.appId', operator: 'notEquals', values: [appId] }
-          ],
-          order: [['Games.name', 'asc']]
-        }
-        
-        const result = await queryCube(query)
-        
-        if (Array.isArray(result) && result.length > 0) {
-          for (const row of result) {
-            const gameAppId = row['Games.appId']
-            const gameName = row['Games.name']
-            
-            if (!gameTagMap.has(gameAppId)) {
-              gameTagMap.set(gameAppId, {
-                name: gameName,
-                appId: gameAppId,
-                commonTags: new Set()
-              })
-            }
-            
-            gameTagMap.get(gameAppId).commonTags.add(tag)
-          }
-        }
-      } catch (tagError) {
-        console.warn(`Error processing tag ${tag}:`, tagError)
-        continue
+    const result = await queryCube(query)
+    console.log('Raw query result:', result.length, 'rows')
+    
+    if (!Array.isArray(result) || result.length === 0) {
+      return []
+    }
+    
+    // Group by game and count common tags
+    const gameTagMap = new Map()
+    
+    for (const row of result) {
+      const gameAppId = row['Games.appId']
+      const gameName = row['Games.name']
+      const tag = row['GameTags.tag']
+      
+      if (!gameTagMap.has(gameAppId)) {
+        gameTagMap.set(gameAppId, {
+          name: gameName,
+          appId: gameAppId,
+          commonTags: new Set()
+        })
       }
+      
+      gameTagMap.get(gameAppId).commonTags.add(tag)
     }
     
     // Convert to results and filter by minimum 15 common tags
