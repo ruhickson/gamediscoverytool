@@ -801,7 +801,7 @@ export async function findSimilarGames(appId) {
     
     // Convert Map to Array and calculate similarity scores
     const results = Array.from(similarGames.values())
-      .filter(game => game.commonTags >= 3) // Minimum 3 common tags
+      .filter(game => game.commonTags >= 15) // Minimum 15 common tags as per SQL query
       .map(game => {
         const similarityScore = Math.round((100 * game.commonTags / 20) * 100) / 100 // round(100 * common_tags / 20, 2)
         return {
