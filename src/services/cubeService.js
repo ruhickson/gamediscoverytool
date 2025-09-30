@@ -14,6 +14,105 @@ const cubeApi = axios.create({
   }
 })
 
+// ------------------------------------------------------------
+// In-memory LRU cache (with TTL) for name search results
+// ------------------------------------------------------------
+const NAME_CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+const NAME_CACHE_MAX_ENTRIES = 200
+const nameSearchCache = new Map() // key -> { ts, results }
+
+function normalizeSearchTerm(term) {
+  return (term || '').toLowerCase().trim()
+}
+
+function makeNameCacheKey(searchTerm, limit) {
+  return `${normalizeSearchTerm(searchTerm)}::${limit || 100}`
+}
+
+function getFromNameCache(searchTerm, limit) {
+  const key = makeNameCacheKey(searchTerm, limit)
+  if (!nameSearchCache.has(key)) return null
+  const entry = nameSearchCache.get(key)
+  const isFresh = Date.now() - entry.ts < NAME_CACHE_TTL_MS
+  if (!isFresh) {
+    nameSearchCache.delete(key)
+    return null
+  }
+  // touch for LRU: reinsert to move to end
+  nameSearchCache.delete(key)
+  nameSearchCache.set(key, entry)
+  return entry.results
+}
+
+function setNameCache(searchTerm, limit, results) {
+  const key = makeNameCacheKey(searchTerm, limit)
+  nameSearchCache.set(key, { ts: Date.now(), results })
+  if (nameSearchCache.size > NAME_CACHE_MAX_ENTRIES) {
+    const oldestKey = nameSearchCache.keys().next().value
+    if (oldestKey) nameSearchCache.delete(oldestKey)
+  }
+}
+
+// ------------------------------------------------------------
+// LocalStorage warm cache for names/appIds (daily refresh)
+// ------------------------------------------------------------
+const LS_WARM_NAMES_KEY = 'gd_name_index_v1'
+const LS_WARM_NAMES_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+let warmNamesMemory = null // [{ name, appId }]
+
+function readWarmNamesFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_WARM_NAMES_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.data)) return null
+    const isFresh = Date.now() - (parsed.ts || 0) < LS_WARM_NAMES_TTL_MS
+    return isFresh ? parsed.data : null
+  } catch (_) {
+    return null
+  }
+}
+
+function writeWarmNamesToStorage(data) {
+  try {
+    localStorage.setItem(LS_WARM_NAMES_KEY, JSON.stringify({ ts: Date.now(), data }))
+  } catch (_) {
+    // ignore quota errors
+  }
+}
+
+export async function prefetchWarmNames(limit = 10000) {
+  // memory first
+  if (warmNamesMemory && warmNamesMemory.length) return warmNamesMemory
+  // storage
+  const stored = readWarmNamesFromStorage()
+  if (stored && stored.length) {
+    warmNamesMemory = stored
+    return warmNamesMemory
+  }
+  // fetch
+  try {
+    const list = await getAllGames(limit)
+    warmNamesMemory = list
+    writeWarmNamesToStorage(list)
+    return list
+  } catch (e) {
+    console.warn('Warm names prefetch failed:', e)
+    return []
+  }
+}
+
+export async function filterWarmNames(searchTerm, limit = 50) {
+  const term = normalizeSearchTerm(searchTerm)
+  if (term.length < 1) return []
+  const list = (warmNamesMemory && warmNamesMemory.length)
+    ? warmNamesMemory
+    : await prefetchWarmNames()
+  return list
+    .filter(g => g && g.name && g.name.toLowerCase().includes(term))
+    .slice(0, limit)
+}
+
 // Review score order for proper sorting
 const reviewDescOrder = [
   'Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Positive',
@@ -700,6 +799,12 @@ export async function getAllGames(limit = 5000) {
 // Search games by name (server-side search)
 export async function searchGamesByName(searchTerm, limit = 100) {
   try {
+    // Cache lookup (in-memory LRU)
+    const cached = getFromNameCache(searchTerm, limit)
+    if (cached) {
+      return cached
+    }
+
     const query = {
       dimensions: [
         'Games.name',
@@ -716,10 +821,12 @@ export async function searchGamesByName(searchTerm, limit = 100) {
     const result = await queryCube(query)
     
     if (Array.isArray(result) && result.length > 0) {
-      return result.map(row => ({
+      const mapped = result.map(row => ({
         name: row['Games.name'],
         appId: row['Games.appId']
       }))
+      setNameCache(searchTerm, limit, mapped)
+      return mapped
     }
     
     return []
@@ -832,5 +939,7 @@ export default {
   getTagsForAppId,
   getAllGames,
   searchGamesByName,
-  findSimilarGames
+  findSimilarGames,
+  prefetchWarmNames,
+  filterWarmNames
 }

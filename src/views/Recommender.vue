@@ -267,19 +267,23 @@ export default {
       // Debounce search by 300ms
       searchTimeout = setTimeout(async () => {
         try {
-          // Use server-side search for better results
+          // 1) Try local warm cache first for instant results
+          const warm = await cubeService.filterWarmNames(gameSearchQuery.value, 50)
+          if (Array.isArray(warm) && warm.length > 0) {
+            filteredGames.value = warm
+            showGameDropdown.value = true
+          }
+
+          // 2) Prefetch warm names in background (once per day)
+          cubeService.prefetchWarmNames(10000).catch(() => {})
+
+          // 3) Server-side search for precise/complete results, cached in-memory
           const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
           filteredGames.value = results
           showGameDropdown.value = true
         } catch (error) {
           console.error('Error searching games:', error)
-          // Fallback to client-side search
-          const query = gameSearchQuery.value.toLowerCase()
-          const results = allGames.value.filter(game => 
-            game.name.toLowerCase().includes(query)
-          )
-          filteredGames.value = results.slice(0, 50)
-          showGameDropdown.value = true
+          // Last resort: no-op, as warm cache already attempted
         } finally {
           isSearching.value = false
         }
