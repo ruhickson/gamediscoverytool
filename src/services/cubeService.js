@@ -729,86 +729,91 @@ export async function searchGamesByName(searchTerm, limit = 100) {
   }
 }
 
-// Find similar games using a single optimized query (matching SQL query)
-export async function findSimilarGames(appId) {
+// Find similar games using custom SimilarGames cube (single optimized query)
+export async function findSimilarGames(appId, minCommonTags = 15) {
   try {
     console.log('Starting similarity search for appId:', appId)
     
-    // First get the tags for the input game
-    const inputGameTags = await getTagsForAppId(appId, 100)
-    console.log('Input game tags:', inputGameTags.length)
-    
-    if (inputGameTags.length === 0) {
-      return []
-    }
-    
-    // Single query to get all games that share tags with the input game
-    // This mimics the SQL JOIN logic in one query
+    // Use the custom SimilarGames cube that implements the SQL JOIN logic
     const query = {
-      measures: ['GameTags.count'],
       dimensions: [
-        'Games.name',
-        'Games.appId',
-        'GameTags.tag'
+        'SimilarGames.name',
+        'SimilarGames.appId',
+        'SimilarGames.reviewScoreDesc',
+        'SimilarGames.totalPositive',
+        'SimilarGames.totalNegative',
+        'SimilarGames.releaseDate',
+        'SimilarGames.isFree'
+      ],
+      measures: [
+        'SimilarGames.commonTags',
+        'SimilarGames.similarityScore'
       ],
       filters: [
-        { member: 'Games.type', operator: 'equals', values: ['game'] },
-        { member: 'GameTags.appId', operator: 'notEquals', values: [appId] },
-        { member: 'GameTags.tag', operator: 'in', values: inputGameTags }
+        { member: 'SimilarGames.inputAppId', operator: 'equals', values: [parseInt(appId)] }
       ],
-      order: [['Games.name', 'asc']]
+      order: [
+        ['SimilarGames.similarityScore', 'desc'],
+        ['SimilarGames.commonTags', 'desc']
+      ],
+      limit: 100 // Get more results to filter client-side
     }
     
     const result = await queryCube(query)
-    console.log('Raw query result:', result.length, 'rows')
+    console.log('SimilarGames cube result:', result.length, 'rows')
     
     if (!Array.isArray(result) || result.length === 0) {
       return []
     }
     
-    // Group by game and count common tags
-    const gameTagMap = new Map()
+    // Filter results to only include games with minimum common tags
+    const filteredResults = result.filter(row => row['SimilarGames.commonTags'] >= minCommonTags)
     
-    for (const row of result) {
-      const gameAppId = row['Games.appId']
-      const gameName = row['Games.name']
-      const tag = row['GameTags.tag']
-      
-      if (!gameTagMap.has(gameAppId)) {
-        gameTagMap.set(gameAppId, {
-          name: gameName,
-          appId: gameAppId,
-          commonTags: new Set()
+    // Get the common tags for each game
+    const results = []
+    for (const row of filteredResults.slice(0, 20)) { // Limit to 20 results
+      try {
+        // Get the common tags for this specific game
+        const tagsQuery = {
+          dimensions: ['SimilarGames.commonTag'],
+          filters: [
+            { member: 'SimilarGames.inputAppId', operator: 'equals', values: [parseInt(appId)] },
+            { member: 'SimilarGames.appId', operator: 'equals', values: [row['SimilarGames.appId']] }
+          ]
+        }
+        
+        const tagsResult = await queryCube(tagsQuery)
+        const commonTagList = tagsResult.map(tagRow => tagRow['SimilarGames.commonTag']).sort()
+        
+        results.push({
+          name: row['SimilarGames.name'],
+          appId: row['SimilarGames.appId'],
+          reviewScoreDesc: row['SimilarGames.reviewScoreDesc'],
+          totalPositive: row['SimilarGames.totalPositive'],
+          totalNegative: row['SimilarGames.totalNegative'],
+          releaseDate: row['SimilarGames.releaseDate'],
+          isFree: row['SimilarGames.isFree'],
+          commonTags: row['SimilarGames.commonTags'],
+          similarityScore: row['SimilarGames.similarityScore'],
+          commonTagList: commonTagList
+        })
+      } catch (tagError) {
+        console.warn(`Error getting tags for game ${row['SimilarGames.appId']}:`, tagError)
+        // Add the game without tags
+        results.push({
+          name: row['SimilarGames.name'],
+          appId: row['SimilarGames.appId'],
+          reviewScoreDesc: row['SimilarGames.reviewScoreDesc'],
+          totalPositive: row['SimilarGames.totalPositive'],
+          totalNegative: row['SimilarGames.totalNegative'],
+          releaseDate: row['SimilarGames.releaseDate'],
+          isFree: row['SimilarGames.isFree'],
+          commonTags: row['SimilarGames.commonTags'],
+          similarityScore: row['SimilarGames.similarityScore'],
+          commonTagList: []
         })
       }
-      
-      gameTagMap.get(gameAppId).commonTags.add(tag)
     }
-    
-    // Convert to results and filter by minimum 15 common tags
-    const results = Array.from(gameTagMap.values())
-      .map(game => ({
-        name: game.name,
-        appId: game.appId,
-        commonTags: game.commonTags.size,
-        commonTagList: Array.from(game.commonTags).sort()
-      }))
-      .filter(game => game.commonTags >= 15) // Minimum 15 common tags as per SQL query
-      .map(game => {
-        const similarityScore = Math.round((100 * game.commonTags / 20) * 100) / 100 // round(100 * common_tags / 20, 2)
-        return {
-          ...game,
-          similarityScore
-        }
-      })
-      .sort((a, b) => {
-        // Sort by similarity score, then by common tags count
-        if (b.similarityScore !== a.similarityScore) {
-          return b.similarityScore - a.similarityScore
-        }
-        return b.commonTags - a.commonTags
-      })
-      .slice(0, 20) // Limit to 20 results
     
     console.log('Found', results.length, 'similar games')
     return results
