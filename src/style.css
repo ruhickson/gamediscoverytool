@@ -2,11 +2,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-  /* Vibrant Pixel Art Color Palette */
+  /* Vibrant Pixel Art Color Palette - Softened for readability */
   --pixel-cyan: #00FFFF;
   --pixel-magenta: #FF00FF;
   --pixel-yellow: #FFFF00;
-  --pixel-green: #00FF00;
+  --pixel-green: #4CAF50;
+  --pixel-green-bright: #66BB6A;
+  --pixel-green-soft: #81C784;
   --pixel-orange: #FF8000;
   --pixel-red: #FF0000;
   --pixel-blue: #0080FF;
@@ -123,7 +125,7 @@ body {
 }
 
 .sidebar .nav-link.active {
-  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green-soft) 100%);
   color: var(--pixel-darker-bg);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
   font-weight: bold;
@@ -199,7 +201,7 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(45deg, var(--pixel-cyan) 0%, var(--pixel-green-bright) 100%);
   border: 2px solid var(--pixel-border);
   color: var(--pixel-darker-bg);
   font-family: 'Press Start 2P', monospace;
@@ -214,7 +216,7 @@ body {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(45deg, var(--pixel-green) 0%, var(--pixel-yellow) 100%);
+  background: linear-gradient(45deg, var(--pixel-green-soft) 0%, var(--pixel-yellow) 100%);
   border-color: var(--pixel-yellow);
   color: var(--pixel-darker-bg);
   box-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
@@ -304,7 +306,7 @@ body {
 }
 
 .table-hover > tbody > tr:hover > td {
-  background: linear-gradient(135deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(135deg, var(--pixel-cyan) 0%, var(--pixel-green-soft) 100%);
   color: var(--pixel-darker-bg);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
   transform: scale(1.02);
@@ -346,8 +348,8 @@ body {
 }
 
 .score-90 { 
-  background: linear-gradient(45deg, var(--pixel-green) 0%, var(--pixel-cyan) 100%);
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  background: linear-gradient(45deg, var(--pixel-green-bright) 0%, var(--pixel-cyan) 100%);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 }
 .score-80 { 
   background: linear-gradient(45deg, var(--pixel-yellow) 0%, var(--pixel-orange) 100%);
@@ -393,8 +395,8 @@ body {
 }
 
 .game-link:hover {
-  color: var(--pixel-green);
-  text-shadow: 0 0 8px var(--pixel-green);
+  color: var(--pixel-green-soft);
+  text-shadow: 0 0 8px var(--pixel-green-soft);
   text-decoration: underline;
   transform: translateX(2px);
 }
@@ -408,9 +410,9 @@ body {
 }
 
 .info-section h5 {
-  color: var(--pixel-green);
+  color: var(--pixel-green-soft);
   margin-top: 20px;
-  text-shadow: 0 0 5px var(--pixel-green);
+  text-shadow: 0 0 5px var(--pixel-green-soft);
   text-transform: uppercase;
   font-size: 10px;
 }
@@ -441,7 +443,7 @@ body {
   left: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(180deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(180deg, var(--pixel-cyan) 0%, var(--pixel-green-soft) 100%);
 }
 
 .highlight-box p {
@@ -649,7 +651,7 @@ body {
 }
 
 .tag-option-selected {
-  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green-soft) 100%);
   color: var(--pixel-darker-bg);
   font-weight: bold;
 }
@@ -670,7 +672,7 @@ body {
 .tag-badge {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(45deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(45deg, var(--pixel-cyan) 0%, var(--pixel-green-bright) 100%);
   color: var(--pixel-darker-bg);
   padding: 8px 12px;
   border: 2px solid var(--pixel-border);
@@ -750,7 +752,7 @@ body {
 }
 
 .mobile-nav .nav-link.active {
-  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green) 100%);
+  background: linear-gradient(90deg, var(--pixel-cyan) 0%, var(--pixel-green-soft) 100%);
   color: var(--pixel-darker-bg) !important;
   font-weight: bold;
 }
