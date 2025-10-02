@@ -57,6 +57,8 @@ function setNameCache(searchTerm, limit, results) {
 // LocalStorage warm cache for names/appIds (daily refresh)
 // ------------------------------------------------------------
 const LS_WARM_NAMES_KEY = 'gd_name_index_v1'
+const LS_DAILY_CACHE_KEY = 'gd_daily_cache_v1'
+const DAILY_CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 const LS_WARM_NAMES_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 let warmNamesMemory = null // [{ name, appId }]
 
@@ -796,15 +798,106 @@ export async function getAllGames(limit = 5000) {
   }
 }
 
-// Search games by name (server-side search)
+// Daily cache management for popular games
+function getDailyCache() {
+  try {
+    const cached = localStorage.getItem(LS_DAILY_CACHE_KEY)
+    if (!cached) return null
+    
+    const data = JSON.parse(cached)
+    const isFresh = Date.now() - data.timestamp < DAILY_CACHE_TTL_MS
+    return isFresh ? data.games : null
+  } catch (error) {
+    console.log('Failed to read daily cache:', error)
+    return null
+  }
+}
+
+function setDailyCache(games) {
+  try {
+    const data = {
+      timestamp: Date.now(),
+      games: games
+    }
+    localStorage.setItem(LS_DAILY_CACHE_KEY, JSON.stringify(data))
+  } catch (error) {
+    console.log('Failed to save daily cache:', error)
+  }
+}
+
+// Populate daily cache with popular games (run once per day)
+export async function populateDailyCache() {
+  try {
+    console.log('Populating daily cache...')
+    
+    // Get top 10,000 games for comprehensive coverage
+    const query = {
+      dimensions: [
+        'Games.name',
+        'Games.appId'
+      ],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] }
+      ],
+      order: [['Games.totalReviews', 'desc']],
+      limit: 10000
+    }
+    
+    const result = await queryCube(query)
+    
+    if (Array.isArray(result) && result.length > 0) {
+      const games = result.map(row => ({
+        name: row['Games.name'],
+        appId: row['Games.appId']
+      }))
+      
+      setDailyCache(games)
+      console.log('Daily cache populated with', games.length, 'games')
+      return games
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Failed to populate daily cache:', error)
+    return []
+  }
+}
+
+// Check and populate daily cache if needed
+export async function ensureDailyCache() {
+  const existing = getDailyCache()
+  if (existing && existing.length > 0) {
+    return existing // Cache is fresh
+  }
+  
+  // Cache is stale or missing, populate it
+  return await populateDailyCache()
+}
+
+// Enhanced search with daily cache
 export async function searchGamesByName(searchTerm, limit = 100) {
   try {
-    // Cache lookup (in-memory LRU)
+    // 1. Try in-memory cache first (fastest)
     const cached = getFromNameCache(searchTerm, limit)
     if (cached) {
       return cached
     }
 
+    // 2. Try daily cache (very fast)
+    const dailyCache = getDailyCache()
+    if (dailyCache && dailyCache.length > 0) {
+      const normalizedTerm = searchTerm.toLowerCase()
+      const filtered = dailyCache.filter(game => 
+        game.name.toLowerCase().includes(normalizedTerm)
+      ).slice(0, limit)
+      
+      if (filtered.length > 0) {
+        setNameCache(searchTerm, limit, filtered)
+        return filtered
+      }
+    }
+
+    // 3. Fallback to server search (slow but complete)
     const query = {
       dimensions: [
         'Games.name',
@@ -941,5 +1034,7 @@ export default {
   searchGamesByName,
   findSimilarGames,
   prefetchWarmNames,
-  filterWarmNames
+  filterWarmNames,
+  populateDailyCache,
+  ensureDailyCache
 }

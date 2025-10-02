@@ -405,6 +405,9 @@ export default {
 
     // Hydration and URL sync
     onMounted(async () => {
+      // Initialize daily cache for fast searches
+      cubeService.ensureDailyCache().catch(() => {})
+      
       // Warm name cache early for instant dropdowns
       cubeService.prefetchWarmNames(10000).catch(() => {})
 

@@ -759,6 +759,9 @@ export default {
         isLoading.value = true
         error.value = ''
 
+        // Initialize daily cache for fast searches
+        cubeService.ensureDailyCache().catch(() => {})
+
         // Hydrate from URL query if present
         const q = route.query || {}
         if (Object.keys(q).length) {
