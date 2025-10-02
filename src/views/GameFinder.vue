@@ -319,12 +319,16 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
 
 export default {
   name: 'GameFinder',
   setup() {
+    // Router for deep-linking filters
+    const route = useRoute()
+    const router = useRouter()
     // Reactive data
     const selectedTags = ref([])
     const excludeTags = ref([])
@@ -355,6 +359,33 @@ export default {
     maxDate.value = today.toISOString().split('T')[0]
 
     // Methods
+    const parseArrayParam = (val) => {
+      if (!val) return []
+      if (Array.isArray(val)) return val.filter(Boolean)
+      return String(val).split(',').map(v => v.trim()).filter(Boolean)
+    }
+
+    const updateRouteFromFilters = (() => {
+      let t
+      return () => {
+        if (t) clearTimeout(t)
+        t = setTimeout(() => {
+          const query = {
+            tags: selectedTags.value.length ? selectedTags.value.join(',') : undefined,
+            exclude: excludeTags.value.length ? excludeTags.value.join(',') : undefined,
+            reviewScore: reviewScore.value !== 'Any' ? reviewScore.value : undefined,
+            orBetter: reviewScoreOrBetter.value ? '1' : undefined,
+            minReviews: minReviews.value != null ? String(minReviews.value) : undefined,
+            maxReviews: maxReviews.value != null ? String(maxReviews.value) : undefined,
+            minDate: minDate.value || undefined,
+            maxDate: maxDate.value || undefined,
+            orderBy: orderBy.value || undefined
+          }
+          Object.keys(query).forEach(k => query[k] === undefined && delete query[k])
+          router.replace({ name: 'GameFinder', query }).catch(() => {})
+        }, 200)
+      }
+    })()
     const loadTags = async () => {
       try {
         isLoading.value = true
@@ -454,6 +485,9 @@ export default {
       error.value = ''
       
       try {
+        // Sync URL for shareable searches
+        updateRouteFromFilters()
+
         // Prepare search parameters
         const searchParams = {
           tags: selectedTags.value.length > 0 ? selectedTags.value : null,
@@ -646,59 +680,66 @@ export default {
       try {
         isLoading.value = true
         error.value = ''
-        
+
+        // Hydrate from URL query if present
+        const q = route.query || {}
+        if (Object.keys(q).length) {
+          selectedTags.value = parseArrayParam(q.tags)
+          excludeTags.value = parseArrayParam(q.exclude)
+          if (q.reviewScore) reviewScore.value = String(q.reviewScore)
+          reviewScoreOrBetter.value = q.orBetter === '1' ? true : (q.orBetter === '0' ? false : reviewScoreOrBetter.value)
+          if (q.minReviews) minReviews.value = parseInt(q.minReviews, 10) || minReviews.value
+          if (q.maxReviews) maxReviews.value = parseInt(q.maxReviews, 10) || maxReviews.value
+          if (q.minDate) minDate.value = String(q.minDate)
+          if (q.maxDate) maxDate.value = String(q.maxDate)
+          if (q.orderBy) orderBy.value = String(q.orderBy)
+        }
+
         // Load tags first
         await loadTags()
-        
-        // Load initial games (recent top games with fallback)
-        const recentGames = await cubeService.getRecentTopGames(100)
-        
-        if (recentGames && recentGames.length > 0) {
-          // Process the initial games
-          const processedGames = recentGames.map(game => {
-            // Calculate Steam score percentage
-            const positiveReviews = game['Games.totalPositiveReviews'] || 0
-            const negativeReviews = game['Games.totalNegativeReviews'] || 0
-            const totalReviews = positiveReviews + negativeReviews
-            
-            let scorePercent = null
-            if (totalReviews > 0) {
-              scorePercent = Math.round((positiveReviews / totalReviews) * 100 * 10) / 10
-            }
-            
-            return {
-              appId: game['Games.appId'],
-              name: game['Games.name'],
-              reviewScoreDesc: game['Games.reviewScoreDesc'],
-              releaseDate: game['Games.releaseDate'],
-              scorePercent: scorePercent,
-              totalReviews: game['Games.totalReviewsValue'] || 0
-            }
-          })
-          
-        // Sort by total reviews (most first) for initial results
-        processedGames.sort((a, b) => {
-          // First by total reviews (descending)
-          const reviewsCompare = b.totalReviews - a.totalReviews
-          if (reviewsCompare !== 0) return reviewsCompare
-          
-          // Then by review score (best first)
-          const scoreOrder = [
-            'Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Positive',
-            'Mixed', 'Negative', 'Mostly Negative', 'Very Negative', 'Overwhelmingly Negative'
-          ]
-          const scoreA = scoreOrder.indexOf(a.reviewScoreDesc) || 999
-          const scoreB = scoreOrder.indexOf(b.reviewScoreDesc) || 999
-          return scoreA - scoreB
-        })
-          
-          games.value = processedGames
-          console.log('Initial data loaded. Found', processedGames.length, 'games')
+
+        // If URL has filters, run a search; else load recent top games with fallback
+        if (Object.keys(q).length) {
+          await searchGames()
         } else {
-          console.log('No initial games loaded, user can search manually')
-          games.value = []
+          const recentGames = await cubeService.getRecentTopGames(100)
+          if (recentGames && recentGames.length > 0) {
+            const processedGames = recentGames.map(game => {
+              const positiveReviews = game['Games.totalPositiveReviews'] || 0
+              const negativeReviews = game['Games.totalNegativeReviews'] || 0
+              const totalReviews = positiveReviews + negativeReviews
+              let scorePercent = null
+              if (totalReviews > 0) {
+                scorePercent = Math.round((positiveReviews / totalReviews) * 100 * 10) / 10
+              }
+              return {
+                appId: game['Games.appId'],
+                name: game['Games.name'],
+                reviewScoreDesc: game['Games.reviewScoreDesc'],
+                releaseDate: game['Games.releaseDate'],
+                scorePercent: scorePercent,
+                totalReviews: game['Games.totalReviewsValue'] || 0
+              }
+            })
+            processedGames.sort((a, b) => {
+              const reviewsCompare = b.totalReviews - a.totalReviews
+              if (reviewsCompare !== 0) return reviewsCompare
+              const scoreOrder = [
+                'Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Positive',
+                'Mixed', 'Negative', 'Mostly Negative', 'Very Negative', 'Overwhelmingly Negative'
+              ]
+              const scoreA = scoreOrder.indexOf(a.reviewScoreDesc) || 999
+              const scoreB = scoreOrder.indexOf(b.reviewScoreDesc) || 999
+              return scoreA - scoreB
+            })
+            games.value = processedGames
+            console.log('Initial data loaded. Found', processedGames.length, 'games')
+          } else {
+            console.log('No initial games loaded, user can search manually')
+            games.value = []
+          }
         }
-        
+
       } catch (err) {
         console.error('Error loading initial data:', err)
         error.value = 'Failed to load initial data. You can still search for games manually.'
@@ -712,6 +753,19 @@ export default {
     onMounted(() => {
       loadInitialData()
     })
+
+    // Keep URL in sync with filters for shareable links
+    watch([
+      selectedTags,
+      excludeTags,
+      reviewScore,
+      reviewScoreOrBetter,
+      minReviews,
+      maxReviews,
+      minDate,
+      maxDate,
+      orderBy
+    ], updateRouteFromFilters, { deep: true })
 
     return {
       selectedTags,
