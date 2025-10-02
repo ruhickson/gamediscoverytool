@@ -2,8 +2,11 @@
   <div class="recommender">
     <!-- Game Search Card -->
     <div class="card">
-      <div class="card-header">
-        <h5><i class="fas fa-search"></i> Find Similar Games</h5>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-search"></i> Find Similar Games</h5>
+        <button class="btn btn-outline-light btn-sm" @click="copyCurrentUrl" title="Copy shareable link">
+          <i class="fas fa-link me-1"></i> Share
+        </button>
       </div>
       <div class="card-body">
         <div class="row mb-3">
@@ -421,6 +424,39 @@ export default {
       }, 250)
     })
 
+    const showCopyMessage = (message = 'Copied') => {
+      const toast = document.createElement('div')
+      toast.textContent = message
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: var(--steam-blue);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: opacity 0.3s ease;
+      `
+      document.body.appendChild(toast)
+      setTimeout(() => {
+        toast.style.opacity = '0'
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast) }, 300)
+      }, 2000)
+    }
+
+    const copyCurrentUrl = () => {
+      const url = window.location.href
+      navigator.clipboard.writeText(url).then(() => {
+        showCopyMessage('Copied')
+      }).catch(() => {
+        showCopyMessage('Failed to copy')
+      })
+    }
+
     return {
       gameSearchQuery,
       filteredGames,
@@ -440,7 +476,8 @@ export default {
       formatDate,
       getScoreClass,
       getScoreTextClass,
-      getSimilarityScoreClass
+      getSimilarityScoreClass,
+      copyCurrentUrl
     }
   }
 }

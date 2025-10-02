@@ -2,8 +2,11 @@
   <div class="game-finder">
     <!-- Filters Card -->
     <div class="card">
-      <div class="card-header">
-        <h5><i class="fas fa-filter"></i> Filters</h5>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+        <button class="btn btn-outline-light btn-sm" @click="copyCurrentUrl" title="Copy shareable link">
+          <i class="fas fa-link me-1"></i> Share
+        </button>
       </div>
       <div class="card-body">
         <p class="text-muted fst-italic">Please wait for the 'Tags' dropdown to populate before searching.</p>
@@ -653,6 +656,15 @@ export default {
       }, 2000)
     }
 
+    const copyCurrentUrl = () => {
+      const url = window.location.href
+      navigator.clipboard.writeText(url).then(() => {
+        showCopyMessage('Copied')
+      }).catch(() => {
+        showCopyMessage('Failed to copy')
+      })
+    }
+
     const formatDate = (date) => {
       if (!date) return 'N/A'
       if (typeof date === 'string') {
@@ -789,6 +801,7 @@ export default {
       showExcludeTagDropdown,
       searchGames,
       resetFilters,
+      copyCurrentUrl,
       shareGame,
       formatDate,
       formatNumber,
