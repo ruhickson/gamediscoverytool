@@ -712,7 +712,23 @@ export default {
       link.click()
       document.body.removeChild(link)
       
-      showCopyMessage('Results exported!')
+      // Also copy formatted list to clipboard
+      const first10Games = games.value.slice(0, 10)
+      const tagsText = selectedTags.value.length > 0 ? selectedTags.value.join(', ') : 'filtered'
+      const gameList = first10Games.map(game => {
+        const steamLink = `https://store.steampowered.com/app/${game.appId}`
+        const scoreText = game.scorePercent ? `${game.scorePercent}%` : 'N/A'
+        const reviewsText = game.totalReviews.toLocaleString()
+        return `${game.name} - ${steamLink} - ${scoreText} - ${reviewsText} reviews`
+      }).join('\n')
+      
+      const shareText = `I found these ${tagsText} games using https://gamediscoverytool.com:\n\n${gameList}`
+      
+      navigator.clipboard.writeText(shareText).then(() => {
+        showCopyMessage('Results exported and copied!')
+      }).catch(() => {
+        showCopyMessage('Results exported!')
+      })
     }
 
     const formatDate = (date) => {

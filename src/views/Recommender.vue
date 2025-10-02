@@ -507,7 +507,23 @@ export default {
       link.click()
       document.body.removeChild(link)
       
-      showCopyMessage('Results exported!')
+      // Also copy formatted list to clipboard
+      const first10Games = similarGames.value.slice(0, 10)
+      const gameList = first10Games.map(game => {
+        const steamLink = `https://store.steampowered.com/app/${game.appId}`
+        const scoreText = game.similarityScore ? `${game.similarityScore}%` : 'N/A'
+        const reviewsText = game.totalPositive && game.totalNegative ? 
+          (game.totalPositive + game.totalNegative).toLocaleString() : 'N/A'
+        return `${game.name} - ${steamLink} - ${scoreText} - ${reviewsText} reviews`
+      }).join('\n')
+      
+      const shareText = `I found these similar games to "${selectedGame.value?.name}" using https://gamediscoverytool.com:\n\n${gameList}`
+      
+      navigator.clipboard.writeText(shareText).then(() => {
+        showCopyMessage('Results exported and copied!')
+      }).catch(() => {
+        showCopyMessage('Results exported!')
+      })
     }
 
     return {
