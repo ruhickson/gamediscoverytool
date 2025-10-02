@@ -226,7 +226,8 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
 
 export default {
@@ -246,6 +247,11 @@ export default {
 
     // Debounce timer
     let searchTimeout = null
+    let urlSyncTimeout = null
+
+    // Router
+    const route = useRoute()
+    const router = useRouter()
 
     // Methods
     const searchGames = async () => {
@@ -387,7 +393,33 @@ export default {
       return 'similarity-poor' // Red
     }
 
-    // No initial load - search starts after 3 characters
+    // Hydration and URL sync
+    onMounted(async () => {
+      // Warm name cache early for instant dropdowns
+      cubeService.prefetchWarmNames(10000).catch(() => {})
+
+      const initialQ = typeof route.query.q === 'string' ? route.query.q : ''
+      if (initialQ && initialQ.trim().length >= 3) {
+        gameSearchQuery.value = initialQ
+        // Trigger immediate search and show dropdown
+        await searchGames()
+      }
+    })
+
+    // Keep URL in sync with search term (debounced)
+    watch(gameSearchQuery, (val) => {
+      if (urlSyncTimeout) clearTimeout(urlSyncTimeout)
+      urlSyncTimeout = setTimeout(() => {
+        const q = (val && val.trim().length > 0) ? val.trim() : undefined
+        const nextQuery = { ...route.query }
+        if (q) {
+          nextQuery.q = q
+        } else {
+          delete nextQuery.q
+        }
+        router.replace({ query: nextQuery }).catch(() => {})
+      }, 250)
+    })
 
     return {
       gameSearchQuery,
