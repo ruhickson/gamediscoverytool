@@ -130,7 +130,7 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-thumbs-up"></i> Similar Games ({{ similarGames.length }})</h5>
         <button 
-          class="btn btn-outline-success btn-sm" 
+          class="btn btn-outline-light btn-sm" 
           @click="exportResults"
           title="Export results to CSV"
         >

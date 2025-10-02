@@ -250,7 +250,7 @@
         <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
         <button 
           v-if="games.length > 0 && !isLoading" 
-          class="btn btn-outline-success btn-sm" 
+          class="btn btn-outline-light btn-sm" 
           @click="exportResults"
           title="Export results to CSV"
         >
