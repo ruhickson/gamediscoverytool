@@ -71,7 +71,7 @@
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <label class="form-label mb-1">Similarity Filter</label>
-                  <small class="text-muted">Minimum {{ minCommonTags }} common tags required</small>
+                  <div class="text-white">Minimum {{ minCommonTags }} common tags required</div>
                 </div>
                 <div class="btn-group" role="group">
                   <button 
@@ -212,7 +212,7 @@
 
     <!-- No Results Message -->
     <div v-else-if="hasSearched && !isLoading" class="card">
-      <div class="card-body text-center text-muted py-4">
+      <div class="card-body text-center text-white py-4">
         <i class="fas fa-search fa-3x mb-3"></i>
         <h5>No similar games found</h5>
         <p class="mb-3">No games meet the current similarity requirements.</p>
@@ -229,7 +229,7 @@
             Loosen Results ({{ minCommonTags - 2 }} tags)
           </button>
         </div>
-        <p v-else class="text-muted">Try selecting a different game or adjust your search criteria.</p>
+        <p v-else class="text-white">Try selecting a different game or adjust your search criteria.</p>
       </div>
     </div>
   </div>
