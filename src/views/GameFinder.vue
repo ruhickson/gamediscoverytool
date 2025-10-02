@@ -246,8 +246,16 @@
 
     <!-- Search Results Card -->
     <div class="card">
-      <div class="card-header">
-        <h5><i class="fas fa-list"></i> Search Results</h5>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
+        <button 
+          v-if="games.length > 0 && !isLoading" 
+          class="btn btn-outline-success btn-sm" 
+          @click="exportResults"
+          title="Export results to CSV"
+        >
+          <i class="fas fa-download me-1"></i> Export Results
+        </button>
       </div>
       <div class="card-body">
         <div v-if="isLoading" class="loading">
@@ -665,6 +673,48 @@ export default {
       })
     }
 
+    const exportResults = () => {
+      if (games.value.length === 0) return
+      
+      // Create CSV headers
+      const headers = [
+        'Game Name',
+        'App ID',
+        'Steam URL',
+        'Review Score',
+        'Release Date',
+        'Steam Review Score (%)',
+        'Total Reviews'
+      ]
+      
+      // Create CSV rows
+      const rows = games.value.map(game => [
+        `"${game.name}"`,
+        game.appId,
+        `https://store.steampowered.com/app/${game.appId}`,
+        game.reviewScoreDesc,
+        formatDate(game.releaseDate),
+        game.scorePercent || 'N/A',
+        game.totalReviews
+      ])
+      
+      // Combine headers and rows
+      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n')
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `game_search_results_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      showCopyMessage('Results exported!')
+    }
+
     const formatDate = (date) => {
       if (!date) return 'N/A'
       if (typeof date === 'string') {
@@ -803,6 +853,7 @@ export default {
       resetFilters,
       copyCurrentUrl,
       shareGame,
+      exportResults,
       formatDate,
       formatNumber,
       getScoreClass,

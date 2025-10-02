@@ -127,8 +127,15 @@
 
     <!-- Similar Games Results -->
     <div v-else-if="similarGames.length > 0" class="card">
-      <div class="card-header">
-        <h5><i class="fas fa-thumbs-up"></i> Similar Games ({{ similarGames.length }})</h5>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-thumbs-up"></i> Similar Games ({{ similarGames.length }})</h5>
+        <button 
+          class="btn btn-outline-success btn-sm" 
+          @click="exportResults"
+          title="Export results to CSV"
+        >
+          <i class="fas fa-download me-1"></i> Export Results
+        </button>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -457,6 +464,52 @@ export default {
       })
     }
 
+    const exportResults = () => {
+      if (similarGames.value.length === 0) return
+      
+      // Create CSV headers
+      const headers = [
+        'Game Name',
+        'App ID',
+        'Steam URL',
+        'Review Score',
+        'Total Reviews',
+        'Release Date',
+        'Similarity Score (%)',
+        'Common Tags Count',
+        'Common Tags List'
+      ]
+      
+      // Create CSV rows
+      const rows = similarGames.value.map(game => [
+        `"${game.name}"`,
+        game.appId,
+        `https://store.steampowered.com/app/${game.appId}`,
+        game.reviewScoreDesc || 'N/A',
+        game.totalPositive && game.totalNegative ? (game.totalPositive + game.totalNegative).toString() : 'N/A',
+        formatDate(game.releaseDate),
+        game.similarityScore,
+        game.commonTags,
+        `"${game.commonTagList.join(', ')}"`
+      ])
+      
+      // Combine headers and rows
+      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n')
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `similar_games_${selectedGame.value?.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      showCopyMessage('Results exported!')
+    }
+
     return {
       gameSearchQuery,
       filteredGames,
@@ -477,7 +530,8 @@ export default {
       getScoreClass,
       getScoreTextClass,
       getSimilarityScoreClass,
-      copyCurrentUrl
+      copyCurrentUrl,
+      exportResults
     }
   }
 }
