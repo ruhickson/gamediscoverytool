@@ -2,7 +2,7 @@
   <div id="app" :class="{ 'hc-contrast': isHighContrast }">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="https://gamediscoverytool.com">
           <i class="fas fa-gamepad me-2"></i>
           Game Discovery Tool
         </a>
@@ -152,6 +152,11 @@
                 </router-link>
               </li>
             </ul>
+            
+            <!-- Conrad Mascot Container -->
+            <div class="conrad-container">
+              <ConradMascot />
+            </div>
           </div>
         </nav>
 
@@ -165,8 +170,13 @@
 </template>
 
 <script>
+import ConradMascot from './components/ConradMascot.vue'
+
 export default {
   name: 'App',
+  components: {
+    ConradMascot
+  },
   data() {
     return {
       isHighContrast: false,
@@ -213,5 +223,13 @@ export default {
   .mobile-nav {
     display: block !important;
   }
+}
+
+/* Conrad container to contain speech bubbles */
+.conrad-container {
+  position: relative;
+  overflow: visible;
+  margin-top: 20px;
+  padding-bottom: 80px; /* Space for speech bubble */
 }
 </style>
