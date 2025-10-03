@@ -4,6 +4,9 @@ import axios from 'axios'
 const CUBEJS_API_URL = import.meta.env.VITE_CUBEJS_API_URL || ''
 const CUBEJS_AUTH_TOKEN = import.meta.env.VITE_CUBEJS_AUTH_TOKEN || ''
 
+// Check if API is configured
+const isApiConfigured = CUBEJS_API_URL && CUBEJS_API_URL !== ''
+
 // Create axios instance with default configuration
 const cubeApi = axios.create({
   baseURL: CUBEJS_API_URL,
@@ -13,6 +16,31 @@ const cubeApi = axios.create({
     'Content-Type': 'application/json'
   }
 })
+
+// Add request interceptor to handle missing configuration
+cubeApi.interceptors.request.use(
+  (config) => {
+    if (!isApiConfigured) {
+      throw new Error('Cube.js API not configured. Please set VITE_CUBEJS_API_URL and VITE_CUBEJS_AUTH_TOKEN environment variables.')
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Add response interceptor to handle CORS errors
+cubeApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
+      console.error('CORS Error: Please check your Cube.js API configuration and ensure CORS is properly set up.')
+      throw new Error('Network error: Unable to connect to Cube.js API. Please check your configuration.')
+    }
+    return Promise.reject(error)
+  }
+)
 
 // ------------------------------------------------------------
 // In-memory LRU cache (with TTL) for name search results
