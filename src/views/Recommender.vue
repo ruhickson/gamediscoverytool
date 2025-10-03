@@ -1,7 +1,7 @@
 <template>
   <div class="recommender">
     <!-- Game Search Card -->
-    <div class="card">
+    <div class="card game-search-card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-search"></i> Find Similar Games</h5>
         <button class="btn btn-outline-light btn-sm" @click="copyCurrentUrl" title="Copy shareable link">
@@ -29,7 +29,7 @@
               </div>
               <div v-if="showGameDropdown && filteredGames.length > 0" class="game-dropdown">
                 <div 
-                  v-for="game in filteredGames" 
+                  v-for="game in filteredGames.slice(0, 10)" 
                   :key="game.appId"
                   class="game-option"
                   @click="selectGame(game)"
@@ -283,23 +283,14 @@ export default {
       // Debounce search by 300ms
       searchTimeout = setTimeout(async () => {
         try {
-          // 1) Try local warm cache first for instant results
-          const warm = await cubeService.filterWarmNames(gameSearchQuery.value, 50)
-          if (Array.isArray(warm) && warm.length > 0) {
-            filteredGames.value = warm
-            showGameDropdown.value = true
-          }
-
-          // 2) Prefetch warm names in background (once per day)
-          cubeService.prefetchWarmNames(10000).catch(() => {})
-
-          // 3) Server-side search for precise/complete results, cached in-memory
+          // Use Algolia-style client-side search (no database queries)
           const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
           filteredGames.value = results
           showGameDropdown.value = true
         } catch (error) {
           console.error('Error searching games:', error)
-          // Last resort: no-op, as warm cache already attempted
+          filteredGames.value = []
+          showGameDropdown.value = false
         } finally {
           isSearching.value = false
         }
@@ -310,6 +301,9 @@ export default {
       selectedGame.value = game
       gameSearchQuery.value = game.name
       showGameDropdown.value = false
+      // Clear any previous similar games results
+      similarGames.value = []
+      hasSearched.value = false
     }
 
     const clearSelection = () => {
@@ -327,7 +321,8 @@ export default {
       similarGames.value = [] // Clear previous results
       
       try {
-        console.log('Starting similarity search for:', selectedGame.value.name, 'with min tags:', minCommonTags.value)
+        console.log('Starting similarity search for:', selectedGame.value.name, 'App ID:', selectedGame.value.appId, 'with min tags:', minCommonTags.value)
+        // Only now do we query the API for similar games using the selected game's app_id
         const results = await cubeService.findSimilarGames(selectedGame.value.appId, minCommonTags.value)
         similarGames.value = results
         console.log('Found', results.length, 'similar games')
@@ -405,10 +400,10 @@ export default {
 
     // Hydration and URL sync
     onMounted(async () => {
-      // Initialize daily cache for fast searches
+      // Preload search index for instant searches
       cubeService.ensureDailyCache().catch(() => {})
       
-      // Warm name cache early for instant dropdowns
+      // Preload search index early for instant dropdowns
       cubeService.prefetchWarmNames(10000).catch(() => {})
 
       const initialQ = typeof route.query.q === 'string' ? route.query.q : ''
@@ -559,6 +554,7 @@ export default {
 <style scoped>
 .game-search-container {
   position: relative;
+  overflow: visible; /* Allow dropdown to extend beyond container */
 }
 
 .search-loading-indicator {
@@ -581,7 +577,7 @@ export default {
   border-radius: 0 0 4px 4px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   z-index: 1000;
-  max-height: 200px;
+  max-height: 400px; /* Increased to accommodate 10 items */
   overflow-y: auto;
   margin-top: 2px;
 }
@@ -598,6 +594,14 @@ export default {
 
 .game-option:hover {
   background-color: #3d3d3d;
+}
+
+.game-search-card {
+  overflow: visible; /* Allow dropdown to extend beyond card */
+}
+
+.game-search-card .card-body {
+  overflow: visible; /* Allow dropdown to extend beyond card body */
 }
 
 .game-option:last-child {

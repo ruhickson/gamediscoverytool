@@ -32,7 +32,12 @@
     
     <!-- Speech bubble -->
     <div class="speech-bubble" v-if="showSpeech">
-      <div class="speech-text">{{ currentMessage }}</div>
+      <div class="speech-text">
+        <span v-if="getCurrentGame()">
+          Check out "<a :href="`https://store.steampowered.com/app/${getCurrentGame()['Games.appId']}`" target="_blank" class="game-link">{{ getCurrentGame()['Games.name'] }}</a>" - it's trending!
+        </span>
+        <span v-else>{{ currentMessage }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -59,7 +64,8 @@ export default {
       'Game on! 🎮',
       'Proudly supports no_clip!',
       'Supports This Week in Video Games!',
-      'Built for the gaming community!'
+      'Built for the gaming community!',
+      "I'm not an AI - I'm just a really well fleshed-out sidebar element, duh!"
     ]
 
     const loadRecentGames = async () => {
@@ -77,6 +83,16 @@ export default {
         `Check out "${game['Games.name']}" - it's trending!`
       )
       return [...baseMessages, ...gameMessages]
+    }
+
+    const getCurrentGame = () => {
+      const allMessages = getAllMessages()
+      const currentIndex = allMessages.indexOf(currentMessage.value)
+      if (currentIndex >= baseMessages.length) {
+        const gameIndex = currentIndex - baseMessages.length
+        return recentGames.value[gameIndex]
+      }
+      return null
     }
 
     const startAnimation = () => {
@@ -97,8 +113,8 @@ export default {
         
         setTimeout(() => {
           showSpeech.value = false
-        }, 3000)
-      }, 12000)
+        }, 5000) // Show for 5 seconds
+      }, 7000) // Show every 7 seconds (2 second gap between messages)
     }
 
     onMounted(async () => {
@@ -120,7 +136,8 @@ export default {
     return {
       isAnimating,
       showSpeech,
-      currentMessage
+      currentMessage,
+      getCurrentGame
     }
   }
 }
@@ -378,6 +395,20 @@ export default {
   font-weight: bold;
   line-height: 1.2;
   max-width: 100%;
+}
+
+.speech-text .game-link {
+  color: #ffff00;
+  text-decoration: underline;
+  text-shadow: 0 0 5px #ffff00;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.speech-text .game-link:hover {
+  color: #ffffff;
+  text-shadow: 0 0 8px #ffffff;
+  transform: scale(1.05);
 }
 
 @keyframes bubble-appear {

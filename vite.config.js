@@ -7,6 +7,18 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
+      '/api/games-index.json': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => '/games-index.json'
+      },
+      '/api/tags-index.json': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => '/tags-index.json'
+      },
       '/api': {
         target: process.env.VITE_CUBEJS_API_URL || 'http://localhost:4000',
         changeOrigin: true,

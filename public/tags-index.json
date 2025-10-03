@@ -1,0 +1,2238 @@
+{
+  "tags": [
+    {
+      "name": "Singleplayer",
+      "id": "Singleplayer",
+      "popularity": 84089
+    },
+    {
+      "name": "Indie",
+      "id": "Indie",
+      "popularity": 71288
+    },
+    {
+      "name": "Action",
+      "id": "Action",
+      "popularity": 60930
+    },
+    {
+      "name": "Adventure",
+      "id": "Adventure",
+      "popularity": 56437
+    },
+    {
+      "name": "Casual",
+      "id": "Casual",
+      "popularity": 55674
+    },
+    {
+      "name": "2D",
+      "id": "2D",
+      "popularity": 45109
+    },
+    {
+      "name": "3D",
+      "id": "3D",
+      "popularity": 37425
+    },
+    {
+      "name": "Strategy",
+      "id": "Strategy",
+      "popularity": 30221
+    },
+    {
+      "name": "Simulation",
+      "id": "Simulation",
+      "popularity": 29328
+    },
+    {
+      "name": "Atmospheric",
+      "id": "Atmospheric",
+      "popularity": 28571
+    },
+    {
+      "name": "RPG",
+      "id": "RPG",
+      "popularity": 27470
+    },
+    {
+      "name": "Exploration",
+      "id": "Exploration",
+      "popularity": 26061
+    },
+    {
+      "name": "Colorful",
+      "id": "Colorful",
+      "popularity": 26055
+    },
+    {
+      "name": "Puzzle",
+      "id": "Puzzle",
+      "popularity": 24988
+    },
+    {
+      "name": "Pixel Graphics",
+      "id": "Pixel Graphics",
+      "popularity": 23582
+    },
+    {
+      "name": "Story Rich",
+      "id": "Story Rich",
+      "popularity": 23270
+    },
+    {
+      "name": "First-Person",
+      "id": "First-Person",
+      "popularity": 22227
+    },
+    {
+      "name": "Cute",
+      "id": "Cute",
+      "popularity": 21999
+    },
+    {
+      "name": "Fantasy",
+      "id": "Fantasy",
+      "popularity": 21870
+    },
+    {
+      "name": "Action-Adventure",
+      "id": "Action-Adventure",
+      "popularity": 19403
+    },
+    {
+      "name": "Multiplayer",
+      "id": "Multiplayer",
+      "popularity": 18443
+    },
+    {
+      "name": "Arcade",
+      "id": "Arcade",
+      "popularity": 18289
+    },
+    {
+      "name": "Combat",
+      "id": "Combat",
+      "popularity": 17022
+    },
+    {
+      "name": "Early Access",
+      "id": "Early Access",
+      "popularity": 17015
+    },
+    {
+      "name": "Funny",
+      "id": "Funny",
+      "popularity": 16589
+    },
+    {
+      "name": "Shooter",
+      "id": "Shooter",
+      "popularity": 15840
+    },
+    {
+      "name": "Horror",
+      "id": "Horror",
+      "popularity": 15780
+    },
+    {
+      "name": "Stylized",
+      "id": "Stylized",
+      "popularity": 15584
+    },
+    {
+      "name": "Relaxing",
+      "id": "Relaxing",
+      "popularity": 15544
+    },
+    {
+      "name": "Sci-fi",
+      "id": "Sci-fi",
+      "popularity": 15493
+    },
+    {
+      "name": "Platformer",
+      "id": "Platformer",
+      "popularity": 14517
+    },
+    {
+      "name": "Family Friendly",
+      "id": "Family Friendly",
+      "popularity": 14391
+    },
+    {
+      "name": "Controller",
+      "id": "Controller",
+      "popularity": 14379
+    },
+    {
+      "name": "Top-Down",
+      "id": "Top-Down",
+      "popularity": 14374
+    },
+    {
+      "name": "Retro",
+      "id": "Retro",
+      "popularity": 14225
+    },
+    {
+      "name": "Third Person",
+      "id": "Third Person",
+      "popularity": 14178
+    },
+    {
+      "name": "Anime",
+      "id": "Anime",
+      "popularity": 12034
+    },
+    {
+      "name": "Female Protagonist",
+      "id": "Female Protagonist",
+      "popularity": 11792
+    },
+    {
+      "name": "PvE",
+      "id": "PvE",
+      "popularity": 11630
+    },
+    {
+      "name": "Free to Play",
+      "id": "Free to Play",
+      "popularity": 11529
+    },
+    {
+      "name": "Realistic",
+      "id": "Realistic",
+      "popularity": 11445
+    },
+    {
+      "name": "Survival",
+      "id": "Survival",
+      "popularity": 11372
+    },
+    {
+      "name": "2D Platformer",
+      "id": "2D Platformer",
+      "popularity": 11357
+    },
+    {
+      "name": "Cartoony",
+      "id": "Cartoony",
+      "popularity": 11356
+    },
+    {
+      "name": "Dark",
+      "id": "Dark",
+      "popularity": 11161
+    },
+    {
+      "name": "Linear",
+      "id": "Linear",
+      "popularity": 11155
+    },
+    {
+      "name": "Mystery",
+      "id": "Mystery",
+      "popularity": 11146
+    },
+    {
+      "name": "Choices Matter",
+      "id": "Choices Matter",
+      "popularity": 11114
+    },
+    {
+      "name": "Open World",
+      "id": "Open World",
+      "popularity": 11037
+    },
+    {
+      "name": "PvP",
+      "id": "PvP",
+      "popularity": 10968
+    },
+    {
+      "name": "Physics",
+      "id": "Physics",
+      "popularity": 10199
+    },
+    {
+      "name": "Psychological Horror",
+      "id": "Psychological Horror",
+      "popularity": 10114
+    },
+    {
+      "name": "Roguelike",
+      "id": "Roguelike",
+      "popularity": 10083
+    },
+    {
+      "name": "Comedy",
+      "id": "Comedy",
+      "popularity": 9930
+    },
+    {
+      "name": "Multiple Endings",
+      "id": "Multiple Endings",
+      "popularity": 9832
+    },
+    {
+      "name": "Roguelite",
+      "id": "Roguelite",
+      "popularity": 9473
+    },
+    {
+      "name": "FPS",
+      "id": "FPS",
+      "popularity": 9190
+    },
+    {
+      "name": "Co-op",
+      "id": "Co-op",
+      "popularity": 9177
+    },
+    {
+      "name": "Character Customization",
+      "id": "Character Customization",
+      "popularity": 8980
+    },
+    {
+      "name": "Minimalist",
+      "id": "Minimalist",
+      "popularity": 8928
+    },
+    {
+      "name": "Sandbox",
+      "id": "Sandbox",
+      "popularity": 8916
+    },
+    {
+      "name": "Visual Novel",
+      "id": "Visual Novel",
+      "popularity": 8869
+    },
+    {
+      "name": "Action RPG",
+      "id": "Action RPG",
+      "popularity": 8550
+    },
+    {
+      "name": "Difficult",
+      "id": "Difficult",
+      "popularity": 8539
+    },
+    {
+      "name": "Hand-drawn",
+      "id": "Hand-drawn",
+      "popularity": 8394
+    },
+    {
+      "name": "Magic",
+      "id": "Magic",
+      "popularity": 8386
+    },
+    {
+      "name": "Point & Click",
+      "id": "Point & Click",
+      "popularity": 8310
+    },
+    {
+      "name": "Management",
+      "id": "Management",
+      "popularity": 8074
+    },
+    {
+      "name": "Building",
+      "id": "Building",
+      "popularity": 8032
+    },
+    {
+      "name": "Tactical",
+      "id": "Tactical",
+      "popularity": 7602
+    },
+    {
+      "name": "3D Platformer",
+      "id": "3D Platformer",
+      "popularity": 7602
+    },
+    {
+      "name": "Space",
+      "id": "Space",
+      "popularity": 7547
+    },
+    {
+      "name": "VR",
+      "id": "VR",
+      "popularity": 7536
+    },
+    {
+      "name": "Action Roguelike",
+      "id": "Action Roguelike",
+      "popularity": 7490
+    },
+    {
+      "name": "Futuristic",
+      "id": "Futuristic",
+      "popularity": 7141
+    },
+    {
+      "name": "Procedural Generation",
+      "id": "Procedural Generation",
+      "popularity": 7117
+    },
+    {
+      "name": "Old School",
+      "id": "Old School",
+      "popularity": 7110
+    },
+    {
+      "name": "Side Scroller",
+      "id": "Side Scroller",
+      "popularity": 7082
+    },
+    {
+      "name": "Medieval",
+      "id": "Medieval",
+      "popularity": 7077
+    },
+    {
+      "name": "Crafting",
+      "id": "Crafting",
+      "popularity": 7033
+    },
+    {
+      "name": "Violent",
+      "id": "Violent",
+      "popularity": 6955
+    },
+    {
+      "name": "Immersive Sim",
+      "id": "Immersive Sim",
+      "popularity": 6847
+    },
+    {
+      "name": "Online Co-Op",
+      "id": "Online Co-Op",
+      "popularity": 6792
+    },
+    {
+      "name": "Logic",
+      "id": "Logic",
+      "popularity": 6680
+    },
+    {
+      "name": "Puzzle Platformer",
+      "id": "Puzzle Platformer",
+      "popularity": 6634
+    },
+    {
+      "name": "Cartoon",
+      "id": "Cartoon",
+      "popularity": 6560
+    },
+    {
+      "name": "Turn-Based Strategy",
+      "id": "Turn-Based Strategy",
+      "popularity": 6554
+    },
+    {
+      "name": "Hidden Object",
+      "id": "Hidden Object",
+      "popularity": 6502
+    },
+    {
+      "name": "Resource Management",
+      "id": "Resource Management",
+      "popularity": 6483
+    },
+    {
+      "name": "Dark Fantasy",
+      "id": "Dark Fantasy",
+      "popularity": 6392
+    },
+    {
+      "name": "Bullet Hell",
+      "id": "Bullet Hell",
+      "popularity": 6237
+    },
+    {
+      "name": "Drama",
+      "id": "Drama",
+      "popularity": 6230
+    },
+    {
+      "name": "Turn-Based Combat",
+      "id": "Turn-Based Combat",
+      "popularity": 6193
+    },
+    {
+      "name": "Turn-Based Tactics",
+      "id": "Turn-Based Tactics",
+      "popularity": 6158
+    },
+    {
+      "name": "Survival Horror",
+      "id": "Survival Horror",
+      "popularity": 6067
+    },
+    {
+      "name": "Interactive Fiction",
+      "id": "Interactive Fiction",
+      "popularity": 5987
+    },
+    {
+      "name": "Nature",
+      "id": "Nature",
+      "popularity": 5925
+    },
+    {
+      "name": "Gore",
+      "id": "Gore",
+      "popularity": 5877
+    },
+    {
+      "name": "Choose Your Own Adventure",
+      "id": "Choose Your Own Adventure",
+      "popularity": 5861
+    },
+    {
+      "name": "Hack and Slash",
+      "id": "Hack and Slash",
+      "popularity": 5848
+    },
+    {
+      "name": "Emotional",
+      "id": "Emotional",
+      "popularity": 5774
+    },
+    {
+      "name": "Sports",
+      "id": "Sports",
+      "popularity": 5769
+    },
+    {
+      "name": "Walking Simulator",
+      "id": "Walking Simulator",
+      "popularity": 5566
+    },
+    {
+      "name": "Shoot 'Em Up",
+      "id": "Shoot 'Em Up",
+      "popularity": 5516
+    },
+    {
+      "name": "Base Building",
+      "id": "Base Building",
+      "popularity": 5488
+    },
+    {
+      "name": "Dungeon Crawler",
+      "id": "Dungeon Crawler",
+      "popularity": 5447
+    },
+    {
+      "name": "1990's",
+      "id": "1990's",
+      "popularity": 5437
+    },
+    {
+      "name": "Local Multiplayer",
+      "id": "Local Multiplayer",
+      "popularity": 5351
+    },
+    {
+      "name": "Surreal",
+      "id": "Surreal",
+      "popularity": 5266
+    },
+    {
+      "name": "Racing",
+      "id": "Racing",
+      "popularity": 5135
+    },
+    {
+      "name": "Post-apocalyptic",
+      "id": "Post-apocalyptic",
+      "popularity": 4978
+    },
+    {
+      "name": "Score Attack",
+      "id": "Score Attack",
+      "popularity": 4800
+    },
+    {
+      "name": "Top-Down Shooter",
+      "id": "Top-Down Shooter",
+      "popularity": 4559
+    },
+    {
+      "name": "Card Game",
+      "id": "Card Game",
+      "popularity": 4469
+    },
+    {
+      "name": "Zombies",
+      "id": "Zombies",
+      "popularity": 4410
+    },
+    {
+      "name": "Isometric",
+      "id": "Isometric",
+      "popularity": 4399
+    },
+    {
+      "name": "War",
+      "id": "War",
+      "popularity": 4380
+    },
+    {
+      "name": "2.5D",
+      "id": "2.5D",
+      "popularity": 4364
+    },
+    {
+      "name": "Life Sim",
+      "id": "Life Sim",
+      "popularity": 4364
+    },
+    {
+      "name": "Great Soundtrack",
+      "id": "Great Soundtrack",
+      "popularity": 4361
+    },
+    {
+      "name": "Historical",
+      "id": "Historical",
+      "popularity": 4258
+    },
+    {
+      "name": "Education",
+      "id": "Education",
+      "popularity": 4247
+    },
+    {
+      "name": "Text-Based",
+      "id": "Text-Based",
+      "popularity": 4174
+    },
+    {
+      "name": "Stealth",
+      "id": "Stealth",
+      "popularity": 4171
+    },
+    {
+      "name": "Investigation",
+      "id": "Investigation",
+      "popularity": 4074
+    },
+    {
+      "name": "JRPG",
+      "id": "JRPG",
+      "popularity": 4029
+    },
+    {
+      "name": "Local Co-Op",
+      "id": "Local Co-Op",
+      "popularity": 4029
+    },
+    {
+      "name": "Clicker",
+      "id": "Clicker",
+      "popularity": 4017
+    },
+    {
+      "name": "Cinematic",
+      "id": "Cinematic",
+      "popularity": 3960
+    },
+    {
+      "name": "Narration",
+      "id": "Narration",
+      "popularity": 3879
+    },
+    {
+      "name": "Precision Platformer",
+      "id": "Precision Platformer",
+      "popularity": 3876
+    },
+    {
+      "name": "Economy",
+      "id": "Economy",
+      "popularity": 3794
+    },
+    {
+      "name": "Romance",
+      "id": "Romance",
+      "popularity": 3744
+    },
+    {
+      "name": "Third-Person Shooter",
+      "id": "Third-Person Shooter",
+      "popularity": 3731
+    },
+    {
+      "name": "1980s",
+      "id": "1980s",
+      "popularity": 3709
+    },
+    {
+      "name": "Lore-Rich",
+      "id": "Lore-Rich",
+      "popularity": 3684
+    },
+    {
+      "name": "Replay Value",
+      "id": "Replay Value",
+      "popularity": 3677
+    },
+    {
+      "name": "Abstract",
+      "id": "Abstract",
+      "popularity": 3623
+    },
+    {
+      "name": "Time Management",
+      "id": "Time Management",
+      "popularity": 3614
+    },
+    {
+      "name": "Conversation",
+      "id": "Conversation",
+      "popularity": 3604
+    },
+    {
+      "name": "Cyberpunk",
+      "id": "Cyberpunk",
+      "popularity": 3576
+    },
+    {
+      "name": "Strategy RPG",
+      "id": "Strategy RPG",
+      "popularity": 3552
+    },
+    {
+      "name": "RTS",
+      "id": "RTS",
+      "popularity": 3540
+    },
+    {
+      "name": "Thriller",
+      "id": "Thriller",
+      "popularity": 3528
+    },
+    {
+      "name": "Psychological",
+      "id": "Psychological",
+      "popularity": 3522
+    },
+    {
+      "name": "Military",
+      "id": "Military",
+      "popularity": 3519
+    },
+    {
+      "name": "Robots",
+      "id": "Robots",
+      "popularity": 3518
+    },
+    {
+      "name": "Tower Defense",
+      "id": "Tower Defense",
+      "popularity": 3499
+    },
+    {
+      "name": "Detective",
+      "id": "Detective",
+      "popularity": 3485
+    },
+    {
+      "name": "Aliens",
+      "id": "Aliens",
+      "popularity": 3482
+    },
+    {
+      "name": "Arena Shooter",
+      "id": "Arena Shooter",
+      "popularity": 3401
+    },
+    {
+      "name": "Real Time Tactics",
+      "id": "Real Time Tactics",
+      "popularity": 3400
+    },
+    {
+      "name": "Dark Humor",
+      "id": "Dark Humor",
+      "popularity": 3391
+    },
+    {
+      "name": "Collectathon",
+      "id": "Collectathon",
+      "popularity": 3368
+    },
+    {
+      "name": "Sexual Content",
+      "id": "Sexual Content",
+      "popularity": 3332
+    },
+    {
+      "name": "Nonlinear",
+      "id": "Nonlinear",
+      "popularity": 3327
+    },
+    {
+      "name": "Demons",
+      "id": "Demons",
+      "popularity": 3324
+    },
+    {
+      "name": "Deckbuilding",
+      "id": "Deckbuilding",
+      "popularity": 3313
+    },
+    {
+      "name": "Supernatural",
+      "id": "Supernatural",
+      "popularity": 3233
+    },
+    {
+      "name": "Perma Death",
+      "id": "Perma Death",
+      "popularity": 3224
+    },
+    {
+      "name": "Board Game",
+      "id": "Board Game",
+      "popularity": 3132
+    },
+    {
+      "name": "City Builder",
+      "id": "City Builder",
+      "popularity": 3074
+    },
+    {
+      "name": "Tabletop",
+      "id": "Tabletop",
+      "popularity": 3063
+    },
+    {
+      "name": "Massively Multiplayer",
+      "id": "Massively Multiplayer",
+      "popularity": 3055
+    },
+    {
+      "name": "Idler",
+      "id": "Idler",
+      "popularity": 2957
+    },
+    {
+      "name": "Dating Sim",
+      "id": "Dating Sim",
+      "popularity": 2937
+    },
+    {
+      "name": "Inventory Management",
+      "id": "Inventory Management",
+      "popularity": 2875
+    },
+    {
+      "name": "Nudity",
+      "id": "Nudity",
+      "popularity": 2866
+    },
+    {
+      "name": "Driving",
+      "id": "Driving",
+      "popularity": 2849
+    },
+    {
+      "name": "Turn-Based",
+      "id": "Turn-Based",
+      "popularity": 2838
+    },
+    {
+      "name": "Tactical RPG",
+      "id": "Tactical RPG",
+      "popularity": 2835
+    },
+    {
+      "name": "Tutorial",
+      "id": "Tutorial",
+      "popularity": 2831
+    },
+    {
+      "name": "Dystopian ",
+      "id": "Dystopian ",
+      "popularity": 2808
+    },
+    {
+      "name": "Team-Based",
+      "id": "Team-Based",
+      "popularity": 2786
+    },
+    {
+      "name": "Metroidvania",
+      "id": "Metroidvania",
+      "popularity": 2749
+    },
+    {
+      "name": "Psychedelic",
+      "id": "Psychedelic",
+      "popularity": 2720
+    },
+    {
+      "name": "Wargame",
+      "id": "Wargame",
+      "popularity": 2711
+    },
+    {
+      "name": "Loot",
+      "id": "Loot",
+      "popularity": 2647
+    },
+    {
+      "name": "Runner",
+      "id": "Runner",
+      "popularity": 2641
+    },
+    {
+      "name": "Souls-like",
+      "id": "Souls-like",
+      "popularity": 2630
+    },
+    {
+      "name": "Card Battler",
+      "id": "Card Battler",
+      "popularity": 2625
+    },
+    {
+      "name": "Fast-Paced",
+      "id": "Fast-Paced",
+      "popularity": 2612
+    },
+    {
+      "name": "Comic Book",
+      "id": "Comic Book",
+      "popularity": 2587
+    },
+    {
+      "name": "LGBTQ+",
+      "id": "LGBTQ+",
+      "popularity": 2582
+    },
+    {
+      "name": "Artificial Intelligence",
+      "id": "Artificial Intelligence",
+      "popularity": 2551
+    },
+    {
+      "name": "Beat 'em up",
+      "id": "Beat 'em up",
+      "popularity": 2546
+    },
+    {
+      "name": "Party-Based RPG",
+      "id": "Party-Based RPG",
+      "popularity": 2513
+    },
+    {
+      "name": "Flight",
+      "id": "Flight",
+      "popularity": 2505
+    },
+    {
+      "name": "Short",
+      "id": "Short",
+      "popularity": 2490
+    },
+    {
+      "name": "4 Player Local",
+      "id": "4 Player Local",
+      "popularity": 2433
+    },
+    {
+      "name": "Modern",
+      "id": "Modern",
+      "popularity": 2377
+    },
+    {
+      "name": "Cats",
+      "id": "Cats",
+      "popularity": 2347
+    },
+    {
+      "name": "Parkour",
+      "id": "Parkour",
+      "popularity": 2339
+    },
+    {
+      "name": "Memes",
+      "id": "Memes",
+      "popularity": 2281
+    },
+    {
+      "name": "Grid-Based Movement",
+      "id": "Grid-Based Movement",
+      "popularity": 2278
+    },
+    {
+      "name": "Level Editor",
+      "id": "Level Editor",
+      "popularity": 2267
+    },
+    {
+      "name": "Alternate History",
+      "id": "Alternate History",
+      "popularity": 2258
+    },
+    {
+      "name": "Mythology",
+      "id": "Mythology",
+      "popularity": 2241
+    },
+    {
+      "name": "Creature Collector",
+      "id": "Creature Collector",
+      "popularity": 2226
+    },
+    {
+      "name": "2D Fighter",
+      "id": "2D Fighter",
+      "popularity": 2108
+    },
+    {
+      "name": "Destruction",
+      "id": "Destruction",
+      "popularity": 2053
+    },
+    {
+      "name": "CRPG",
+      "id": "CRPG",
+      "popularity": 2044
+    },
+    {
+      "name": "Twin Stick Shooter",
+      "id": "Twin Stick Shooter",
+      "popularity": 2021
+    },
+    {
+      "name": "RPGMaker",
+      "id": "RPGMaker",
+      "popularity": 1979
+    },
+    {
+      "name": "Automation",
+      "id": "Automation",
+      "popularity": 1932
+    },
+    {
+      "name": "Capitalism",
+      "id": "Capitalism",
+      "popularity": 1903
+    },
+    {
+      "name": "Crime",
+      "id": "Crime",
+      "popularity": 1846
+    },
+    {
+      "name": "Philosophical",
+      "id": "Philosophical",
+      "popularity": 1833
+    },
+    {
+      "name": "Rhythm",
+      "id": "Rhythm",
+      "popularity": 1811
+    },
+    {
+      "name": "Automobile Sim",
+      "id": "Automobile Sim",
+      "popularity": 1782
+    },
+    {
+      "name": "Farming Sim",
+      "id": "Farming Sim",
+      "popularity": 1767
+    },
+    {
+      "name": "3D Fighter",
+      "id": "3D Fighter",
+      "popularity": 1736
+    },
+    {
+      "name": "Music",
+      "id": "Music",
+      "popularity": 1692
+    },
+    {
+      "name": "Cozy",
+      "id": "Cozy",
+      "popularity": 1691
+    },
+    {
+      "name": "Competitive",
+      "id": "Competitive",
+      "popularity": 1646
+    },
+    {
+      "name": "Space Sim",
+      "id": "Space Sim",
+      "popularity": 1631
+    },
+    {
+      "name": "Colony Sim",
+      "id": "Colony Sim",
+      "popularity": 1612
+    },
+    {
+      "name": "Utilities",
+      "id": "Utilities",
+      "popularity": 1605
+    },
+    {
+      "name": "Fighting",
+      "id": "Fighting",
+      "popularity": 1593
+    },
+    {
+      "name": "Cooking",
+      "id": "Cooking",
+      "popularity": 1590
+    },
+    {
+      "name": "Experimental",
+      "id": "Experimental",
+      "popularity": 1577
+    },
+    {
+      "name": "Moddable",
+      "id": "Moddable",
+      "popularity": 1558
+    },
+    {
+      "name": "Mature",
+      "id": "Mature",
+      "popularity": 1537
+    },
+    {
+      "name": "Dark Comedy",
+      "id": "Dark Comedy",
+      "popularity": 1529
+    },
+    {
+      "name": "Design & Illustration",
+      "id": "Design & Illustration",
+      "popularity": 1520
+    },
+    {
+      "name": "Class-Based",
+      "id": "Class-Based",
+      "popularity": 1519
+    },
+    {
+      "name": "Swordplay",
+      "id": "Swordplay",
+      "popularity": 1516
+    },
+    {
+      "name": "Vehicular Combat",
+      "id": "Vehicular Combat",
+      "popularity": 1512
+    },
+    {
+      "name": "Auto Battler",
+      "id": "Auto Battler",
+      "popularity": 1507
+    },
+    {
+      "name": "Lovecraftian",
+      "id": "Lovecraftian",
+      "popularity": 1506
+    },
+    {
+      "name": "Noir",
+      "id": "Noir",
+      "popularity": 1499
+    },
+    {
+      "name": "Gun Customization",
+      "id": "Gun Customization",
+      "popularity": 1466
+    },
+    {
+      "name": "Science",
+      "id": "Science",
+      "popularity": 1465
+    },
+    {
+      "name": "Word Game",
+      "id": "Word Game",
+      "popularity": 1455
+    },
+    {
+      "name": "Classic",
+      "id": "Classic",
+      "popularity": 1452
+    },
+    {
+      "name": "Grand Strategy",
+      "id": "Grand Strategy",
+      "popularity": 1440
+    },
+    {
+      "name": "Mystery Dungeon",
+      "id": "Mystery Dungeon",
+      "popularity": 1432
+    },
+    {
+      "name": "eSports",
+      "id": "eSports",
+      "popularity": 1413
+    },
+    {
+      "name": "Soundtrack",
+      "id": "Soundtrack",
+      "popularity": 1389
+    },
+    {
+      "name": "Match 3",
+      "id": "Match 3",
+      "popularity": 1377
+    },
+    {
+      "name": "Trading",
+      "id": "Trading",
+      "popularity": 1286
+    },
+    {
+      "name": "Battle Royale",
+      "id": "Battle Royale",
+      "popularity": 1280
+    },
+    {
+      "name": "Dragons",
+      "id": "Dragons",
+      "popularity": 1257
+    },
+    {
+      "name": "Hentai",
+      "id": "Hentai",
+      "popularity": 1242
+    },
+    {
+      "name": "3D Vision",
+      "id": "3D Vision",
+      "popularity": 1236
+    },
+    {
+      "name": "Parody ",
+      "id": "Parody ",
+      "popularity": 1231
+    },
+    {
+      "name": "Split Screen",
+      "id": "Split Screen",
+      "popularity": 1224
+    },
+    {
+      "name": "Hero Shooter",
+      "id": "Hero Shooter",
+      "popularity": 1216
+    },
+    {
+      "name": "America",
+      "id": "America",
+      "popularity": 1214
+    },
+    {
+      "name": "Combat Racing",
+      "id": "Combat Racing",
+      "popularity": 1196
+    },
+    {
+      "name": "Bullet Time",
+      "id": "Bullet Time",
+      "popularity": 1192
+    },
+    {
+      "name": "Agriculture",
+      "id": "Agriculture",
+      "popularity": 1191
+    },
+    {
+      "name": "Looter Shooter",
+      "id": "Looter Shooter",
+      "popularity": 1183
+    },
+    {
+      "name": "Spectacle fighter",
+      "id": "Spectacle fighter",
+      "popularity": 1156
+    },
+    {
+      "name": "Software",
+      "id": "Software",
+      "popularity": 1151
+    },
+    {
+      "name": "Conspiracy",
+      "id": "Conspiracy",
+      "popularity": 1145
+    },
+    {
+      "name": "6DOF",
+      "id": "6DOF",
+      "popularity": 1140
+    },
+    {
+      "name": "Action RTS",
+      "id": "Action RTS",
+      "popularity": 1138
+    },
+    {
+      "name": "MMORPG",
+      "id": "MMORPG",
+      "popularity": 1119
+    },
+    {
+      "name": "Voxel",
+      "id": "Voxel",
+      "popularity": 1105
+    },
+    {
+      "name": "Time Manipulation",
+      "id": "Time Manipulation",
+      "popularity": 1097
+    },
+    {
+      "name": "Underground",
+      "id": "Underground",
+      "popularity": 1083
+    },
+    {
+      "name": "Wholesome",
+      "id": "Wholesome",
+      "popularity": 1082
+    },
+    {
+      "name": "Solitaire",
+      "id": "Solitaire",
+      "popularity": 1077
+    },
+    {
+      "name": "Martial Arts",
+      "id": "Martial Arts",
+      "popularity": 1072
+    },
+    {
+      "name": "Gothic",
+      "id": "Gothic",
+      "popularity": 1068
+    },
+    {
+      "name": "Open World Survival Craft",
+      "id": "Open World Survival Craft",
+      "popularity": 1064
+    },
+    {
+      "name": "Mechs",
+      "id": "Mechs",
+      "popularity": 1054
+    },
+    {
+      "name": "Satire",
+      "id": "Satire",
+      "popularity": 1050
+    },
+    {
+      "name": "Roguelike Deckbuilder",
+      "id": "Roguelike Deckbuilder",
+      "popularity": 1048
+    },
+    {
+      "name": "World War II",
+      "id": "World War II",
+      "popularity": 1024
+    },
+    {
+      "name": "Quick-Time Events",
+      "id": "Quick-Time Events",
+      "popularity": 1021
+    },
+    {
+      "name": "God Game",
+      "id": "God Game",
+      "popularity": 1021
+    },
+    {
+      "name": "Mining",
+      "id": "Mining",
+      "popularity": 1020
+    },
+    {
+      "name": "Sokoban",
+      "id": "Sokoban",
+      "popularity": 1000
+    },
+    {
+      "name": "Co-op Campaign",
+      "id": "Co-op Campaign",
+      "popularity": 995
+    },
+    {
+      "name": "Steampunk",
+      "id": "Steampunk",
+      "popularity": 982
+    },
+    {
+      "name": "Fishing",
+      "id": "Fishing",
+      "popularity": 973
+    },
+    {
+      "name": "Dog",
+      "id": "Dog",
+      "popularity": 964
+    },
+    {
+      "name": "Hex Grid",
+      "id": "Hex Grid",
+      "popularity": 921
+    },
+    {
+      "name": "Time Travel",
+      "id": "Time Travel",
+      "popularity": 917
+    },
+    {
+      "name": "Dynamic Narration",
+      "id": "Dynamic Narration",
+      "popularity": 914
+    },
+    {
+      "name": "Pirates",
+      "id": "Pirates",
+      "popularity": 903
+    },
+    {
+      "name": "Underwater",
+      "id": "Underwater",
+      "popularity": 902
+    },
+    {
+      "name": "Game Development",
+      "id": "Game Development",
+      "popularity": 896
+    },
+    {
+      "name": "Narrative",
+      "id": "Narrative",
+      "popularity": 893
+    },
+    {
+      "name": "Political",
+      "id": "Political",
+      "popularity": 866
+    },
+    {
+      "name": "Boomer Shooter",
+      "id": "Boomer Shooter",
+      "popularity": 844
+    },
+    {
+      "name": "Trading Card Game",
+      "id": "Trading Card Game",
+      "popularity": 841
+    },
+    {
+      "name": "NSFW",
+      "id": "NSFW",
+      "popularity": 825
+    },
+    {
+      "name": "Party Game",
+      "id": "Party Game",
+      "popularity": 824
+    },
+    {
+      "name": "Hunting",
+      "id": "Hunting",
+      "popularity": 808
+    },
+    {
+      "name": "4X",
+      "id": "4X",
+      "popularity": 797
+    },
+    {
+      "name": "Ninja",
+      "id": "Ninja",
+      "popularity": 788
+    },
+    {
+      "name": "Character Action Game",
+      "id": "Character Action Game",
+      "popularity": 780
+    },
+    {
+      "name": "Vampire",
+      "id": "Vampire",
+      "popularity": 778
+    },
+    {
+      "name": "Animation & Modeling",
+      "id": "Animation & Modeling",
+      "popularity": 774
+    },
+    {
+      "name": "Tanks",
+      "id": "Tanks",
+      "popularity": 770
+    },
+    {
+      "name": "Immersive",
+      "id": "Immersive",
+      "popularity": 748
+    },
+    {
+      "name": "Blood",
+      "id": "Blood",
+      "popularity": 741
+    },
+    {
+      "name": "FMV",
+      "id": "FMV",
+      "popularity": 738
+    },
+    {
+      "name": "Programming",
+      "id": "Programming",
+      "popularity": 737
+    },
+    {
+      "name": "Beautiful",
+      "id": "Beautiful",
+      "popularity": 735
+    },
+    {
+      "name": "Mouse only",
+      "id": "Mouse only",
+      "popularity": 734
+    },
+    {
+      "name": "Typing",
+      "id": "Typing",
+      "popularity": 727
+    },
+    {
+      "name": "Hacking",
+      "id": "Hacking",
+      "popularity": 727
+    },
+    {
+      "name": "Political Sim",
+      "id": "Political Sim",
+      "popularity": 724
+    },
+    {
+      "name": "Asynchronous Multiplayer",
+      "id": "Asynchronous Multiplayer",
+      "popularity": 717
+    },
+    {
+      "name": "Otome",
+      "id": "Otome",
+      "popularity": 717
+    },
+    {
+      "name": "Faith",
+      "id": "Faith",
+      "popularity": 712
+    },
+    {
+      "name": "MOBA",
+      "id": "MOBA",
+      "popularity": 709
+    },
+    {
+      "name": "Escape Room",
+      "id": "Escape Room",
+      "popularity": 696
+    },
+    {
+      "name": "Transportation",
+      "id": "Transportation",
+      "popularity": 679
+    },
+    {
+      "name": "Dinosaurs",
+      "id": "Dinosaurs",
+      "popularity": 664
+    },
+    {
+      "name": "Western",
+      "id": "Western",
+      "popularity": 648
+    },
+    {
+      "name": "Trains",
+      "id": "Trains",
+      "popularity": 642
+    },
+    {
+      "name": "Party",
+      "id": "Party",
+      "popularity": 640
+    },
+    {
+      "name": "Politics",
+      "id": "Politics",
+      "popularity": 628
+    },
+    {
+      "name": "Assassin",
+      "id": "Assassin",
+      "popularity": 607
+    },
+    {
+      "name": "Minigames",
+      "id": "Minigames",
+      "popularity": 586
+    },
+    {
+      "name": "Naval",
+      "id": "Naval",
+      "popularity": 578
+    },
+    {
+      "name": "Snow",
+      "id": "Snow",
+      "popularity": 576
+    },
+    {
+      "name": "Gambling",
+      "id": "Gambling",
+      "popularity": 575
+    },
+    {
+      "name": "Superhero",
+      "id": "Superhero",
+      "popularity": 562
+    },
+    {
+      "name": "Real-Time",
+      "id": "Real-Time",
+      "popularity": 554
+    },
+    {
+      "name": "Archery",
+      "id": "Archery",
+      "popularity": 549
+    },
+    {
+      "name": "Diplomacy",
+      "id": "Diplomacy",
+      "popularity": 546
+    },
+    {
+      "name": "Sailing",
+      "id": "Sailing",
+      "popularity": 530
+    },
+    {
+      "name": "Trivia",
+      "id": "Trivia",
+      "popularity": 513
+    },
+    {
+      "name": "On-Rails Shooter",
+      "id": "On-Rails Shooter",
+      "popularity": 500
+    },
+    {
+      "name": "Time Attack",
+      "id": "Time Attack",
+      "popularity": 494
+    },
+    {
+      "name": "Cold War",
+      "id": "Cold War",
+      "popularity": 493
+    },
+    {
+      "name": "Football (Soccer)",
+      "id": "Football (Soccer)",
+      "popularity": 492
+    },
+    {
+      "name": "Heist",
+      "id": "Heist",
+      "popularity": 481
+    },
+    {
+      "name": "Naval Combat",
+      "id": "Naval Combat",
+      "popularity": 474
+    },
+    {
+      "name": "Video Production",
+      "id": "Video Production",
+      "popularity": 467
+    },
+    {
+      "name": "Remake",
+      "id": "Remake",
+      "popularity": 458
+    },
+    {
+      "name": "Addictive",
+      "id": "Addictive",
+      "popularity": 451
+    },
+    {
+      "name": "Audio Production",
+      "id": "Audio Production",
+      "popularity": 440
+    },
+    {
+      "name": "Traditional Roguelike",
+      "id": "Traditional Roguelike",
+      "popularity": 436
+    },
+    {
+      "name": "Real-Time with Pause",
+      "id": "Real-Time with Pause",
+      "popularity": 436
+    },
+    {
+      "name": "Offroad",
+      "id": "Offroad",
+      "popularity": 407
+    },
+    {
+      "name": "Music-Based Procedural Generation",
+      "id": "Music-Based Procedural Generation",
+      "popularity": 405
+    },
+    {
+      "name": "Spelling",
+      "id": "Spelling",
+      "popularity": 387
+    },
+    {
+      "name": "Foreign",
+      "id": "Foreign",
+      "popularity": 386
+    },
+    {
+      "name": "Nostalgia",
+      "id": "Nostalgia",
+      "popularity": 378
+    },
+    {
+      "name": "Farming",
+      "id": "Farming",
+      "popularity": 365
+    },
+    {
+      "name": "Illuminati",
+      "id": "Illuminati",
+      "popularity": 365
+    },
+    {
+      "name": "Mars",
+      "id": "Mars",
+      "popularity": 352
+    },
+    {
+      "name": "Transhumanism",
+      "id": "Transhumanism",
+      "popularity": 352
+    },
+    {
+      "name": "Sniper",
+      "id": "Sniper",
+      "popularity": 352
+    },
+    {
+      "name": "Horses",
+      "id": "Horses",
+      "popularity": 345
+    },
+    {
+      "name": "Outbreak Sim",
+      "id": "Outbreak Sim",
+      "popularity": 342
+    },
+    {
+      "name": "Boxing",
+      "id": "Boxing",
+      "popularity": 339
+    },
+    {
+      "name": "Chess",
+      "id": "Chess",
+      "popularity": 338
+    },
+    {
+      "name": "Villain Protagonist",
+      "id": "Villain Protagonist",
+      "popularity": 337
+    },
+    {
+      "name": "Touch-Friendly",
+      "id": "Touch-Friendly",
+      "popularity": 330
+    },
+    {
+      "name": "Roguevania",
+      "id": "Roguevania",
+      "popularity": 325
+    },
+    {
+      "name": "Jet",
+      "id": "Jet",
+      "popularity": 322
+    },
+    {
+      "name": "Cult Classic",
+      "id": "Cult Classic",
+      "popularity": 321
+    },
+    {
+      "name": "Werewolves",
+      "id": "Werewolves",
+      "popularity": 320
+    },
+    {
+      "name": "Software Training",
+      "id": "Software Training",
+      "popularity": 304
+    },
+    {
+      "name": "Golf",
+      "id": "Golf",
+      "popularity": 293
+    },
+    {
+      "name": "Rome",
+      "id": "Rome",
+      "popularity": 278
+    },
+    {
+      "name": "Job Simulator",
+      "id": "Job Simulator",
+      "popularity": 273
+    },
+    {
+      "name": "Submarine",
+      "id": "Submarine",
+      "popularity": 272
+    },
+    {
+      "name": "Unforgiving",
+      "id": "Unforgiving",
+      "popularity": 271
+    },
+    {
+      "name": "Experience",
+      "id": "Experience",
+      "popularity": 269
+    },
+    {
+      "name": "Social Deduction",
+      "id": "Social Deduction",
+      "popularity": 268
+    },
+    {
+      "name": "Photo Editing",
+      "id": "Photo Editing",
+      "popularity": 267
+    },
+    {
+      "name": "Spaceships",
+      "id": "Spaceships",
+      "popularity": 266
+    },
+    {
+      "name": "Web Publishing",
+      "id": "Web Publishing",
+      "popularity": 254
+    },
+    {
+      "name": "Motorbike",
+      "id": "Motorbike",
+      "popularity": 253
+    },
+    {
+      "name": "Medical Sim",
+      "id": "Medical Sim",
+      "popularity": 253
+    },
+    {
+      "name": "World War I",
+      "id": "World War I",
+      "popularity": 252
+    },
+    {
+      "name": "Sequel",
+      "id": "Sequel",
+      "popularity": 249
+    },
+    {
+      "name": "Bikes",
+      "id": "Bikes",
+      "popularity": 247
+    },
+    {
+      "name": "LEGO",
+      "id": "LEGO",
+      "popularity": 240
+    },
+    {
+      "name": "Basketball",
+      "id": "Basketball",
+      "popularity": 236
+    },
+    {
+      "name": "Asymmetric VR",
+      "id": "Asymmetric VR",
+      "popularity": 218
+    },
+    {
+      "name": "GameMaker",
+      "id": "GameMaker",
+      "popularity": 217
+    },
+    {
+      "name": "Episodic",
+      "id": "Episodic",
+      "popularity": 214
+    },
+    {
+      "name": "Kickstarter",
+      "id": "Kickstarter",
+      "popularity": 210
+    },
+    {
+      "name": "Pinball",
+      "id": "Pinball",
+      "popularity": 208
+    },
+    {
+      "name": "Dwarf",
+      "id": "Dwarf",
+      "popularity": 203
+    },
+    {
+      "name": "Electronic Music",
+      "id": "Electronic Music",
+      "popularity": 201
+    },
+    {
+      "name": "Mini Golf",
+      "id": "Mini Golf",
+      "popularity": 195
+    },
+    {
+      "name": "360 Video",
+      "id": "360 Video",
+      "popularity": 183
+    },
+    {
+      "name": "Ambient",
+      "id": "Ambient",
+      "popularity": 182
+    },
+    {
+      "name": "Skateboarding",
+      "id": "Skateboarding",
+      "popularity": 180
+    },
+    {
+      "name": "Jump Scare",
+      "id": "Jump Scare",
+      "popularity": 180
+    },
+    {
+      "name": "Football (American)",
+      "id": "Football (American)",
+      "popularity": 179
+    },
+    {
+      "name": "Silent Protagonist",
+      "id": "Silent Protagonist",
+      "popularity": 170
+    },
+    {
+      "name": "Boss Rush",
+      "id": "Boss Rush",
+      "popularity": 169
+    },
+    {
+      "name": "Dungeons & Dragons",
+      "id": "Dungeons & Dragons",
+      "popularity": 166
+    },
+    {
+      "name": "Skating",
+      "id": "Skating",
+      "popularity": 161
+    },
+    {
+      "name": "Tennis",
+      "id": "Tennis",
+      "popularity": 160
+    },
+    {
+      "name": "Extraction Shooter",
+      "id": "Extraction Shooter",
+      "popularity": 159
+    },
+    {
+      "name": "Pool",
+      "id": "Pool",
+      "popularity": 158
+    },
+    {
+      "name": "Wrestling",
+      "id": "Wrestling",
+      "popularity": 150
+    },
+    {
+      "name": "TrackIR",
+      "id": "TrackIR",
+      "popularity": 147
+    },
+    {
+      "name": "Movie",
+      "id": "Movie",
+      "popularity": 146
+    },
+    {
+      "name": "Cycling",
+      "id": "Cycling",
+      "popularity": 145
+    },
+    {
+      "name": "Gaming",
+      "id": "Gaming",
+      "popularity": 142
+    },
+    {
+      "name": "Intentionally Awkward Controls",
+      "id": "Intentionally Awkward Controls",
+      "popularity": 136
+    },
+    {
+      "name": "Vikings",
+      "id": "Vikings",
+      "popularity": 131
+    },
+    {
+      "name": "Epic",
+      "id": "Epic",
+      "popularity": 130
+    },
+    {
+      "name": "Dice",
+      "id": "Dice",
+      "popularity": 129
+    },
+    {
+      "name": "Mod",
+      "id": "Mod",
+      "popularity": 129
+    },
+    {
+      "name": "Baseball",
+      "id": "Baseball",
+      "popularity": 127
+    },
+    {
+      "name": "Motocross",
+      "id": "Motocross",
+      "popularity": 117
+    },
+    {
+      "name": "Hockey",
+      "id": "Hockey",
+      "popularity": 115
+    },
+    {
+      "name": "Shop Keeper",
+      "id": "Shop Keeper",
+      "popularity": 115
+    },
+    {
+      "name": "Crowdfunded",
+      "id": "Crowdfunded",
+      "popularity": 109
+    },
+    {
+      "name": "Lemmings",
+      "id": "Lemmings",
+      "popularity": 107
+    },
+    {
+      "name": "Instrumental Music",
+      "id": "Instrumental Music",
+      "popularity": 106
+    },
+    {
+      "name": "Mahjong",
+      "id": "Mahjong",
+      "popularity": 104
+    },
+    {
+      "name": "Games Workshop",
+      "id": "Games Workshop",
+      "popularity": 103
+    },
+    {
+      "name": "Warhammer 40K",
+      "id": "Warhammer 40K",
+      "popularity": 95
+    },
+    {
+      "name": "Snowboarding",
+      "id": "Snowboarding",
+      "popularity": 93
+    },
+    {
+      "name": "Bowling",
+      "id": "Bowling",
+      "popularity": 90
+    },
+    {
+      "name": "Based On A Novel",
+      "id": "Based On A Novel",
+      "popularity": 89
+    },
+    {
+      "name": "Skiing",
+      "id": "Skiing",
+      "popularity": 88
+    },
+    {
+      "name": "8-bit Music",
+      "id": "8-bit Music",
+      "popularity": 85
+    },
+    {
+      "name": "Rock Music",
+      "id": "Rock Music",
+      "popularity": 81
+    },
+    {
+      "name": "BMX",
+      "id": "BMX",
+      "popularity": 80
+    },
+    {
+      "name": "Birds",
+      "id": "Birds",
+      "popularity": 77
+    },
+    {
+      "name": "Well-Written",
+      "id": "Well-Written",
+      "popularity": 75
+    },
+    {
+      "name": "Electronic",
+      "id": "Electronic",
+      "popularity": 69
+    },
+    {
+      "name": "Voice Control",
+      "id": "Voice Control",
+      "popularity": 65
+    },
+    {
+      "name": "ATV",
+      "id": "ATV",
+      "popularity": 63
+    },
+    {
+      "name": "Fox",
+      "id": "Fox",
+      "popularity": 53
+    },
+    {
+      "name": "Coding",
+      "id": "Coding",
+      "popularity": 48
+    },
+    {
+      "name": "Musou",
+      "id": "Musou",
+      "popularity": 45
+    },
+    {
+      "name": "Documentary",
+      "id": "Documentary",
+      "popularity": 42
+    },
+    {
+      "name": "Benchmark",
+      "id": "Benchmark",
+      "popularity": 39
+    },
+    {
+      "name": "Hobby Sim",
+      "id": "Hobby Sim",
+      "popularity": 38
+    },
+    {
+      "name": "Cricket",
+      "id": "Cricket",
+      "popularity": 38
+    },
+    {
+      "name": "Volleyball",
+      "id": "Volleyball",
+      "popularity": 36
+    },
+    {
+      "name": "Hardware",
+      "id": "Hardware",
+      "popularity": 34
+    },
+    {
+      "name": "Elf",
+      "id": "Elf",
+      "popularity": 28
+    },
+    {
+      "name": "Rugby",
+      "id": "Rugby",
+      "popularity": 24
+    },
+    {
+      "name": "Feature Film",
+      "id": "Feature Film",
+      "popularity": 20
+    },
+    {
+      "name": "Steam Machine",
+      "id": "Steam Machine",
+      "popularity": 17
+    },
+    {
+      "name": "Snooker",
+      "id": "Snooker",
+      "popularity": 17
+    },
+    {
+      "name": "Reboot",
+      "id": "Reboot",
+      "popularity": 13
+    }
+  ],
+  "lastUpdated": "2025-10-03 14:54:31 UTC",
+  "totalTags": 446,
+  "generatedBy": "generate_tags_index.py",
+  "version": "1.0"
+}

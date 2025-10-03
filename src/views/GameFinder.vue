@@ -191,23 +191,77 @@
         </div>
 
         <div class="row mb-3">
-          <div class="col-md-3">
-            <label for="minDateFilter" class="form-label">Minimum Release Date</label>
-            <input 
-              type="date" 
-              class="form-control" 
-              id="minDateFilter" 
-              v-model="minDate"
-            >
-          </div>
-          <div class="col-md-3">
-            <label for="maxDateFilter" class="form-label">Maximum Release Date</label>
-            <input 
-              type="date" 
-              class="form-control" 
-              id="maxDateFilter" 
-              v-model="maxDate"
-            >
+          <div class="col-md-6">
+            <label for="dateRange" class="form-label">Release Date Range</label>
+            
+            <!-- Date Mode Toggle -->
+            <div class="btn-group mb-3" role="group" aria-label="Date mode toggle">
+              <input 
+                type="radio" 
+                class="btn-check" 
+                name="dateMode" 
+                id="quickMode" 
+                value="quick"
+                v-model="dateMode"
+                @change="updateRouteFromFilters"
+              >
+              <label class="btn btn-outline-secondary" for="quickMode">Quick</label>
+
+              <input 
+                type="radio" 
+                class="btn-check" 
+                name="dateMode" 
+                id="customMode" 
+                value="custom"
+                v-model="dateMode"
+                @change="updateRouteFromFilters"
+              >
+              <label class="btn btn-outline-secondary" for="customMode">Custom</label>
+            </div>
+
+            <!-- Quick Date Options -->
+            <div v-if="dateMode === 'quick'" class="mb-3">
+              <select 
+                class="form-select quick-date-select" 
+                v-model="quickDateRange"
+                @change="updateQuickDates"
+              >
+                <option value="">Select a time period...</option>
+                <option value="last3days">Last 3 days</option>
+                <option value="lastweek">Last week</option>
+                <option value="last2weeks">Last 2 weeks</option>
+                <option value="lastmonth">Last month</option>
+                <option value="lastyear">Last year</option>
+                <option value="last2years">Last 2 years</option>
+                <option value="last3years">Last 3 years</option>
+                <option value="last5years">Last 5 years</option>
+                <option value="beginning">Beginning of time</option>
+              </select>
+            </div>
+
+            <!-- Custom Date Range -->
+            <div v-if="dateMode === 'custom'" class="row">
+              <div class="col-6">
+                <input 
+                  type="date" 
+                  class="form-control" 
+                  id="minDate" 
+                  v-model="minDate"
+                  @change="updateRouteFromFilters"
+                >
+                <label for="minDate" class="form-label-sm text-muted">From</label>
+              </div>
+              <div class="col-6">
+                <input 
+                  type="date" 
+                  class="form-control" 
+                  id="maxDate" 
+                  v-model="maxDate"
+                  @change="updateRouteFromFilters"
+                >
+                <label for="maxDate" class="form-label-sm text-muted">To</label>
+              </div>
+            </div>
           </div>
           <div class="col-md-3">
             <div style="margin-top: 25px;">
@@ -326,6 +380,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -350,6 +405,8 @@ export default {
     const orderBy = ref('total_reviews_desc')
     const minDate = ref('')
     const maxDate = ref('')
+    const dateMode = ref('quick') // 'quick' or 'custom'
+    const quickDateRange = ref('lastmonth')
     const games = ref([])
     const isLoading = ref(false)
     const error = ref('')
@@ -362,11 +419,15 @@ export default {
     const filteredExcludeTags = ref([])
     const showTagDropdown = ref(false)
     const showExcludeTagDropdown = ref(false)
+    
+    // Debounce timers
+    let tagSearchTimeout = null
+    let excludeTagSearchTimeout = null
 
-    // Initialize dates
+    // Initialize dates with quick mode default
     const today = new Date()
-    const twoWeeksAgo = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000))
-    minDate.value = twoWeeksAgo.toISOString().split('T')[0]
+    const oneMonthAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000))
+    minDate.value = oneMonthAgo.toISOString().split('T')[0]
     maxDate.value = today.toISOString().split('T')[0]
 
     // Methods
@@ -388,6 +449,8 @@ export default {
             orBetter: reviewScoreOrBetter.value ? '1' : undefined,
             minReviews: minReviews.value != null ? String(minReviews.value) : undefined,
             maxReviews: maxReviews.value != null ? String(maxReviews.value) : undefined,
+            dateMode: dateMode.value || undefined,
+            quickDateRange: quickDateRange.value || undefined,
             minDate: minDate.value || undefined,
             maxDate: maxDate.value || undefined,
             orderBy: orderBy.value || undefined
@@ -414,29 +477,65 @@ export default {
 
     // Tag selector methods
     const filterTags = () => {
-      if (tagSearchQuery.value.trim() === '') {
-        filteredTags.value = availableTags.value.slice(0, 20) // Show first 20 tags when no search
-        showTagDropdown.value = false
-      } else {
-        const query = tagSearchQuery.value.toLowerCase()
-        filteredTags.value = availableTags.value.filter(tag => 
-          tag.toLowerCase().includes(query)
-        )
-        showTagDropdown.value = true
+      // Clear previous timeout
+      if (tagSearchTimeout) {
+        clearTimeout(tagSearchTimeout)
       }
+
+      // Debounce search by 300ms
+      tagSearchTimeout = setTimeout(async () => {
+        if (tagSearchQuery.value.trim() === '') {
+          // Show first 20 tags when no search
+          filteredTags.value = availableTags.value.slice(0, 20)
+          showTagDropdown.value = false
+        } else {
+          try {
+            // Use client-side search for tags
+            const results = await cubeService.searchTagsByName(tagSearchQuery.value, 20)
+            filteredTags.value = results
+            showTagDropdown.value = true
+          } catch (error) {
+            console.error('Error filtering tags:', error)
+            // Fallback to local filtering
+            const query = tagSearchQuery.value.toLowerCase()
+            filteredTags.value = availableTags.value.filter(tag => 
+              tag.toLowerCase().includes(query)
+            )
+            showTagDropdown.value = true
+          }
+        }
+      }, 300)
     }
 
     const filterExcludeTags = () => {
-      if (excludeTagSearchQuery.value.trim() === '') {
-        filteredExcludeTags.value = availableTags.value.slice(0, 20) // Show first 20 tags when no search
-        showExcludeTagDropdown.value = false
-      } else {
-        const query = excludeTagSearchQuery.value.toLowerCase()
-        filteredExcludeTags.value = availableTags.value.filter(tag => 
-          tag.toLowerCase().includes(query)
-        )
-        showExcludeTagDropdown.value = true
+      // Clear previous timeout
+      if (excludeTagSearchTimeout) {
+        clearTimeout(excludeTagSearchTimeout)
       }
+
+      // Debounce search by 300ms
+      excludeTagSearchTimeout = setTimeout(async () => {
+        if (excludeTagSearchQuery.value.trim() === '') {
+          // Show first 20 tags when no search
+          filteredExcludeTags.value = availableTags.value.slice(0, 20)
+          showExcludeTagDropdown.value = false
+        } else {
+          try {
+            // Use client-side search for tags
+            const results = await cubeService.searchTagsByName(excludeTagSearchQuery.value, 20)
+            filteredExcludeTags.value = results
+            showExcludeTagDropdown.value = true
+          } catch (error) {
+            console.error('Error filtering exclude tags:', error)
+            // Fallback to local filtering
+            const query = excludeTagSearchQuery.value.toLowerCase()
+            filteredExcludeTags.value = availableTags.value.filter(tag => 
+              tag.toLowerCase().includes(query)
+            )
+            showExcludeTagDropdown.value = true
+          }
+        }
+      }, 300)
     }
 
     const addTag = (tag) => {
@@ -489,6 +588,55 @@ export default {
     const clearExcludeTagSearch = () => {
       excludeTagSearchQuery.value = ''
       showExcludeTagDropdown.value = false
+    }
+
+    // Date range methods
+    const updateQuickDates = () => {
+      const today = new Date()
+      
+      switch (quickDateRange.value) {
+        case 'last3days':
+          minDate.value = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'lastweek':
+          minDate.value = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'last2weeks':
+          minDate.value = new Date(today.getTime() - (14 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'lastmonth':
+          minDate.value = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'lastyear':
+          minDate.value = new Date(today.getTime() - (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'last2years':
+          minDate.value = new Date(today.getTime() - (2 * 365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'last3years':
+          minDate.value = new Date(today.getTime() - (3 * 365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'last5years':
+          minDate.value = new Date(today.getTime() - (5 * 365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        case 'beginning':
+          minDate.value = '1900-01-01' // Very early date
+          maxDate.value = today.toISOString().split('T')[0]
+          break
+        default:
+          minDate.value = ''
+          maxDate.value = ''
+      }
+      
+      updateRouteFromFilters()
     }
 
     const searchGames = async () => {
@@ -615,7 +763,9 @@ export default {
       minReviews.value = 11
       maxReviews.value = 10000
       orderBy.value = 'total_reviews_desc'
-      minDate.value = twoWeeksAgo.toISOString().split('T')[0]
+      dateMode.value = 'quick'
+      quickDateRange.value = 'lastmonth'
+      minDate.value = oneMonthAgo.toISOString().split('T')[0]
       maxDate.value = today.toISOString().split('T')[0]
       games.value = []
       error.value = ''
@@ -771,6 +921,8 @@ export default {
           reviewScoreOrBetter.value = q.orBetter === '1' ? true : (q.orBetter === '0' ? false : reviewScoreOrBetter.value)
           if (q.minReviews) minReviews.value = parseInt(q.minReviews, 10) || minReviews.value
           if (q.maxReviews) maxReviews.value = parseInt(q.maxReviews, 10) || maxReviews.value
+          if (q.dateMode) dateMode.value = String(q.dateMode)
+          if (q.quickDateRange) quickDateRange.value = String(q.quickDateRange)
           if (q.minDate) minDate.value = String(q.minDate)
           if (q.maxDate) maxDate.value = String(q.maxDate)
           if (q.orderBy) orderBy.value = String(q.orderBy)
@@ -845,6 +997,8 @@ export default {
       maxReviews,
       minDate,
       maxDate,
+      dateMode,
+      quickDateRange,
       orderBy
     ], updateRouteFromFilters, { deep: true })
 
@@ -858,6 +1012,9 @@ export default {
       orderBy,
       minDate,
       maxDate,
+      dateMode,
+      quickDateRange,
+      updateQuickDates,
       games,
       isLoading,
       error,
@@ -891,3 +1048,92 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+
+/* Quick Date Select Dropdown Styling */
+.quick-date-select {
+  background-color: #2d2d2d !important;
+  border-color: #4d4d4d !important;
+  color: #e0e0e0 !important;
+}
+
+.quick-date-select:focus {
+  background-color: #2d2d2d !important;
+  border-color: #6c757d !important;
+  color: #e0e0e0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+}
+
+.quick-date-select option {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.quick-date-select option:hover {
+  background-color: #4d4d4d !important;
+}
+
+/* Override Bootstrap form-select styling for dark theme */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e0e0e0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+  position: relative !important;
+}
+
+/* Remove any decorative elements from form selects */
+.form-select::before,
+.form-select::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Override any pixel art styling that might add decorative elements */
+.form-select {
+  background: #2d2d2d !important;
+  border: 1px solid #4d4d4d !important;
+  color: #e0e0e0 !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+.quick-date-select {
+  background: #2d2d2d !important;
+  border: 1px solid #4d4d4d !important;
+  color: #e0e0e0 !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Fix dropdown animations and prevent wave effects */
+.tag-dropdown, .game-dropdown {
+  animation: none !important;
+  transition: none !important;
+}
+
+.tag-dropdown *, .game-dropdown * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Ensure dropdowns are stable */
+.tag-option, .game-option {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Override any Bootstrap dropdown animations */
+.dropdown-menu {
+  animation: none !important;
+  transition: none !important;
+}
+
+.dropdown-menu * {
+  animation: none !important;
+  transition: none !important;
+}
+</style>

@@ -1,30 +1,10 @@
 import axios from 'axios'
+import { searchGames, getSearchSuggestions, preloadIndex } from './searchEngine.js'
+import { searchTags, getTagSuggestions, preloadIndex as preloadTagsIndex } from './tagsSearchEngine.js'
 
 // Cube.js API configuration
 const CUBEJS_API_URL = import.meta.env.VITE_CUBEJS_API_URL || ''
 const CUBEJS_AUTH_TOKEN = import.meta.env.VITE_CUBEJS_AUTH_TOKEN || ''
-
-// Check if API is configured
-const isApiConfigured = CUBEJS_API_URL && CUBEJS_API_URL !== ''
-
-// Mock data for development when API is unavailable
-const MOCK_GAMES = [
-  { 'Games.name': 'Cyberpunk 2077', 'Games.appId': 1091500 },
-  { 'Games.name': 'Elden Ring', 'Games.appId': 1244460 },
-  { 'Games.name': 'The Witcher 3: Wild Hunt', 'Games.appId': 292030 },
-  { 'Games.name': 'Baldur\'s Gate 3', 'Games.appId': 1086940 },
-  { 'Games.name': 'Hogwarts Legacy', 'Games.appId': 990080 },
-  { 'Games.name': 'Starfield', 'Games.appId': 1716740 },
-  { 'Games.name': 'Red Dead Redemption 2', 'Games.appId': 1174180 },
-  { 'Games.name': 'Grand Theft Auto V', 'Games.appId': 271590 },
-  { 'Games.name': 'Counter-Strike 2', 'Games.appId': 730 },
-  { 'Games.name': 'Dota 2', 'Games.appId': 570 }
-]
-
-const MOCK_TAGS = [
-  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports', 'Racing', 'Fighting', 'Shooter', 'Platformer',
-  'Puzzle', 'Horror', 'Survival', 'Sandbox', 'Open World', 'Multiplayer', 'Singleplayer', 'Co-op', 'VR', 'Indie'
-]
 
 // Create axios instance with default configuration
 const cubeApi = axios.create({
@@ -35,31 +15,6 @@ const cubeApi = axios.create({
     'Content-Type': 'application/json'
   }
 })
-
-// Add request interceptor to handle missing configuration
-cubeApi.interceptors.request.use(
-  (config) => {
-    if (!isApiConfigured) {
-      throw new Error('Cube.js API not configured. Please set VITE_CUBEJS_API_URL and VITE_CUBEJS_AUTH_TOKEN environment variables.')
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// Add response interceptor to handle CORS errors and API unavailability
-cubeApi.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS') || error.response?.status === 402) {
-      console.warn('Cube.js API unavailable, using mock data for development')
-      throw new Error('API_UNAVAILABLE')
-    }
-    return Promise.reject(error)
-  }
-)
 
 // ------------------------------------------------------------
 // In-memory LRU cache (with TTL) for name search results
@@ -131,35 +86,26 @@ function writeWarmNamesToStorage(data) {
 }
 
 export async function prefetchWarmNames(limit = 10000) {
-  // memory first
-  if (warmNamesMemory && warmNamesMemory.length) return warmNamesMemory
-  // storage
-  const stored = readWarmNamesFromStorage()
-  if (stored && stored.length) {
-    warmNamesMemory = stored
-    return warmNamesMemory
-  }
-  // fetch
   try {
-    const list = await getAllGames(limit)
-    warmNamesMemory = list
-    writeWarmNamesToStorage(list)
-    return list
-  } catch (e) {
-    console.warn('Warm names prefetch failed:', e)
+    // Preload the search index for instant searches
+    await preloadIndex()
+    console.log('Search index preloaded successfully')
+    return []
+  } catch (error) {
+    console.warn('Search index preload failed:', error)
     return []
   }
 }
 
 export async function filterWarmNames(searchTerm, limit = 50) {
-  const term = normalizeSearchTerm(searchTerm)
-  if (term.length < 1) return []
-  const list = (warmNamesMemory && warmNamesMemory.length)
-    ? warmNamesMemory
-    : await prefetchWarmNames()
-  return list
-    .filter(g => g && g.name && g.name.toLowerCase().includes(term))
-    .slice(0, limit)
+  try {
+    // Use the new search engine for instant results
+    const results = await getSearchSuggestions(searchTerm, limit)
+    return results
+  } catch (error) {
+    console.error('Error filtering warm names:', error)
+    return []
+  }
 }
 
 // Review score order for proper sorting
@@ -275,38 +221,36 @@ function ensureNumeric(data, columns) {
   return result
 }
 
-// Get all tags for the filter dropdown
+// Client-side tags search (no database queries)
 export async function getAllTags() {
   try {
-    const query = {
-      dimensions: ['all_tags.name'],
-      measures: ['all_tags.popularity'],
-      order: [['all_tags.popularity', 'desc']]
-    }
+    // Use the new client-side search engine
+    const results = await searchTags('', { limit: 1000 }) // Get all tags when no query
     
-    const result = await queryCube(query)
-    
-    if (Array.isArray(result) && result.length > 0) {
-      const standardized = result.map(row => standardizeColumnNames(row, ['all_tags.name', 'all_tags.popularity']))
-      const numeric = ensureNumeric(standardized, ['all_tags.popularity'])
-      
-      // Sort by popularity descending, then by name ascending
-      return numeric.sort((a, b) => {
-        const popA = a['all_tags.popularity'] || 0
-        const popB = b['all_tags.popularity'] || 0
-        if (popA !== popB) return popB - popA
-        return (a['all_tags.name'] || '').localeCompare(b['all_tags.name'] || '')
-      })
-    }
-    
-    return []
+    // Map to expected format for compatibility
+    return results.map(tag => ({
+      'all_tags.name': tag.name,
+      'all_tags.popularity': 0 // Placeholder since we don't have popularity in the new system
+    }))
   } catch (error) {
-    if (error.message === 'API_UNAVAILABLE') {
-      console.log('Using mock tags for development')
-      return MOCK_TAGS.map(tag => ({ 'all_tags.name': tag, 'all_tags.popularity': Math.floor(Math.random() * 1000) }))
-    }
-    console.error('Error fetching tags:', error)
-    throw error
+    console.error('Error searching tags:', error)
+    // Return empty array as fallback
+    return []
+  }
+}
+
+// Search tags by name (for autocomplete)
+export async function searchTagsByName(query, limit = 100) {
+  try {
+    // Use the new client-side search engine
+    const results = await searchTags(query, { limit })
+    
+    // Return just the tag names for compatibility
+    return results.map(tag => tag.name)
+  } catch (error) {
+    console.error('Error searching tags:', error)
+    // Return empty array as fallback
+    return []
   }
 }
 
@@ -914,84 +858,34 @@ export async function populateDailyCache() {
   }
 }
 
-// Check and populate daily cache if needed
+// Check and ensure search index is available
 export async function ensureDailyCache() {
-  const existing = getDailyCache()
-  if (existing && existing.length > 0) {
-    return existing // Cache is fresh
-  }
-  
-  // Cache is stale or missing, populate it
-  return await populateDailyCache()
-}
-
-// Enhanced search with daily cache
-export async function searchGamesByName(searchTerm, limit = 100) {
   try {
-    // 1. Try in-memory cache first (fastest)
-    const cached = getFromNameCache(searchTerm, limit)
-    if (cached) {
-      return cached
-    }
-
-    // 2. Try daily cache (very fast)
-    const dailyCache = getDailyCache()
-    if (dailyCache && dailyCache.length > 0) {
-      const normalizedTerm = searchTerm.toLowerCase()
-      const filtered = dailyCache.filter(game => 
-        game.name.toLowerCase().includes(normalizedTerm)
-      ).slice(0, limit)
-      
-      if (filtered.length > 0) {
-        setNameCache(searchTerm, limit, filtered)
-        return filtered
-      }
-    }
-
-    // 3. Fallback to server search (slow but complete)
-    const query = {
-      dimensions: [
-        'Games.name',
-        'Games.appId'
-      ],
-      filters: [
-        { member: 'Games.type', operator: 'equals', values: ['game'] },
-        { member: 'Games.name', operator: 'contains', values: [searchTerm] }
-      ],
-      order: [['Games.name', 'asc']],
-      limit
-    }
-    
-    const result = await queryCube(query)
-    
-    if (Array.isArray(result) && result.length > 0) {
-      const mapped = result.map(row => ({
-        name: row['Games.name'],
-        appId: row['Games.appId']
-      }))
-      setNameCache(searchTerm, limit, mapped)
-      return mapped
-    }
-    
+    // Preload the search index instead of daily cache
+    await preloadIndex()
+    console.log('Search index ensured and ready')
     return []
   } catch (error) {
-    if (error.message === 'API_UNAVAILABLE') {
-      console.log('Using mock games for development')
-      const normalizedTerm = searchTerm.toLowerCase()
-      const filtered = MOCK_GAMES.filter(game => 
-        game['Games.name'].toLowerCase().includes(normalizedTerm)
-      ).slice(0, limit)
-      
-      const mapped = filtered.map(game => ({
-        name: game['Games.name'],
-        appId: game['Games.appId']
-      }))
-      
-      setNameCache(searchTerm, limit, mapped)
-      return mapped
-    }
+    console.warn('Failed to ensure search index:', error)
+    return []
+  }
+}
+
+// Algolia-style client-side search (no database queries)
+export async function searchGamesByName(searchTerm, limit = 100) {
+  try {
+    // Use the new client-side search engine
+    const results = await searchGames(searchTerm, { limit })
+    
+    // Map to expected format for compatibility
+    return results.map(game => ({
+      name: game.name,
+      appId: game.appId
+    }))
+  } catch (error) {
     console.error('Error searching games:', error)
-    throw error
+    // Return empty array as fallback
+    return []
   }
 }
 
@@ -1092,6 +986,7 @@ export async function findSimilarGames(appId, minCommonTags = 15) {
 
 export default {
   getAllTags,
+  searchTagsByName,
   getRecentTopGames,
   findGames,
   getAppIdsForTag,

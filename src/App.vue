@@ -153,6 +153,25 @@
               </li>
             </ul>
             
+            <!-- Support Section -->
+            <div class="support-section">
+              <h6 class="support-title">Game Discovery Tool loves and supports</h6>
+              <div class="support-links">
+                <a href="https://www.imirt.ie/" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/imirt.jpg" alt="Imirt" class="support-image">
+                </a>
+                <a href="https://www.twitch.tv/oatsngoats" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/oatsngoats.jpeg" alt="Oats n Goats" class="support-image">
+                </a>
+                <a href="https://thisweekinvideogames.com" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/twiv.jpg" alt="TWIV" class="support-image">
+                </a>
+                <a href="https://www.patreon.com/cw/noclip" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/noclip.jpg" alt="Noclip" class="support-image">
+                </a>
+              </div>
+            </div>
+            
             <!-- Conrad Mascot Container -->
             <div class="conrad-container">
               <ConradMascot />
@@ -231,5 +250,51 @@ export default {
   overflow: visible;
   margin-top: 20px;
   padding-bottom: 80px; /* Space for speech bubble */
+}
+
+/* Sidebar Support Section */
+.support-section {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--pixel-border);
+}
+
+.support-title {
+  color: var(--pixel-text);
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.support-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.support-link {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.support-link:hover {
+  transform: scale(1.05);
+}
+
+.support-image {
+  max-width: 120px;
+  height: auto;
+  border: 1px solid var(--pixel-border);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.support-image:hover {
+  border-color: var(--pixel-cyan);
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
 }
 </style>
