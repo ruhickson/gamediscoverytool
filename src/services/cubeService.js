@@ -7,6 +7,25 @@ const CUBEJS_AUTH_TOKEN = import.meta.env.VITE_CUBEJS_AUTH_TOKEN || ''
 // Check if API is configured
 const isApiConfigured = CUBEJS_API_URL && CUBEJS_API_URL !== ''
 
+// Mock data for development when API is unavailable
+const MOCK_GAMES = [
+  { 'Games.name': 'Cyberpunk 2077', 'Games.appId': 1091500 },
+  { 'Games.name': 'Elden Ring', 'Games.appId': 1244460 },
+  { 'Games.name': 'The Witcher 3: Wild Hunt', 'Games.appId': 292030 },
+  { 'Games.name': 'Baldur\'s Gate 3', 'Games.appId': 1086940 },
+  { 'Games.name': 'Hogwarts Legacy', 'Games.appId': 990080 },
+  { 'Games.name': 'Starfield', 'Games.appId': 1716740 },
+  { 'Games.name': 'Red Dead Redemption 2', 'Games.appId': 1174180 },
+  { 'Games.name': 'Grand Theft Auto V', 'Games.appId': 271590 },
+  { 'Games.name': 'Counter-Strike 2', 'Games.appId': 730 },
+  { 'Games.name': 'Dota 2', 'Games.appId': 570 }
+]
+
+const MOCK_TAGS = [
+  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports', 'Racing', 'Fighting', 'Shooter', 'Platformer',
+  'Puzzle', 'Horror', 'Survival', 'Sandbox', 'Open World', 'Multiplayer', 'Singleplayer', 'Co-op', 'VR', 'Indie'
+]
+
 // Create axios instance with default configuration
 const cubeApi = axios.create({
   baseURL: CUBEJS_API_URL,
@@ -30,13 +49,13 @@ cubeApi.interceptors.request.use(
   }
 )
 
-// Add response interceptor to handle CORS errors
+// Add response interceptor to handle CORS errors and API unavailability
 cubeApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
-      console.error('CORS Error: Please check your Cube.js API configuration and ensure CORS is properly set up.')
-      throw new Error('Network error: Unable to connect to Cube.js API. Please check your configuration.')
+    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS') || error.response?.status === 402) {
+      console.warn('Cube.js API unavailable, using mock data for development')
+      throw new Error('API_UNAVAILABLE')
     }
     return Promise.reject(error)
   }
@@ -282,6 +301,10 @@ export async function getAllTags() {
     
     return []
   } catch (error) {
+    if (error.message === 'API_UNAVAILABLE') {
+      console.log('Using mock tags for development')
+      return MOCK_TAGS.map(tag => ({ 'all_tags.name': tag, 'all_tags.popularity': Math.floor(Math.random() * 1000) }))
+    }
     console.error('Error fetching tags:', error)
     throw error
   }
@@ -952,6 +975,21 @@ export async function searchGamesByName(searchTerm, limit = 100) {
     
     return []
   } catch (error) {
+    if (error.message === 'API_UNAVAILABLE') {
+      console.log('Using mock games for development')
+      const normalizedTerm = searchTerm.toLowerCase()
+      const filtered = MOCK_GAMES.filter(game => 
+        game['Games.name'].toLowerCase().includes(normalizedTerm)
+      ).slice(0, limit)
+      
+      const mapped = filtered.map(game => ({
+        name: game['Games.name'],
+        appId: game['Games.appId']
+      }))
+      
+      setNameCache(searchTerm, limit, mapped)
+      return mapped
+    }
     console.error('Error searching games:', error)
     throw error
   }
