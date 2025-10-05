@@ -67,7 +67,7 @@
           
           <!-- Tighten/Loosen Controls -->
           <div class="row mb-3">
-            <div class="col-12">
+            <div class="col-md-8">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <label class="form-label mb-1">Similarity Filter</label>
@@ -92,6 +92,22 @@
                     <i class="fas fa-compress-arrows-alt me-1"></i>
                     Tighten
                   </button>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check mt-3">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="includeAdultGames" 
+                  v-model="includeAdultGames"
+                >
+                <label class="form-check-label" for="includeAdultGames">
+                  Include adult games
+                </label>
+                <div class="form-text text-muted">
+                  <small>By default, games with "Sexual Content" or "Hentai" tags are excluded</small>
                 </div>
               </div>
             </div>
@@ -254,6 +270,7 @@ export default {
     const allGames = ref([]) // Used for client-side fallback search (lazy loaded)
     const minCommonTags = ref(15) // Minimum common tags requirement
     const isSearching = ref(false) // Loading indicator for game search
+    const includeAdultGames = ref(false) // Default: exclude adult games
 
     // Debounce timer
     let searchTimeout = null
@@ -323,7 +340,34 @@ export default {
       try {
         console.log('Starting similarity search for:', selectedGame.value.name, 'App ID:', selectedGame.value.appId, 'with min tags:', minCommonTags.value)
         // Only now do we query the API for similar games using the selected game's app_id
-        const results = await cubeService.findSimilarGames(selectedGame.value.appId, minCommonTags.value)
+        let results = await cubeService.findSimilarGames(selectedGame.value.appId, minCommonTags.value)
+        
+        // Apply adult content filter if not including adult games
+        if (!includeAdultGames.value) {
+          console.log('Applying adult content filter to similar games')
+          const adultContentTags = ['Sexual Content', 'Hentai']
+          const adultExcludedAppIds = []
+          
+          for (const tag of adultContentTags) {
+            try {
+              const tagAppIds = await cubeService.getAppIdsForTag(tag)
+              adultExcludedAppIds.push(...tagAppIds)
+            } catch (err) {
+              console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
+            }
+          }
+          
+          const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
+          
+          // Remove games with adult content tags
+          if (uniqueAdultExcludedAppIds.length > 0) {
+            results = results.filter(game => 
+              !uniqueAdultExcludedAppIds.includes(game.appId)
+            )
+            console.log('After adult content filter:', results.length, 'similar games')
+          }
+        }
+        
         similarGames.value = results
         console.log('Found', results.length, 'similar games')
       } catch (error) {
@@ -534,6 +578,7 @@ export default {
       hasSearched,
       minCommonTags,
       isSearching,
+      includeAdultGames,
       searchGames,
       selectGame,
       clearSelection,

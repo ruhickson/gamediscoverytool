@@ -142,6 +142,22 @@
             </div>
           </div>
           <div class="col-md-4">
+            <div class="form-check mt-4">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="includeAdultGames" 
+                v-model="includeAdultGames"
+              >
+              <label class="form-check-label" for="includeAdultGames">
+                Include adult games
+              </label>
+              <div class="form-text text-muted">
+                <small>By default, games with "Sexual Content" or "Hentai" tags are excluded</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
             <label for="minReviewsFilter" class="form-label">Min Reviews</label>
             <input 
               type="number" 
@@ -151,6 +167,9 @@
               min="0"
             >
           </div>
+        </div>
+
+        <div class="row mb-3">
           <div class="col-md-4">
             <label for="maxReviewsFilter" class="form-label">Max Reviews</label>
             <input 
@@ -161,10 +180,7 @@
               min="0"
             >
           </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label for="orderByFilter" class="form-label">Order Results By</label>
             <select 
               id="orderByFilter" 
@@ -183,7 +199,7 @@
               <option value="game_name_desc">Game Name (Z-A)</option>
             </select>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div style="margin-top: 25px;">
               <p class="text-muted small">Choose how to sort the search results</p>
             </div>
@@ -195,7 +211,7 @@
             <label for="dateRange" class="form-label">Release Date Range</label>
             
             <!-- Date Mode Toggle -->
-            <div class="btn-group mb-3" role="group" aria-label="Date mode toggle">
+            <div class="btn-group mb-3 mt-2" role="group" aria-label="Date mode toggle">
               <input 
                 type="radio" 
                 class="btn-check" 
@@ -407,6 +423,7 @@ export default {
     const maxDate = ref('')
     const dateMode = ref('quick') // 'quick' or 'custom'
     const quickDateRange = ref('lastmonth')
+    const includeAdultGames = ref(false) // Default: exclude adult games
     const games = ref([])
     const isLoading = ref(false)
     const error = ref('')
@@ -453,7 +470,8 @@ export default {
             quickDateRange: quickDateRange.value || undefined,
             minDate: minDate.value || undefined,
             maxDate: maxDate.value || undefined,
-            orderBy: orderBy.value || undefined
+            orderBy: orderBy.value || undefined,
+            includeAdult: includeAdultGames.value ? '1' : undefined
           }
           Object.keys(query).forEach(k => query[k] === undefined && delete query[k])
           router.replace({ name: 'GameFinder', query }).catch(() => {})
@@ -687,6 +705,32 @@ export default {
             console.log('After exclude tags filter:', searchResults.length, 'games')
           }
         }
+
+        // Apply adult content filter if not including adult games
+        if (!includeAdultGames.value) {
+          console.log('Applying adult content filter')
+          const adultContentTags = ['Sexual Content', 'Hentai']
+          const adultExcludedAppIds = []
+          
+          for (const tag of adultContentTags) {
+            try {
+              const tagAppIds = await cubeService.getAppIdsForTag(tag)
+              adultExcludedAppIds.push(...tagAppIds)
+            } catch (err) {
+              console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
+            }
+          }
+          
+          const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
+          
+          // Remove games with adult content tags
+          if (uniqueAdultExcludedAppIds.length > 0) {
+            searchResults = searchResults.filter(game => 
+              !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
+            )
+            console.log('After adult content filter:', searchResults.length, 'games')
+          }
+        }
         
         // Process the results
         const processedGames = searchResults.map(game => {
@@ -765,6 +809,7 @@ export default {
       orderBy.value = 'total_reviews_desc'
       dateMode.value = 'quick'
       quickDateRange.value = 'lastmonth'
+      includeAdultGames.value = false
       minDate.value = oneMonthAgo.toISOString().split('T')[0]
       maxDate.value = today.toISOString().split('T')[0]
       games.value = []
@@ -926,6 +971,7 @@ export default {
           if (q.minDate) minDate.value = String(q.minDate)
           if (q.maxDate) maxDate.value = String(q.maxDate)
           if (q.orderBy) orderBy.value = String(q.orderBy)
+          includeAdultGames.value = q.includeAdult === '1' ? true : false
         }
 
         // Load tags first
@@ -999,7 +1045,8 @@ export default {
       maxDate,
       dateMode,
       quickDateRange,
-      orderBy
+      orderBy,
+      includeAdultGames
     ], updateRouteFromFilters, { deep: true })
 
     return {
@@ -1014,6 +1061,7 @@ export default {
       maxDate,
       dateMode,
       quickDateRange,
+      includeAdultGames,
       updateQuickDates,
       games,
       isLoading,
