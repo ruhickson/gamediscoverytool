@@ -4,7 +4,8 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="https://gamediscoverytool.com">
           <i class="fas fa-gamepad me-2"></i>
-          Game Discovery Tool
+          <span class="d-none d-sm-inline">Game Discovery Tool</span>
+          <span class="d-sm-none">Game Discovery</span>
         </a>
         
         <!-- Mobile menu toggle button -->
@@ -21,12 +22,13 @@
         
         <div class="d-flex ms-auto">
           <button
-            class="btn btn-outline-light btn-sm"
+            class="btn btn-outline-light btn-sm accessibility-btn"
             @click="toggleContrast"
             aria-pressed="isHighContrast.toString()"
             aria-label="Toggle high-contrast accessibility mode"
           >
-            {{ isHighContrast ? 'Disable Accessibility' : 'Accessibility' }}
+            <span class="d-none d-md-inline">{{ isHighContrast ? 'Disable Accessibility' : 'Accessibility' }}</span>
+            <span class="d-md-none">{{ isHighContrast ? 'Disable' : 'A11y' }}</span>
           </button>
         </div>
       </div>
@@ -56,6 +58,17 @@
             >
               <i class="fas fa-magic me-2"></i>
               Recommender
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link 
+              to="/blog" 
+              class="nav-link text-light"
+              :class="{ active: $route.name === 'Blog' || $route.name === 'BlogPost' }"
+              @click="closeMobileMenu"
+            >
+              <i class="fas fa-blog me-2"></i>
+              Blog
             </router-link>
           </li>
           <li class="nav-item">
@@ -91,6 +104,17 @@
               FAQ
             </router-link>
           </li>
+          <li class="nav-item">
+            <router-link 
+              to="/report" 
+              class="nav-link text-light"
+              :class="{ active: $route.name === 'ReportIssue' }"
+              @click="closeMobileMenu"
+            >
+              <i class="fas fa-flag me-2"></i>
+              Report an Issue
+            </router-link>
+          </li>
         </ul>
       </div>
     </div>
@@ -123,6 +147,16 @@
               </li>
               <li class="nav-item">
                 <router-link 
+                  to="/blog" 
+                  class="nav-link"
+                  :class="{ active: $route.name === 'Blog' || $route.name === 'BlogPost' }"
+                >
+                  <i class="fas fa-blog"></i>
+                  Blog
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link 
                   to="/how-to-use" 
                   class="nav-link"
                   :class="{ active: $route.name === 'HowToUse' }"
@@ -149,6 +183,16 @@
                 >
                   <i class="fas fa-info-circle"></i>
                   About
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link 
+                  to="/report" 
+                  class="nav-link"
+                  :class="{ active: $route.name === 'ReportIssue' }"
+                >
+                  <i class="fas fa-flag"></i>
+                  Report an Issue
                 </router-link>
               </li>
             </ul>
@@ -217,6 +261,57 @@ export default {
 </script>
 
 <style>
+/* Responsive Navbar Brand */
+.navbar-brand {
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100vw - 200px); /* Leave space for toggle button and accessibility button */
+}
+
+/* Mobile-specific navbar brand adjustments */
+@media (max-width: 991.98px) {
+  .navbar-brand {
+    font-size: 1rem;
+    max-width: calc(100vw - 120px); /* More space for mobile toggle */
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 0.9rem;
+    max-width: calc(100vw - 100px);
+  }
+  
+  .navbar-brand i {
+    font-size: 0.8rem;
+  }
+  
+  .accessibility-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Extra small screens - make title even more compact */
+@media (max-width: 400px) {
+  .navbar-brand {
+    font-size: 0.8rem;
+    max-width: calc(100vw - 80px);
+  }
+  
+  .navbar-brand i {
+    font-size: 0.7rem;
+  }
+  
+  .accessibility-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+}
+
 /* Mobile Navigation */
 .mobile-nav {
   border-top: 1px solid #495057;

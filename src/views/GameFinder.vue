@@ -142,22 +142,6 @@
             </div>
           </div>
           <div class="col-md-4">
-            <div class="form-check mt-4">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="includeAdultGames" 
-                v-model="includeAdultGames"
-              >
-              <label class="form-check-label" for="includeAdultGames">
-                Include adult games
-              </label>
-              <div class="form-text text-muted">
-                <small>By default, games with "Sexual Content" or "Hentai" tags are excluded</small>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
             <label for="minReviewsFilter" class="form-label">Min Reviews</label>
             <input 
               type="number" 
@@ -167,9 +151,6 @@
               min="0"
             >
           </div>
-        </div>
-
-        <div class="row mb-3">
           <div class="col-md-4">
             <label for="maxReviewsFilter" class="form-label">Max Reviews</label>
             <input 
@@ -180,7 +161,10 @@
               min="0"
             >
           </div>
-          <div class="col-md-4">
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
             <label for="orderByFilter" class="form-label">Order Results By</label>
             <select 
               id="orderByFilter" 
@@ -199,9 +183,20 @@
               <option value="game_name_desc">Game Name (Z-A)</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <div style="margin-top: 25px;">
-              <p class="text-muted small">Choose how to sort the search results</p>
+          <div class="col-md-6">
+            <div class="form-check" style="margin-top: 32px;">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="includeAdultGames" 
+                v-model="includeAdultGames"
+              >
+              <label class="form-check-label" for="includeAdultGames">
+                Include adult games
+              </label>
+              <div class="form-text text-muted">
+                <small>By default, games with "Sexual Content" or "Hentai" tags are excluded</small>
+              </div>
             </div>
           </div>
         </div>
@@ -328,6 +323,17 @@
         </button>
       </div>
       <div class="card-body">
+        <!-- DEBUG INFO -->
+        <div style="background: #1a1a1a; padding: 10px; margin-bottom: 15px; border: 1px solid #444;">
+          <strong>DEBUG:</strong>
+          <ul style="margin: 5px 0; padding-left: 20px;">
+            <li>isLoading: {{ isLoading }}</li>
+            <li>error: {{ error || 'None' }}</li>
+            <li>games.length: {{ games.length }}</li>
+            <li>games type: {{ Array.isArray(games) ? 'Array' : typeof games }}</li>
+          </ul>
+        </div>
+        
         <div v-if="isLoading" class="loading">
           <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
           <p>Searching for games...</p>
@@ -346,12 +352,32 @@
           <table class="table table-striped table-hover">
             <thead>
               <tr>
-                <th>Game</th>
+                <th @click="sortBy('name')" class="sortable">
+                  Game 
+                  <i v-if="sortField === 'name'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
                 <th>Share</th>
-                <th>Review Score</th>
-                <th>Release Date</th>
-                <th>Steam Review Score</th>
-                <th>Total Reviews</th>
+                <th @click="sortBy('reviewScoreDesc')" class="sortable">
+                  Review Score 
+                  <i v-if="sortField === 'reviewScoreDesc'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
+                <th @click="sortBy('releaseDate')" class="sortable">
+                  Release Date 
+                  <i v-if="sortField === 'releaseDate'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
+                <th @click="sortBy('scorePercent')" class="sortable">
+                  Steam Review Score 
+                  <i v-if="sortField === 'scorePercent'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
+                <th @click="sortBy('totalReviews')" class="sortable">
+                  Total Reviews 
+                  <i v-if="sortField === 'totalReviews'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -423,11 +449,15 @@ export default {
     const maxDate = ref('')
     const dateMode = ref('quick') // 'quick' or 'custom'
     const quickDateRange = ref('lastmonth')
-    const includeAdultGames = ref(false) // Default: exclude adult games
+    const includeAdultGames = ref(false)
     const games = ref([])
     const isLoading = ref(false)
     const error = ref('')
     const availableTags = ref([])
+    
+    // Sorting state
+    const sortField = ref('')
+    const sortDirection = ref('desc')
     
     // Tag selector state
     const tagSearchQuery = ref('')
@@ -680,32 +710,10 @@ export default {
         
         // Call the Cube.js service
         let searchResults = await cubeService.findGames(searchParams)
+        console.log('API Response:', searchResults)
+        console.log('Type of searchResults:', typeof searchResults, Array.isArray(searchResults))
+        console.log('Length of searchResults:', searchResults?.length)
         
-        // Apply exclude tags filter if any are selected
-        if (excludeTags.value.length > 0) {
-          console.log('Applying exclude tags filter')
-          const excludedAppIds = []
-          
-          for (const tag of excludeTags.value) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              excludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for exclude tag ${tag}:`, err)
-            }
-          }
-          
-          const uniqueExcludedAppIds = [...new Set(excludedAppIds)]
-          
-          // Remove games with excluded tags
-          if (uniqueExcludedAppIds.length > 0) {
-            searchResults = searchResults.filter(game => 
-              !uniqueExcludedAppIds.includes(game['Games.appId'])
-            )
-            console.log('After exclude tags filter:', searchResults.length, 'games')
-          }
-        }
-
         // Apply adult content filter if not including adult games
         if (!includeAdultGames.value) {
           console.log('Applying adult content filter')
@@ -729,6 +737,31 @@ export default {
               !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
             )
             console.log('After adult content filter:', searchResults.length, 'games')
+          }
+        }
+        
+        // Apply exclude tags filter if any are selected
+        if (excludeTags.value.length > 0) {
+          console.log('Applying exclude tags filter')
+          const excludedAppIds = []
+          
+          for (const tag of excludeTags.value) {
+            try {
+              const tagAppIds = await cubeService.getAppIdsForTag(tag)
+              excludedAppIds.push(...tagAppIds)
+            } catch (err) {
+              console.error(`Error getting app IDs for exclude tag ${tag}:`, err)
+            }
+          }
+          
+          const uniqueExcludedAppIds = [...new Set(excludedAppIds)]
+          
+          // Remove games with excluded tags
+          if (uniqueExcludedAppIds.length > 0) {
+            searchResults = searchResults.filter(game => 
+              !uniqueExcludedAppIds.includes(game['Games.appId'])
+            )
+            console.log('After exclude tags filter:', searchResults.length, 'games')
           }
         }
         
@@ -782,11 +815,15 @@ export default {
           }
         })
         
+        console.log('Processed games:', processedGames)
+        console.log('Sample processed game:', processedGames[0])
         games.value = processedGames
         console.log('Search completed. Found', processedGames.length, 'games')
+        console.log('games.value after assignment:', games.value)
         
       } catch (err) {
         console.error('Search error:', err)
+        console.error('Error details:', err.message, err.stack)
         if (err.message.includes('timeout') || err.message.includes('Continue wait')) {
           error.value = 'The search query is taking too long to process. Please try simplifying your search criteria or try again later.'
         } else if (err.message.includes('Cube.js returned an error')) {
@@ -795,7 +832,9 @@ export default {
           error.value = 'An error occurred while searching for games. Please check your connection and try again.'
         }
       } finally {
+        console.log('Setting isLoading to false. Current games count:', games.value.length)
         isLoading.value = false
+        console.log('isLoading is now:', isLoading.value)
       }
     }
 
@@ -809,9 +848,9 @@ export default {
       orderBy.value = 'total_reviews_desc'
       dateMode.value = 'quick'
       quickDateRange.value = 'lastmonth'
-      includeAdultGames.value = false
       minDate.value = oneMonthAgo.toISOString().split('T')[0]
       maxDate.value = today.toISOString().split('T')[0]
+      includeAdultGames.value = false
       games.value = []
       error.value = ''
     }
@@ -948,6 +987,41 @@ export default {
       return 'score-low'
     }
 
+    const sortBy = (field) => {
+      if (sortField.value === field) {
+        // Toggle direction if same field
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+      } else {
+        // New field, default to descending
+        sortField.value = field
+        sortDirection.value = 'desc'
+      }
+      
+      // Sort the games array
+      games.value.sort((a, b) => {
+        let aVal = a[field]
+        let bVal = b[field]
+        
+        // Handle different data types
+        if (field === 'releaseDate') {
+          aVal = aVal ? new Date(aVal) : new Date(0)
+          bVal = bVal ? new Date(bVal) : new Date(0)
+        } else if (field === 'scorePercent' || field === 'totalReviews') {
+          aVal = aVal || 0
+          bVal = bVal || 0
+        } else if (field === 'name' || field === 'reviewScoreDesc') {
+          aVal = (aVal || '').toString()
+          bVal = (bVal || '').toString()
+        }
+        
+        let comparison = 0
+        if (aVal < bVal) comparison = -1
+        else if (aVal > bVal) comparison = 1
+        
+        return sortDirection.value === 'asc' ? comparison : -comparison
+      })
+    }
+
     // Load initial data
     const loadInitialData = async () => {
       try {
@@ -971,7 +1045,7 @@ export default {
           if (q.minDate) minDate.value = String(q.minDate)
           if (q.maxDate) maxDate.value = String(q.maxDate)
           if (q.orderBy) orderBy.value = String(q.orderBy)
-          includeAdultGames.value = q.includeAdult === '1' ? true : false
+          includeAdultGames.value = q.includeAdult === '1'
         }
 
         // Load tags first
@@ -1033,6 +1107,14 @@ export default {
       loadInitialData()
     })
 
+    // Watch games array for debugging
+    watch(games, (newValue, oldValue) => {
+      console.log('Games array changed!')
+      console.log('Old length:', oldValue?.length)
+      console.log('New length:', newValue?.length)
+      console.log('New games:', newValue)
+    }, { deep: true })
+
     // Keep URL in sync with filters for shareable links
     watch([
       selectedTags,
@@ -1091,13 +1173,32 @@ export default {
       addExcludeTagFromSearch,
       clearTagSearch,
       clearExcludeTagSearch,
-      showCopyMessage
+      showCopyMessage,
+      sortBy,
+      sortField,
+      sortDirection
     }
   }
 }
 </script>
 
 <style scoped>
+
+/* Sortable table headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sortable i {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
 
 /* Quick Date Select Dropdown Styling */
 .quick-date-select {

@@ -1,0 +1,19 @@
+<!-- Security Headers for Netlify -->
+<!-- Add this to your _headers file or netlify.toml -->
+
+# Content Security Policy
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.cubecloudapp.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# Additional Security Headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# API Endpoints (if using proxy)
+/api/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff

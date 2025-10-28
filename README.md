@@ -155,3 +155,26 @@ The app uses CSS custom properties for theming. You can modify the color scheme 
 ## License
 
 MIT License - feel free to use and modify as needed.
+
+## Reporting Issues Feature
+
+This app provides a "Report an Issue" page at `/report` with hCaptcha and email delivery via a Netlify Function.
+
+### Setup
+
+1. Create `.env` in `vue-app/` with your hCaptcha site key:
+   
+   ```env
+   VITE_HCAPTCHA_SITEKEY=your_hcaptcha_site_key
+   ```
+
+2. Configure Netlify environment variables (Site settings → Build & deploy → Environment):
+   - `HCAPTCHA_SECRET` (your hCaptcha secret key)
+   - `SMTP_HOST`
+   - `SMTP_PORT` (465 for SSL or 587 for STARTTLS)
+   - `SMTP_USER`
+   - `SMTP_PASS`
+   - `MAIL_TO` (optional, default `topohaihai@gmail.com`)
+   - `MAIL_FROM` (optional)
+
+3. Deploy on Netlify. Functions are defined under `netlify/functions/` and enabled via `netlify.toml`.

@@ -158,11 +158,36 @@
                 <table class="table table-striped table-hover">
                   <thead>
                     <tr>
-                      <th>Game</th>
-                      <th>Steam Review Score</th>
-                      <th>Total Reviews</th>
-                      <th>Release Date</th>
-                      <th>Similarity Score</th>
+                      <th @click="sortBy('name')" class="sortable">
+                        Game 
+                        <i v-if="sortField === 'name'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
+                      <th @click="sortBy('reviewScoreDesc')" class="sortable">
+                        Steam Review Score 
+                        <i v-if="sortField === 'reviewScoreDesc'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
+                      <th @click="sortBy('totalReviews')" class="sortable">
+                        Total Reviews 
+                        <i v-if="sortField === 'totalReviews'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
+                      <th @click="sortBy('releaseDate')" class="sortable">
+                        Release Date 
+                        <i v-if="sortField === 'releaseDate'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
+                      <th @click="sortBy('price')" class="sortable">
+                        Price 
+                        <i v-if="sortField === 'price'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
+                      <th @click="sortBy('similarityScore')" class="sortable">
+                        Similarity Score 
+                        <i v-if="sortField === 'similarityScore'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                        <i v-else class="fas fa-sort text-muted"></i>
+                      </th>
                       <th>Common Tags</th>
                       <th>Common Tag List</th>
                     </tr>
@@ -197,6 +222,32 @@
                           {{ formatDate(game.releaseDate) }}
                         </span>
                         <span v-else class="text-muted">N/A</span>
+                      </td>
+                      <td>
+                        <div v-if="game.priceData" class="price-info">
+                          <div v-if="game.priceData.isFree" class="text-success fw-bold">
+                            <i class="fas fa-gift me-1"></i>Free
+                          </div>
+                          <div v-else-if="game.priceData.price !== 'N/A'" class="price-display">
+                            <span v-if="game.priceData.originalPrice && game.priceData.discountPercent > 0" 
+                                  class="text-decoration-line-through text-muted me-2">
+                              {{ game.priceData.originalPrice }}
+                            </span>
+                            <span class="fw-bold" :class="game.priceData.discountPercent > 0 ? 'text-danger' : ''">
+                              {{ game.priceData.price }}
+                            </span>
+                            <span v-if="game.priceData.discountPercent > 0" 
+                                  class="badge bg-danger ms-2">
+                              -{{ game.priceData.discountPercent }}%
+                            </span>
+                          </div>
+                          <div v-else class="text-muted">
+                            <i class="fas fa-question-circle me-1"></i>N/A
+                          </div>
+                        </div>
+                        <div v-else class="text-muted">
+                          <i class="fas fa-spinner fa-spin me-1"></i>Loading...
+                        </div>
                       </td>
                       <td>
                         <div class="similarity-score">
@@ -255,6 +306,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
+import steamPriceService from '../services/steamPriceService'
 
 export default {
   name: 'Recommender',
@@ -271,6 +323,10 @@ export default {
     const minCommonTags = ref(15) // Minimum common tags requirement
     const isSearching = ref(false) // Loading indicator for game search
     const includeAdultGames = ref(false) // Default: exclude adult games
+    
+    // Sorting state
+    const sortField = ref('')
+    const sortDirection = ref('desc')
 
     // Debounce timer
     let searchTimeout = null
@@ -370,6 +426,25 @@ export default {
         
         similarGames.value = results
         console.log('Found', results.length, 'similar games')
+        
+        // Fetch prices for all similar games
+        if (results.length > 0) {
+          console.log('Fetching prices for', results.length, 'games...')
+          try {
+            const appIds = results.map(game => game.appId)
+            const priceData = await steamPriceService.getGamePrices(appIds, { delayMs: 150 })
+            
+            // Add price data to each game
+            results.forEach((game, index) => {
+              game.priceData = priceData[index] || null
+            })
+            
+            console.log('Price data fetched for', priceData.length, 'games')
+          } catch (priceError) {
+            console.warn('Failed to fetch price data:', priceError)
+            // Continue without price data
+          }
+        }
       } catch (error) {
         console.error('Error finding similar games:', error)
         similarGames.value = []
@@ -440,6 +515,53 @@ export default {
       if (score >= 60) return 'similarity-good' // Gold
       if (score >= 40) return 'similarity-fair' // Orange
       return 'similarity-poor' // Red
+    }
+
+    const sortBy = (field) => {
+      if (sortField.value === field) {
+        // Toggle direction if same field
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+      } else {
+        // New field, default to descending
+        sortField.value = field
+        sortDirection.value = 'desc'
+      }
+      
+      // Sort the similarGames array
+      similarGames.value.sort((a, b) => {
+        let aVal = a[field]
+        let bVal = b[field]
+        
+        // Handle different data types
+        if (field === 'releaseDate') {
+          aVal = aVal ? new Date(aVal) : new Date(0)
+          bVal = bVal ? new Date(bVal) : new Date(0)
+        } else if (field === 'similarityScore' || field === 'totalReviews') {
+          aVal = aVal || 0
+          bVal = bVal || 0
+        } else if (field === 'price') {
+          // Sort by price (handle free games and N/A)
+          const getPriceValue = (game) => {
+            if (!game.priceData) return 999999 // No price data = sort last
+            if (game.priceData.isFree) return 0 // Free games first
+            if (game.priceData.price === 'N/A') return 999999 // N/A last
+            // Extract numeric value from price string (e.g., "$19.99" -> 19.99)
+            const match = game.priceData.price.match(/[\d.]+/)
+            return match ? parseFloat(match[0]) : 999999
+          }
+          aVal = getPriceValue(a)
+          bVal = getPriceValue(b)
+        } else if (field === 'name' || field === 'reviewScoreDesc') {
+          aVal = (aVal || '').toString()
+          bVal = (bVal || '').toString()
+        }
+        
+        let comparison = 0
+        if (aVal < bVal) comparison = -1
+        else if (aVal > bVal) comparison = 1
+        
+        return sortDirection.value === 'asc' ? comparison : -comparison
+      })
     }
 
     // Hydration and URL sync
@@ -590,13 +712,32 @@ export default {
       getScoreTextClass,
       getSimilarityScoreClass,
       copyCurrentUrl,
-      exportResults
+      exportResults,
+      sortBy,
+      sortField,
+      sortDirection
     }
   }
 }
 </script>
 
 <style scoped>
+/* Sortable table headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sortable i {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
+
 .game-search-container {
   position: relative;
   overflow: visible; /* Allow dropdown to extend beyond container */

@@ -354,16 +354,24 @@ export async function findGames({
         filters.push({ member: 'GameTags.tag', operator: 'equals', values: [tags[0]] })
       } else {
         // For multiple tags, run separate queries and find intersection
-        return await findGamesWithMultipleTags({
+        // NOTE: Do NOT pass limit here - it will be applied after finding intersection
+        const intersectionResult = await findGamesWithMultipleTags({
           tags,
           reviewScore,
           minReviews,
           maxReviews,
           minDate,
           maxDate,
-          limit,
+          limit: null, // Don't limit individual tag queries
           reviewScoreOrBetter
         })
+        
+        // Apply limit AFTER finding the intersection
+        if (limit !== null && intersectionResult.length > limit) {
+          return intersectionResult.slice(0, limit)
+        }
+        
+        return intersectionResult
       }
     }
 
@@ -537,6 +545,8 @@ export async function findGames({
 }
 
 // Find games with multiple tags by running separate queries and joining results
+// NOTE: limit parameter is intentionally NOT used in individual tag queries
+// It should be applied AFTER finding the intersection
 async function findGamesWithMultipleTags({
   tags,
   reviewScore,
@@ -544,19 +554,21 @@ async function findGamesWithMultipleTags({
   maxReviews,
   minDate,
   maxDate,
-  limit,
+  limit, // This parameter is ignored - limit should be applied after intersection
   reviewScoreOrBetter
 }) {
   console.log('Multi-Tag Search Debug')
   console.log('Tags:', tags.join(', '))
   console.log('Review Score:', reviewScore)
   console.log('Date Range:', minDate, 'to', maxDate)
+  console.log('Note: Not applying limit to individual tag queries - will apply after intersection')
 
   // Get results for each tag and find intersection
   const tagResults = []
 
   for (let i = 0; i < tags.length; i++) {
     console.log(`Querying tag ${i + 1}:`, tags[i])
+    // Don't pass limit to individual tag queries
     const tagResult = await findGamesSingleTag({
       tag: tags[i],
       reviewScore,
@@ -564,7 +576,7 @@ async function findGamesWithMultipleTags({
       maxReviews,
       minDate,
       maxDate,
-      limit,
+      limit: null, // Explicitly set to null to get all matching games
       reviewScoreOrBetter
     })
 
@@ -598,7 +610,7 @@ async function findGamesWithMultipleTags({
   const baseResult = tagResults[0]
   const finalResult = baseResult.filter(row => intersectingAppIds.includes(row['Games.appId']))
 
-  console.log('Final result:', finalResult.length, 'games')
+  console.log('Final result (before any limit):', finalResult.length, 'games')
   console.log('------------------------')
 
   return finalResult
