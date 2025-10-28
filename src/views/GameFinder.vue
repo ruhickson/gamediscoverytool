@@ -323,17 +323,6 @@
         </button>
       </div>
       <div class="card-body">
-        <!-- DEBUG INFO -->
-        <div style="background: #1a1a1a; padding: 10px; margin-bottom: 15px; border: 1px solid #444;">
-          <strong>DEBUG:</strong>
-          <ul style="margin: 5px 0; padding-left: 20px;">
-            <li>isLoading: {{ isLoading }}</li>
-            <li>error: {{ error || 'None' }}</li>
-            <li>games.length: {{ games.length }}</li>
-            <li>games type: {{ Array.isArray(games) ? 'Array' : typeof games }}</li>
-          </ul>
-        </div>
-        
         <div v-if="isLoading" class="loading">
           <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
           <p>Searching for games...</p>
@@ -371,6 +360,11 @@
                 <th @click="sortBy('scorePercent')" class="sortable">
                   Steam Review Score 
                   <i v-if="sortField === 'scorePercent'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
+                <th @click="sortBy('length')" class="sortable">
+                  Length (Hours) 
+                  <i v-if="sortField === 'length'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
                   <i v-else class="fas fa-sort text-muted"></i>
                 </th>
                 <th @click="sortBy('totalReviews')" class="sortable">
@@ -415,6 +409,7 @@
                     <span v-else>N/A</span>
                   </div>
                 </td>
+                <td>{{ game.length !== null ? game.length : 'N/A' }}</td>
                 <td>{{ formatNumber(game.totalReviews) }}</td>
               </tr>
             </tbody>
@@ -706,13 +701,8 @@ export default {
           reviewScoreOrBetter: reviewScoreOrBetter.value
         }
 
-        console.log('Search parameters:', searchParams)
-        
         // Call the Cube.js service
         let searchResults = await cubeService.findGames(searchParams)
-        console.log('API Response:', searchResults)
-        console.log('Type of searchResults:', typeof searchResults, Array.isArray(searchResults))
-        console.log('Length of searchResults:', searchResults?.length)
         
         // Apply adult content filter if not including adult games
         if (!includeAdultGames.value) {
@@ -783,7 +773,8 @@ export default {
             reviewScoreDesc: game['Games.reviewScoreDesc'],
             releaseDate: game['Games.releaseDate'],
             scorePercent: scorePercent,
-            totalReviews: game['Games.totalReviewsValue'] || 0
+            totalReviews: game['Games.totalReviewsValue'] || 0,
+            length: game['Games.length'] || null
           }
         })
         
@@ -806,6 +797,10 @@ export default {
               return b.totalReviews - a.totalReviews
             case 'total_reviews_asc':
               return a.totalReviews - b.totalReviews
+            case 'length_desc':
+              return (b.length || 0) - (a.length || 0)
+            case 'length_asc':
+              return (a.length || 0) - (b.length || 0)
             case 'game_name_asc':
               return (a.name || '').localeCompare(b.name || '')
             case 'game_name_desc':
@@ -815,15 +810,11 @@ export default {
           }
         })
         
-        console.log('Processed games:', processedGames)
-        console.log('Sample processed game:', processedGames[0])
         games.value = processedGames
         console.log('Search completed. Found', processedGames.length, 'games')
-        console.log('games.value after assignment:', games.value)
         
       } catch (err) {
         console.error('Search error:', err)
-        console.error('Error details:', err.message, err.stack)
         if (err.message.includes('timeout') || err.message.includes('Continue wait')) {
           error.value = 'The search query is taking too long to process. Please try simplifying your search criteria or try again later.'
         } else if (err.message.includes('Cube.js returned an error')) {
@@ -832,9 +823,7 @@ export default {
           error.value = 'An error occurred while searching for games. Please check your connection and try again.'
         }
       } finally {
-        console.log('Setting isLoading to false. Current games count:', games.value.length)
         isLoading.value = false
-        console.log('isLoading is now:', isLoading.value)
       }
     }
 
@@ -1006,7 +995,7 @@ export default {
         if (field === 'releaseDate') {
           aVal = aVal ? new Date(aVal) : new Date(0)
           bVal = bVal ? new Date(bVal) : new Date(0)
-        } else if (field === 'scorePercent' || field === 'totalReviews') {
+        } else if (field === 'scorePercent' || field === 'totalReviews' || field === 'length') {
           aVal = aVal || 0
           bVal = bVal || 0
         } else if (field === 'name' || field === 'reviewScoreDesc') {
@@ -1071,7 +1060,8 @@ export default {
                 reviewScoreDesc: game['Games.reviewScoreDesc'],
                 releaseDate: game['Games.releaseDate'],
                 scorePercent: scorePercent,
-                totalReviews: game['Games.totalReviewsValue'] || 0
+                totalReviews: game['Games.totalReviewsValue'] || 0,
+                length: game['Games.length'] || null
               }
             })
             processedGames.sort((a, b) => {
@@ -1106,14 +1096,6 @@ export default {
     onMounted(() => {
       loadInitialData()
     })
-
-    // Watch games array for debugging
-    watch(games, (newValue, oldValue) => {
-      console.log('Games array changed!')
-      console.log('Old length:', oldValue?.length)
-      console.log('New length:', newValue?.length)
-      console.log('New games:', newValue)
-    }, { deep: true })
 
     // Keep URL in sync with filters for shareable links
     watch([

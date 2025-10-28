@@ -268,7 +268,8 @@ export async function getRecentTopGames(limit = 100) {
         'RecentTopGames.name',
         'RecentTopGames.appId',
         'RecentTopGames.reviewScoreDesc',
-        'RecentTopGames.releaseDate'
+        'RecentTopGames.releaseDate',
+        'RecentTopGames.length'
       ],
       order: [['RecentTopGames.totalReviews', 'desc']],
       limit
@@ -287,7 +288,8 @@ export async function getRecentTopGames(limit = 100) {
           'RecentTopGames.releaseDate': 'Games.releaseDate',
           'RecentTopGames.totalReviews': 'Games.totalReviewsValue',
           'RecentTopGames.totalPositiveReviews': 'Games.totalPositiveReviews',
-          'RecentTopGames.totalNegativeReviews': 'Games.totalNegativeReviews'
+          'RecentTopGames.totalNegativeReviews': 'Games.totalNegativeReviews',
+          'RecentTopGames.length': 'Games.length'
         }
         
         Object.entries(renameMap).forEach(([oldKey, newKey]) => {
@@ -415,7 +417,8 @@ export async function findGames({
         'Games.reviewScoreDesc',
         'Games.releaseDate',
         'Games.appId',
-        'Games.totalReviewsValue'
+        'Games.totalReviewsValue',
+        'Games.length'
       ],
       filters,
       order: [['Games.releaseDate', 'desc']]
@@ -495,7 +498,8 @@ export async function findGames({
           'Games.releaseDate',
           'Games.appId',
           'Games.totalPositiveReviews',
-          'Games.totalNegativeReviews'
+          'Games.totalNegativeReviews',
+          'Games.length'
         ])
       )
       
@@ -673,7 +677,8 @@ async function findGamesSingleTag({
       'Games.reviewScoreDesc',
       'Games.releaseDate',
       'Games.appId',
-      'Games.totalReviewsValue'
+      'Games.totalReviewsValue',
+      'Games.length'
     ],
     filters,
     order: [['Games.releaseDate', 'desc']]
