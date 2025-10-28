@@ -268,8 +268,7 @@ export async function getRecentTopGames(limit = 100) {
         'RecentTopGames.name',
         'RecentTopGames.appId',
         'RecentTopGames.reviewScoreDesc',
-        'RecentTopGames.releaseDate',
-        'RecentTopGames.length'
+        'RecentTopGames.releaseDate'
       ],
       order: [['RecentTopGames.totalReviews', 'desc']],
       limit
@@ -288,8 +287,7 @@ export async function getRecentTopGames(limit = 100) {
           'RecentTopGames.releaseDate': 'Games.releaseDate',
           'RecentTopGames.totalReviews': 'Games.totalReviewsValue',
           'RecentTopGames.totalPositiveReviews': 'Games.totalPositiveReviews',
-          'RecentTopGames.totalNegativeReviews': 'Games.totalNegativeReviews',
-          'RecentTopGames.length': 'Games.length'
+          'RecentTopGames.totalNegativeReviews': 'Games.totalNegativeReviews'
         }
         
         Object.entries(renameMap).forEach(([oldKey, newKey]) => {
@@ -417,8 +415,7 @@ export async function findGames({
         'Games.reviewScoreDesc',
         'Games.releaseDate',
         'Games.appId',
-        'Games.totalReviewsValue',
-        'Games.length'
+        'Games.totalReviewsValue'
       ],
       filters,
       order: [['Games.releaseDate', 'desc']]
@@ -435,6 +432,14 @@ export async function findGames({
     }
 
     console.log('Cube.js Query Sent:', query)
+    console.log('Query filters:', query.filters)
+    query.filters.forEach((filter, idx) => {
+      console.log(`  Filter ${idx}:`, JSON.stringify(filter, null, 2))
+    })
+    console.log('Query timeDimensions:', query.timeDimensions)
+    query.timeDimensions.forEach((td, idx) => {
+      console.log(`  TimeDimension ${idx}:`, JSON.stringify(td, null, 2))
+    })
 
     // Execute the query with error handling
     let result
@@ -498,8 +503,7 @@ export async function findGames({
           'Games.releaseDate',
           'Games.appId',
           'Games.totalPositiveReviews',
-          'Games.totalNegativeReviews',
-          'Games.length'
+          'Games.totalNegativeReviews'
         ])
       )
       
@@ -677,8 +681,7 @@ async function findGamesSingleTag({
       'Games.reviewScoreDesc',
       'Games.releaseDate',
       'Games.appId',
-      'Games.totalReviewsValue',
-      'Games.length'
+      'Games.totalReviewsValue'
     ],
     filters,
     order: [['Games.releaseDate', 'desc']]

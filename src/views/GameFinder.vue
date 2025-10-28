@@ -242,6 +242,7 @@
                 <option value="lastweek">Last week</option>
                 <option value="last2weeks">Last 2 weeks</option>
                 <option value="lastmonth">Last month</option>
+                <option value="last3months">Last 3 months</option>
                 <option value="lastyear">Last year</option>
                 <option value="last2years">Last 2 years</option>
                 <option value="last3years">Last 3 years</option>
@@ -362,11 +363,6 @@
                   <i v-if="sortField === 'scorePercent'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
                   <i v-else class="fas fa-sort text-muted"></i>
                 </th>
-                <th @click="sortBy('length')" class="sortable">
-                  Length (Hours) 
-                  <i v-if="sortField === 'length'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-                  <i v-else class="fas fa-sort text-muted"></i>
-                </th>
                 <th @click="sortBy('totalReviews')" class="sortable">
                   Total Reviews 
                   <i v-if="sortField === 'totalReviews'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
@@ -409,7 +405,6 @@
                     <span v-else>N/A</span>
                   </div>
                 </td>
-                <td>{{ game.length !== null ? game.length : 'N/A' }}</td>
                 <td>{{ formatNumber(game.totalReviews) }}</td>
               </tr>
             </tbody>
@@ -654,6 +649,10 @@ export default {
           minDate.value = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
           maxDate.value = today.toISOString().split('T')[0]
           break
+        case 'last3months':
+          minDate.value = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+          maxDate.value = today.toISOString().split('T')[0]
+          break
         case 'lastyear':
           minDate.value = new Date(today.getTime() - (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
           maxDate.value = today.toISOString().split('T')[0]
@@ -700,9 +699,19 @@ export default {
           maxDate: maxDate.value,
           reviewScoreOrBetter: reviewScoreOrBetter.value
         }
+        
+        console.log('Search params minDate:', searchParams.minDate)
+        console.log('Search params maxDate:', searchParams.maxDate)
+        console.log('Date difference check:', searchParams.maxDate > searchParams.minDate)
+        console.log('Search params reviewScore:', searchParams.reviewScore)
+        console.log('Search params reviewScoreOrBetter:', searchParams.reviewScoreOrBetter)
 
         // Call the Cube.js service
+        console.log('Calling findGames with params:', searchParams)
         let searchResults = await cubeService.findGames(searchParams)
+        console.log('Search results received:', searchResults)
+        console.log('Type:', typeof searchResults, 'Is array:', Array.isArray(searchResults))
+        console.log('Length:', searchResults?.length)
         
         // Apply adult content filter if not including adult games
         if (!includeAdultGames.value) {
@@ -756,6 +765,8 @@ export default {
         }
         
         // Process the results
+        console.log('Processing results, count:', searchResults.length)
+        console.log('Sample raw game:', searchResults[0])
         const processedGames = searchResults.map(game => {
           // Calculate Steam score percentage
           const positiveReviews = game['Games.totalPositiveReviews'] || 0
@@ -773,12 +784,16 @@ export default {
             reviewScoreDesc: game['Games.reviewScoreDesc'],
             releaseDate: game['Games.releaseDate'],
             scorePercent: scorePercent,
-            totalReviews: game['Games.totalReviewsValue'] || 0,
-            length: game['Games.length'] || null
+            totalReviews: game['Games.totalReviewsValue'] || 0
           }
         })
+        console.log('Processed games count:', processedGames.length)
+        console.log('Sample processed game:', processedGames[0])
         
         // Apply sorting
+        if (!processedGames || processedGames.length === 0) {
+          console.error('No processed games to sort!')
+        }
         processedGames.sort((a, b) => {
           switch (orderBy.value) {
             case 'release_date_desc':
@@ -797,10 +812,6 @@ export default {
               return b.totalReviews - a.totalReviews
             case 'total_reviews_asc':
               return a.totalReviews - b.totalReviews
-            case 'length_desc':
-              return (b.length || 0) - (a.length || 0)
-            case 'length_asc':
-              return (a.length || 0) - (b.length || 0)
             case 'game_name_asc':
               return (a.name || '').localeCompare(b.name || '')
             case 'game_name_desc':
@@ -810,7 +821,9 @@ export default {
           }
         })
         
+        console.log('About to assign games.value. processedGames.length:', processedGames.length)
         games.value = processedGames
+        console.log('After assignment. games.value.length:', games.value.length)
         console.log('Search completed. Found', processedGames.length, 'games')
         
       } catch (err) {
@@ -995,7 +1008,7 @@ export default {
         if (field === 'releaseDate') {
           aVal = aVal ? new Date(aVal) : new Date(0)
           bVal = bVal ? new Date(bVal) : new Date(0)
-        } else if (field === 'scorePercent' || field === 'totalReviews' || field === 'length') {
+        } else if (field === 'scorePercent' || field === 'totalReviews') {
           aVal = aVal || 0
           bVal = bVal || 0
         } else if (field === 'name' || field === 'reviewScoreDesc') {
