@@ -64,8 +64,14 @@ function formatPrice(priceInCents, currency = 'USD') {
 async function fetchGamePrice(appId) {
   try {
     console.log(`Fetching price for appId: ${appId}`)
-    
-    const response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appId}`)
+    // Prefer proxy to avoid CORS
+    const cc = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_STEAM_CC) ? import.meta.env.VITE_STEAM_CC : 'us'
+    const lang = 'en'
+    let response = await fetch(`/.netlify/functions/steam-price?appids=${appId}&cc=${cc}&l=${lang}`)
+    if (!response.ok) {
+      // Fallback to direct (may fail due to CORS in browser)
+      response = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&cc=${cc}&l=${lang}`)
+    }
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -87,7 +93,7 @@ async function fetchGamePrice(appId) {
         price: gameData.is_free ? 'Free' : 'N/A',
         originalPrice: null,
         discountPercent: 0,
-        currency: 'USD',
+        currency: (gameData.price_overview && gameData.price_overview.currency) || 'USD',
         available: true
       }
     }

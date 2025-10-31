@@ -106,6 +106,9 @@
           </div>
         </div>
 
+        <!-- Section: Time Range -->
+
+        <!-- Section: Reviews -->
         <div class="row mb-3">
           <div class="col-md-4">
             <div class="d-flex align-items-center gap-3">
@@ -147,7 +150,7 @@
               type="number" 
               class="form-control" 
               id="minReviewsFilter" 
-              v-model="minReviews"
+              v-model.number="minReviews"
               min="0"
             >
           </div>
@@ -157,7 +160,7 @@
               type="number" 
               class="form-control" 
               id="maxReviewsFilter" 
-              v-model="maxReviews"
+              v-model.number="maxReviews"
               min="0"
             >
           </div>
@@ -166,25 +169,102 @@
         <div class="row mb-3">
           <div class="col-md-6">
             <label for="orderByFilter" class="form-label">Order Results By</label>
+            <div class="btn-group mb-3 mt-2" role="group" aria-label="Order direction">
+              <input type="radio" class="btn-check" name="orderDir" id="orderAsc" value="asc" v-model="orderDirection" @change="updateRouteFromFilters">
+              <label class="btn btn-outline-secondary" for="orderAsc">ASC</label>
+              <input type="radio" class="btn-check" name="orderDir" id="orderDesc" value="desc" v-model="orderDirection" @change="updateRouteFromFilters">
+              <label class="btn btn-outline-secondary" for="orderDesc">DESC</label>
+            </div>
             <select 
               id="orderByFilter" 
               class="form-select" 
-              v-model="orderBy"
+              v-model="orderField"
+              @change="updateRouteFromFilters"
             >
-              <option value="release_date_desc">Release Date (Newest First)</option>
-              <option value="release_date_asc">Release Date (Oldest First)</option>
-              <option value="total_reviews_desc">Total Reviews (Most First)</option>
-              <option value="total_reviews_asc">Total Reviews (Least First)</option>
-              <option value="review_score_desc">Review Score (Best First)</option>
-              <option value="review_score_asc">Review Score (Worst First)</option>
-              <option value="steam_score_desc">Steam Review Score (Highest First)</option>
-              <option value="steam_score_asc">Steam Review Score (Lowest First)</option>
-              <option value="game_name_asc">Game Name (A-Z)</option>
-              <option value="game_name_desc">Game Name (Z-A)</option>
+              <option value="release_date">Release Date</option>
+              <option value="total_reviews">Total Reviews</option>
+              <option value="review_score">Review Score</option>
+              <option value="steam_score">Steam Review Score</option>
+              <option value="game_name">Game Name</option>
             </select>
           </div>
           <div class="col-md-6">
-            <div class="form-check" style="margin-top: 32px;">
+            <label for="dateRange" class="form-label">Release Date Range</label>
+            <div class="btn-group mb-3 mt-2" role="group" aria-label="Date mode toggle">
+              <input type="radio" class="btn-check" name="dateMode" id="quickMode" value="quick" v-model="dateMode" @change="updateRouteFromFilters">
+              <label class="btn btn-outline-secondary" for="quickMode">Quick</label>
+              <input type="radio" class="btn-check" name="dateMode" id="customMode" value="custom" v-model="dateMode" @change="updateRouteFromFilters">
+              <label class="btn btn-outline-secondary" for="customMode">Custom</label>
+            </div>
+
+            <div v-if="dateMode === 'quick'" class="mb-3">
+              <select class="form-select quick-date-select" v-model="quickDateRange" @change="updateQuickDates">
+                <option value="">Select a time period...</option>
+                <option value="last3days">Last 3 days</option>
+                <option value="lastweek">Last week</option>
+                <option value="last2weeks">Last 2 weeks</option>
+                <option value="lastmonth">Last month</option>
+                <option value="last3months">Last 3 months</option>
+                <option value="lastyear">Last year</option>
+                <option value="last2years">Last 2 years</option>
+                <option value="last3years">Last 3 years</option>
+                <option value="last5years">Last 5 years</option>
+                <option value="beginning">Beginning of time</option>
+              </select>
+            </div>
+
+            <div v-if="dateMode === 'custom'" class="row">
+              <div class="col-6">
+                <input type="date" class="form-control" id="minDate" v-model="minDate" @change="updateRouteFromFilters">
+                <label for="minDate" class="form-label-sm text-muted">From</label>
+              </div>
+              <div class="col-6">
+                <input type="date" class="form-control" id="maxDate" v-model="maxDate" @change="updateRouteFromFilters">
+                <label for="maxDate" class="form-label-sm text-muted">To</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter by hours directly beneath Release Date Range -->
+        <div class="row mb-2">
+          <div class="col-md-6">
+            <div class="d-flex align-items-end gap-3">
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="hoursFilterEnabled" 
+                  v-model="hoursFilterEnabled"
+                  @change="updateRouteFromFilters"
+                >
+                <label class="form-check-label" for="hoursFilterEnabled">
+                  Filter by hours
+                </label>
+              </div>
+              <div class="flex-grow-0" style="min-width: 180px;">
+                <label class="form-label">Condition</label>
+                <select class="form-select" v-model="hoursComparator" :disabled="!hoursFilterEnabled" @change="updateRouteFromFilters">
+                  <option value="at_least">At least</option>
+                  <option value="at_most">At most</option>
+                </select>
+              </div>
+              <div class="flex-grow-0" style="min-width: 160px;">
+                <label class="form-label">Hours</label>
+                <input type="number" class="form-control" v-model.number="hoursValue" min="0" step="1" :disabled="!hoursFilterEnabled" @change="updateRouteFromFilters">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Toggles (buttons moved below include adult games) -->
+
+        <!-- (hours controls moved above) -->
+
+        <!-- Include Adult Games moved below Release Date Range -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="form-check" style="margin-top: 6px;">
               <input 
                 class="form-check-input" 
                 type="checkbox" 
@@ -201,102 +281,28 @@
           </div>
         </div>
 
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="dateRange" class="form-label">Release Date Range</label>
-            
-            <!-- Date Mode Toggle -->
-            <div class="btn-group mb-3 mt-2" role="group" aria-label="Date mode toggle">
-              <input 
-                type="radio" 
-                class="btn-check" 
-                name="dateMode" 
-                id="quickMode" 
-                value="quick"
-                v-model="dateMode"
-                @change="updateRouteFromFilters"
-              >
-              <label class="btn btn-outline-secondary" for="quickMode">Quick</label>
-
-              <input 
-                type="radio" 
-                class="btn-check" 
-                name="dateMode" 
-                id="customMode" 
-                value="custom"
-                v-model="dateMode"
-                @change="updateRouteFromFilters"
-              >
-              <label class="btn btn-outline-secondary" for="customMode">Custom</label>
-            </div>
-
-            <!-- Quick Date Options -->
-            <div v-if="dateMode === 'quick'" class="mb-3">
-              <select 
-                class="form-select quick-date-select" 
-                v-model="quickDateRange"
-                @change="updateQuickDates"
-              >
-                <option value="">Select a time period...</option>
-                <option value="last3days">Last 3 days</option>
-                <option value="lastweek">Last week</option>
-                <option value="last2weeks">Last 2 weeks</option>
-                <option value="lastmonth">Last month</option>
-                <option value="last3months">Last 3 months</option>
-                <option value="lastyear">Last year</option>
-                <option value="last2years">Last 2 years</option>
-                <option value="last3years">Last 3 years</option>
-                <option value="last5years">Last 5 years</option>
-                <option value="beginning">Beginning of time</option>
-              </select>
-            </div>
-
-            <!-- Custom Date Range -->
-            <div v-if="dateMode === 'custom'" class="row">
-              <div class="col-6">
-                <input 
-                  type="date" 
-                  class="form-control" 
-                  id="minDate" 
-                  v-model="minDate"
-                  @change="updateRouteFromFilters"
-                >
-                <label for="minDate" class="form-label-sm text-muted">From</label>
-              </div>
-              <div class="col-6">
-                <input 
-                  type="date" 
-                  class="form-control" 
-                  id="maxDate" 
-                  v-model="maxDate"
-                  @change="updateRouteFromFilters"
-                >
-                <label for="maxDate" class="form-label-sm text-muted">To</label>
-              </div>
-            </div>
+        <!-- Action Buttons -->
+        <div class="row mb-4 align-items-stretch">
+          <div class="col-md-6 d-flex">
+            <button 
+              class="btn btn-primary w-100 py-5" 
+              style="font-size: 1.25rem;"
+              @click="searchGames"
+              :disabled="isLoading"
+            >
+              <i class="fas fa-search me-2"></i>
+              {{ isLoading ? 'Searching...' : 'Find Games' }}
+            </button>
           </div>
-          <div class="col-md-3">
-            <div style="margin-top: 25px;">
-              <button 
-                class="btn btn-primary w-100" 
-                @click="searchGames"
-                :disabled="isLoading"
-              >
-                <i class="fas fa-search me-2"></i>
-                {{ isLoading ? 'Searching...' : 'Find Games' }}
-              </button>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div style="margin-top: 25px;">
-              <button 
-                class="btn btn-secondary w-100" 
-                @click="resetFilters"
-              >
-                <i class="fas fa-refresh me-2"></i>
-                Reset Filters
-              </button>
-            </div>
+          <div class="col-md-6 d-flex">
+            <button 
+              class="btn btn-secondary w-100 py-5" 
+              style="font-size: 1.25rem;"
+              @click="resetFilters"
+            >
+              <i class="fas fa-refresh me-2"></i>
+              Reset Filters
+            </button>
           </div>
         </div>
 
@@ -368,6 +374,12 @@
                   <i v-if="sortField === 'totalReviews'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
                   <i v-else class="fas fa-sort text-muted"></i>
                 </th>
+                <th @click="sortBy('hours')" class="sortable">
+                  Hours 
+                  <i v-if="sortField === 'hours'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+                  <i v-else class="fas fa-sort text-muted"></i>
+                </th>
+                <th>ITAD Price</th>
               </tr>
             </thead>
             <tbody>
@@ -406,6 +418,17 @@
                   </div>
                 </td>
                 <td>{{ formatNumber(game.totalReviews) }}</td>
+                <td :class="{ 'hours-na': game.hours == null }">{{ game.hours != null ? formatNumber(game.hours) : 'N/A' }}</td>
+                <td>
+                  <a 
+                    :href="getItadUrl(game.name)" 
+                    target="_blank" 
+                    class="itad-link"
+                    title="View on IsThereAnyDeal"
+                  >
+                    ITAD
+                  </a>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -417,9 +440,11 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
+// Steam price hidden
+import { getItadUrl } from '../services/itadService'
 
 export default {
   name: 'GameFinder',
@@ -434,16 +459,23 @@ export default {
     const reviewScoreOrBetter = ref(true)
     const minReviews = ref(11)
     const maxReviews = ref(10000)
-    const orderBy = ref('total_reviews_desc')
+    // Ordering: separate field and direction, compute orderBy string when needed
+    const orderField = ref('total_reviews')
+    const orderDirection = ref('desc')
+    const orderBy = computed(() => `${orderField.value}_${orderDirection.value}`)
     const minDate = ref('')
     const maxDate = ref('')
     const dateMode = ref('quick') // 'quick' or 'custom'
     const quickDateRange = ref('lastmonth')
-    const includeAdultGames = ref(false)
-    const games = ref([])
-    const isLoading = ref(false)
-    const error = ref('')
-    const availableTags = ref([])
+      const includeAdultGames = ref(false)
+      const hoursFilterEnabled = ref(false)
+      const hoursComparator = ref('at_least')
+      const hoursValue = ref(null)
+      const games = ref([])
+      const isLoading = ref(false)
+      const error = ref('')
+      const availableTags = ref([])
+      // Steam price hidden; no price fetching
     
     // Sorting state
     const sortField = ref('')
@@ -491,7 +523,10 @@ export default {
             minDate: minDate.value || undefined,
             maxDate: maxDate.value || undefined,
             orderBy: orderBy.value || undefined,
-            includeAdult: includeAdultGames.value ? '1' : undefined
+            includeAdult: includeAdultGames.value ? '1' : undefined,
+            hoursEnabled: hoursFilterEnabled.value ? '1' : undefined,
+            hoursCmp: hoursFilterEnabled.value ? hoursComparator.value : undefined,
+            hoursVal: hoursFilterEnabled.value && hoursValue.value != null && hoursValue.value !== '' ? String(hoursValue.value) : undefined
           }
           Object.keys(query).forEach(k => query[k] === undefined && delete query[k])
           router.replace({ name: 'GameFinder', query }).catch(() => {})
@@ -629,6 +664,10 @@ export default {
     }
 
     // Date range methods
+    // Removed ITAD asynchronous fetching
+
+    // Steam price fetching removed
+
     const updateQuickDates = () => {
       const today = new Date()
       
@@ -697,7 +736,8 @@ export default {
           maxReviews: maxReviews.value,
           minDate: minDate.value,
           maxDate: maxDate.value,
-          reviewScoreOrBetter: reviewScoreOrBetter.value
+          reviewScoreOrBetter: reviewScoreOrBetter.value,
+          hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null
         }
         
         console.log('Search params minDate:', searchParams.minDate)
@@ -784,7 +824,8 @@ export default {
             reviewScoreDesc: game['Games.reviewScoreDesc'],
             releaseDate: game['Games.releaseDate'],
             scorePercent: scorePercent,
-            totalReviews: game['Games.totalReviewsValue'] || 0
+            totalReviews: game['Games.totalReviewsValue'] || 0,
+            hours: game['Games.hours'] != null ? game['Games.hours'] : null
           }
         })
         console.log('Processed games count:', processedGames.length)
@@ -825,6 +866,8 @@ export default {
         games.value = processedGames
         console.log('After assignment. games.value.length:', games.value.length)
         console.log('Search completed. Found', processedGames.length, 'games')
+        
+        // Steam price hidden; no async fetch
         
       } catch (err) {
         console.error('Search error:', err)
@@ -920,19 +963,28 @@ export default {
         'Review Score',
         'Release Date',
         'Steam Review Score (%)',
-        'Total Reviews'
+        'Total Reviews',
+        'Hours',
+        'ITAD Price',
+        'ITAD Price URL'
       ]
       
       // Create CSV rows
-      const rows = games.value.map(game => [
-        `"${game.name}"`,
-        game.appId,
-        `https://store.steampowered.com/app/${game.appId}`,
-        game.reviewScoreDesc,
-        formatDate(game.releaseDate),
-        game.scorePercent || 'N/A',
-        game.totalReviews
-      ])
+      const rows = games.value.map(game => {
+        const price = 'N/A'
+        return [
+          `"${game.name}"`,
+          game.appId,
+          `https://store.steampowered.com/app/${game.appId}`,
+          game.reviewScoreDesc,
+          formatDate(game.releaseDate),
+          game.scorePercent || 'N/A',
+          game.totalReviews,
+          game.hours != null ? game.hours : 'N/A',
+          price,
+          getItadUrl(game.name)
+        ]
+      })
       
       // Combine headers and rows
       const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n')
@@ -1008,7 +1060,7 @@ export default {
         if (field === 'releaseDate') {
           aVal = aVal ? new Date(aVal) : new Date(0)
           bVal = bVal ? new Date(bVal) : new Date(0)
-        } else if (field === 'scorePercent' || field === 'totalReviews') {
+        } else if (field === 'scorePercent' || field === 'totalReviews' || field === 'hours') {
           aVal = aVal || 0
           bVal = bVal || 0
         } else if (field === 'name' || field === 'reviewScoreDesc') {
@@ -1046,8 +1098,19 @@ export default {
           if (q.quickDateRange) quickDateRange.value = String(q.quickDateRange)
           if (q.minDate) minDate.value = String(q.minDate)
           if (q.maxDate) maxDate.value = String(q.maxDate)
-          if (q.orderBy) orderBy.value = String(q.orderBy)
+          if (q.orderBy) {
+            const ob = String(q.orderBy)
+            const match = ob.match(/^(.*)_(asc|desc)$/)
+            if (match) {
+              orderField.value = match[1]
+              orderDirection.value = match[2]
+            }
+          }
           includeAdultGames.value = q.includeAdult === '1'
+          // Hours filter
+          hoursFilterEnabled.value = q.hoursEnabled === '1'
+          if (q.hoursCmp === 'at_least' || q.hoursCmp === 'at_most') hoursComparator.value = String(q.hoursCmp)
+          if (q.hoursVal) hoursValue.value = parseInt(q.hoursVal, 10)
         }
 
         // Load tags first
@@ -1122,8 +1185,13 @@ export default {
       maxDate,
       dateMode,
       quickDateRange,
+      orderField,
+      orderDirection,
       orderBy,
-      includeAdultGames
+      includeAdultGames,
+      hoursFilterEnabled,
+      hoursComparator,
+      hoursValue
     ], updateRouteFromFilters, { deep: true })
 
     return {
@@ -1139,11 +1207,17 @@ export default {
       dateMode,
       quickDateRange,
       includeAdultGames,
+      hoursFilterEnabled,
+      hoursComparator,
+      hoursValue,
       updateQuickDates,
       games,
       isLoading,
       error,
       availableTags,
+      orderField,
+      orderDirection,
+      
       tagSearchQuery,
       excludeTagSearchQuery,
       filteredTags,
@@ -1157,6 +1231,7 @@ export default {
       exportResults,
       formatDate,
       formatNumber,
+      getItadUrl,
       getScoreClass,
       filterTags,
       filterExcludeTags,
@@ -1279,5 +1354,10 @@ export default {
 .dropdown-menu * {
   animation: none !important;
   transition: none !important;
+}
+
+/* Dark grey text for N/A hours values */
+.hours-na {
+  color: #7a7a7a !important;
 }
 </style>

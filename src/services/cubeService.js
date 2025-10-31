@@ -341,7 +341,8 @@ export async function findGames({
   minDate = null,
   maxDate = null,
   limit = null,
-  reviewScoreOrBetter = true
+  reviewScoreOrBetter = true,
+  hours = null // { comparator: 'at_least' | 'at_most', value: number } | null
 }) {
   try {
     const filters = [
@@ -363,7 +364,8 @@ export async function findGames({
           minDate,
           maxDate,
           limit: null, // Don't limit individual tag queries
-          reviewScoreOrBetter
+          reviewScoreOrBetter,
+          hours
         })
         
         // Apply limit AFTER finding the intersection
@@ -392,10 +394,16 @@ export async function findGames({
 
     // Review count filters
     if (minReviews > 0) {
-      filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [minReviews] })
+      filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [Number(minReviews)] })
     }
     if (maxReviews < 1000000) {
-      filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [maxReviews] })
+      filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [Number(maxReviews)] })
+    }
+
+    // Hours filter
+    if (hours && typeof hours.value === 'number' && !Number.isNaN(hours.value)) {
+      const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
+      filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
     }
 
     // Handle date range
@@ -409,7 +417,7 @@ export async function findGames({
 
     // Construct the final query
     const query = {
-      measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
+      measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews', 'Games.hours'],
       dimensions: [
         'Games.name',
         'Games.reviewScoreDesc',
@@ -503,14 +511,16 @@ export async function findGames({
           'Games.releaseDate',
           'Games.appId',
           'Games.totalPositiveReviews',
-          'Games.totalNegativeReviews'
+          'Games.totalNegativeReviews',
+          'Games.hours'
         ])
       )
       
       const numeric = ensureNumeric(standardized, [
         'Games.totalReviewsValue',
         'Games.totalPositiveReviews',
-        'Games.totalNegativeReviews'
+        'Games.totalNegativeReviews',
+        'Games.hours'
       ])
       
       // Convert releaseDate to Date and sort
@@ -563,7 +573,8 @@ async function findGamesWithMultipleTags({
   minDate,
   maxDate,
   limit, // This parameter is ignored - limit should be applied after intersection
-  reviewScoreOrBetter
+  reviewScoreOrBetter,
+  hours
 }) {
   console.log('Multi-Tag Search Debug')
   console.log('Tags:', tags.join(', '))
@@ -585,7 +596,8 @@ async function findGamesWithMultipleTags({
       minDate,
       maxDate,
       limit: null, // Explicitly set to null to get all matching games
-      reviewScoreOrBetter
+      reviewScoreOrBetter,
+      hours
     })
 
     console.log(`Tag ${tags[i]} returned ${tagResult.length} games`)
@@ -633,7 +645,8 @@ async function findGamesSingleTag({
   minDate,
   maxDate,
   limit,
-  reviewScoreOrBetter
+  reviewScoreOrBetter,
+  hours
 }) {
   // Build the same query structure as findGames but for a single tag
   const filters = [
@@ -658,10 +671,16 @@ async function findGamesSingleTag({
 
   // Add review count filters
   if (minReviews > 0) {
-    filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [minReviews] })
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [Number(minReviews)] })
   }
   if (maxReviews < 1000000) {
-    filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [maxReviews] })
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [Number(maxReviews)] })
+  }
+
+  // Hours filter
+  if (hours && typeof hours.value === 'number' && !Number.isNaN(hours.value)) {
+    const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
+    filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
   }
 
   // Handle date range
@@ -675,7 +694,7 @@ async function findGamesSingleTag({
 
   // Build query
   const query = {
-    measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
+    measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews', 'Games.hours'],
     dimensions: [
       'Games.name',
       'Games.reviewScoreDesc',
@@ -708,14 +727,16 @@ async function findGamesSingleTag({
         'Games.releaseDate',
         'Games.appId',
         'Games.totalPositiveReviews',
-        'Games.totalNegativeReviews'
+        'Games.totalNegativeReviews',
+        'Games.hours'
       ])
     )
     
     const numeric = ensureNumeric(standardized, [
       'Games.totalReviewsValue',
       'Games.totalPositiveReviews',
-      'Games.totalNegativeReviews'
+      'Games.totalNegativeReviews',
+      'Games.hours'
     ])
     
     // Convert date column

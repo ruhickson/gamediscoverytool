@@ -178,11 +178,7 @@
                         <i v-if="sortField === 'releaseDate'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
                         <i v-else class="fas fa-sort text-muted"></i>
                       </th>
-                      <th @click="sortBy('price')" class="sortable">
-                        Price 
-                        <i v-if="sortField === 'price'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-                        <i v-else class="fas fa-sort text-muted"></i>
-                      </th>
+                      <th>ITAD Price</th>
                       <th @click="sortBy('similarityScore')" class="sortable">
                         Similarity Score 
                         <i v-if="sortField === 'similarityScore'" :class="sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
@@ -224,30 +220,14 @@
                         <span v-else class="text-muted">N/A</span>
                       </td>
                       <td>
-                        <div v-if="game.priceData" class="price-info">
-                          <div v-if="game.priceData.isFree" class="text-success fw-bold">
-                            <i class="fas fa-gift me-1"></i>Free
-                          </div>
-                          <div v-else-if="game.priceData.price !== 'N/A'" class="price-display">
-                            <span v-if="game.priceData.originalPrice && game.priceData.discountPercent > 0" 
-                                  class="text-decoration-line-through text-muted me-2">
-                              {{ game.priceData.originalPrice }}
-                            </span>
-                            <span class="fw-bold" :class="game.priceData.discountPercent > 0 ? 'text-danger' : ''">
-                              {{ game.priceData.price }}
-                            </span>
-                            <span v-if="game.priceData.discountPercent > 0" 
-                                  class="badge bg-danger ms-2">
-                              -{{ game.priceData.discountPercent }}%
-                            </span>
-                          </div>
-                          <div v-else class="text-muted">
-                            <i class="fas fa-question-circle me-1"></i>N/A
-                          </div>
-                        </div>
-                        <div v-else class="text-muted">
-                          <i class="fas fa-spinner fa-spin me-1"></i>Loading...
-                        </div>
+                        <a 
+                          :href="getItadUrl(game.name)" 
+                          target="_blank" 
+                          class="itad-link"
+                          title="View on IsThereAnyDeal"
+                        >
+                          ITAD
+                        </a>
                       </td>
                       <td>
                         <div class="similarity-score">
@@ -306,7 +286,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
-import steamPriceService from '../services/steamPriceService'
+import { getItadUrl } from '../services/itadService'
 
 export default {
   name: 'Recommender',
@@ -427,24 +407,7 @@ export default {
         similarGames.value = results
         console.log('Found', results.length, 'similar games')
         
-        // Fetch prices for all similar games
-        if (results.length > 0) {
-          console.log('Fetching prices for', results.length, 'games...')
-          try {
-            const appIds = results.map(game => game.appId)
-            const priceData = await steamPriceService.getGamePrices(appIds, { delayMs: 150 })
-            
-            // Add price data to each game
-            results.forEach((game, index) => {
-              game.priceData = priceData[index] || null
-            })
-            
-            console.log('Price data fetched for', priceData.length, 'games')
-          } catch (priceError) {
-            console.warn('Failed to fetch price data:', priceError)
-            // Continue without price data
-          }
-        }
+        // No Steam price fetching; ITAD link shown instead
       } catch (error) {
         console.error('Error finding similar games:', error)
         similarGames.value = []
@@ -539,18 +502,6 @@ export default {
         } else if (field === 'similarityScore' || field === 'totalReviews') {
           aVal = aVal || 0
           bVal = bVal || 0
-        } else if (field === 'price') {
-          // Sort by price (handle free games and N/A)
-          const getPriceValue = (game) => {
-            if (!game.priceData) return 999999 // No price data = sort last
-            if (game.priceData.isFree) return 0 // Free games first
-            if (game.priceData.price === 'N/A') return 999999 // N/A last
-            // Extract numeric value from price string (e.g., "$19.99" -> 19.99)
-            const match = game.priceData.price.match(/[\d.]+/)
-            return match ? parseFloat(match[0]) : 999999
-          }
-          aVal = getPriceValue(a)
-          bVal = getPriceValue(b)
         } else if (field === 'name' || field === 'reviewScoreDesc') {
           aVal = (aVal || '').toString()
           bVal = (bVal || '').toString()
