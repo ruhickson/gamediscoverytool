@@ -356,7 +356,7 @@ export default {
       showGameDropdown.value = false
       // Clear any previous similar games results
       similarGames.value = []
-      hasSearched.value = false
+      // Don't reset hasSearched - keep previous search state
     }
 
     const clearSelection = () => {
