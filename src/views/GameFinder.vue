@@ -320,14 +320,22 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
-        <button 
-          v-if="games.length > 0 && !isLoading" 
-          class="btn btn-outline-light btn-sm" 
-          @click="exportResults"
-          title="Export results to CSV"
-        >
-          <i class="fas fa-download me-1"></i> Export Results
-        </button>
+        <div v-if="games.length > 0 && !isLoading" class="d-flex gap-2">
+          <button 
+            class="btn btn-outline-light btn-sm" 
+            @click="copyCurrentUrl"
+            title="Copy link to this search"
+          >
+            <i class="fas fa-link me-1"></i> Share Search
+          </button>
+          <button 
+            class="btn btn-outline-light btn-sm" 
+            @click="exportResults"
+            title="Copy top results to clipboard"
+          >
+            <i class="fas fa-copy me-1"></i> Export Results
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <div v-if="isLoading" class="loading">
