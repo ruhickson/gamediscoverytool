@@ -258,7 +258,7 @@
     </div>
 
     <!-- No Results Message -->
-    <div v-else-if="hasSearched && !isLoading" class="card">
+    <div v-else-if="!isLoading && selectedGame && similarGames.length === 0" class="card">
       <div class="card-body text-center text-white py-4">
         <i class="fas fa-search fa-3x mb-3"></i>
         <h5>No similar games found</h5>
@@ -581,63 +581,53 @@ export default {
 
     const exportResults = () => {
       if (similarGames.value.length === 0) return
-      
-      // Create CSV headers
-      const headers = [
-        'Game Name',
-        'App ID',
-        'Steam URL',
-        'Review Score',
-        'Total Reviews',
-        'Release Date',
-        'Similarity Score (%)',
-        'Common Tags Count',
-        'Common Tags List'
-      ]
-      
-      // Create CSV rows
-      const rows = similarGames.value.map(game => [
-        `"${game.name}"`,
-        game.appId,
-        `https://store.steampowered.com/app/${game.appId}`,
-        game.reviewScoreDesc || 'N/A',
-        game.totalPositive && game.totalNegative ? (game.totalPositive + game.totalNegative).toString() : 'N/A',
-        formatDate(game.releaseDate),
-        game.similarityScore,
-        game.commonTags,
-        `"${game.commonTagList.join(', ')}"`
-      ])
-      
-      // Combine headers and rows
-      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n')
-      
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', `similar_games_${selectedGame.value?.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Also copy formatted list to clipboard
+
+      // Take top 10 results
       const first10Games = similarGames.value.slice(0, 10)
+
+      // Compute shared tags across the top 10 (intersection)
+      let sharedTags = []
+      if (first10Games.length > 0) {
+        const tagSets = first10Games
+          .map(g => Array.isArray(g.commonTagList) ? g.commonTagList : [])
+          .filter(arr => arr.length > 0)
+        if (tagSets.length > 0) {
+          sharedTags = tagSets.reduce((acc, tags) => acc.filter(t => tags.includes(t)))
+        }
+      }
+      // Fallback to most frequent tags if no strict intersection exists
+      if (sharedTags.length === 0 && first10Games.length > 0) {
+        const freq = new Map()
+        first10Games.forEach(g => {
+          (Array.isArray(g.commonTagList) ? g.commonTagList : []).forEach(tag => {
+            freq.set(tag, (freq.get(tag) || 0) + 1)
+          })
+        })
+        sharedTags = [...freq.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([tag]) => tag)
+      }
+
+      const tagText = sharedTags.length > 0 ? sharedTags.join(', ') : 'similar games'
+
       const gameList = first10Games.map(game => {
         const steamLink = `https://store.steampowered.com/app/${game.appId}`
         const scoreText = game.similarityScore ? `${game.similarityScore}%` : 'N/A'
-        const reviewsText = game.totalPositive && game.totalNegative ? 
+        const reviewsText = game.totalPositive && game.totalNegative ?
           (game.totalPositive + game.totalNegative).toLocaleString() : 'N/A'
         return `${game.name} - ${steamLink} - ${scoreText} - ${reviewsText} reviews`
       }).join('\n')
-      
-      const shareText = `I found these similar games to "${selectedGame.value?.name}" using https://gamediscoverytool.com:\n\n${gameList}`
-      
+
+      const recreateLink = window.location.href
+      const header = `I found the following ${tagText} with gamediscoverytool.com:`
+      const footer = `\n\nRecreate this search: ${recreateLink}`
+      const shareText = `${header}\n\n${gameList}${footer}`
+
       navigator.clipboard.writeText(shareText).then(() => {
-        showCopyMessage('Results exported and copied!')
+        showCopyMessage('Top 10 copied to clipboard!')
       }).catch(() => {
-        showCopyMessage('Results exported!')
+        showCopyMessage('Failed to copy')
       })
     }
 
@@ -662,6 +652,7 @@ export default {
       getScoreClass,
       getScoreTextClass,
       getSimilarityScoreClass,
+      getItadUrl,
       copyCurrentUrl,
       exportResults,
       sortBy,
