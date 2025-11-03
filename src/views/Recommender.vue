@@ -145,13 +145,22 @@
     <div v-else-if="similarGames.length > 0" class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-thumbs-up"></i> Similar Games ({{ similarGames.length }})</h5>
-        <button 
-          class="btn btn-outline-light btn-sm" 
-          @click="exportResults"
-          title="Export results to CSV"
-        >
-          <i class="fas fa-download me-1"></i> Export Results
-        </button>
+        <div class="d-flex gap-2">
+          <button 
+            class="btn btn-outline-light btn-sm" 
+            @click="copyCurrentUrl"
+            title="Copy link to this search"
+          >
+            <i class="fas fa-link me-1"></i> Share Search
+          </button>
+          <button 
+            class="btn btn-outline-light btn-sm" 
+            @click="exportResults"
+            title="Copy top results to clipboard"
+          >
+            <i class="fas fa-copy me-1"></i> Export Results
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <div class="table-responsive">
