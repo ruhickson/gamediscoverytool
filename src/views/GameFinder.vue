@@ -320,7 +320,7 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
-        <div v-if="games.length > 0 && !isLoading" class="d-flex gap-2">
+        <div v-if="games.length > 0 && !isLoading" class="btn-group" role="group">
           <button 
             class="btn btn-outline-light btn-sm" 
             @click="copyCurrentUrl"
