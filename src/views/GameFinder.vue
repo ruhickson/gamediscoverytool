@@ -278,6 +278,21 @@
                 <small>By default, games with "Sexual Content" or "Hentai" tags are excluded</small>
               </div>
             </div>
+            <div class="form-check" style="margin-top: 12px;">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="removeResultLimit" 
+                v-model="removeResultLimit"
+                @change="updateRouteFromFilters"
+              >
+              <label class="form-check-label" for="removeResultLimit">
+                Remove limit of 100 results (warning: slower search)
+              </label>
+              <div class="form-text text-muted">
+                <small>By default, results are limited to 100 games for faster loading and pricing</small>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -475,8 +490,9 @@ export default {
     const minDate = ref('')
     const maxDate = ref('')
     const dateMode = ref('quick') // 'quick' or 'custom'
-    const quickDateRange = ref('lastmonth')
+      const quickDateRange = ref('lastmonth')
       const includeAdultGames = ref(false)
+      const removeResultLimit = ref(false)
       const hoursFilterEnabled = ref(false)
       const hoursComparator = ref('at_least')
       const hoursValue = ref(null)
@@ -533,6 +549,7 @@ export default {
             maxDate: maxDate.value || undefined,
             orderBy: orderBy.value || undefined,
             includeAdult: includeAdultGames.value ? '1' : undefined,
+            removeLimit: removeResultLimit.value ? '1' : undefined,
             hoursEnabled: hoursFilterEnabled.value ? '1' : undefined,
             hoursCmp: hoursFilterEnabled.value ? hoursComparator.value : undefined,
             hoursVal: hoursFilterEnabled.value && hoursValue.value != null && hoursValue.value !== '' ? String(hoursValue.value) : undefined
@@ -871,6 +888,12 @@ export default {
           }
         })
         
+        // Apply result limit (100) unless user opted to remove it
+        if (!removeResultLimit.value && processedGames.length > 100) {
+          console.log(`Limiting results from ${processedGames.length} to 100`)
+          processedGames = processedGames.slice(0, 100)
+        }
+        
         console.log('About to assign games.value. processedGames.length:', processedGames.length)
         games.value = processedGames
         console.log('After assignment. games.value.length:', games.value.length)
@@ -984,6 +1007,7 @@ export default {
       minDate.value = oneMonthAgo.toISOString().split('T')[0]
       maxDate.value = today.toISOString().split('T')[0]
       includeAdultGames.value = false
+      removeResultLimit.value = false
       games.value = []
       error.value = ''
     }
@@ -1196,6 +1220,7 @@ export default {
             }
           }
           includeAdultGames.value = q.includeAdult === '1'
+          removeResultLimit.value = q.removeLimit === '1'
           // Hours filter
           hoursFilterEnabled.value = q.hoursEnabled === '1'
           if (q.hoursCmp === 'at_least' || q.hoursCmp === 'at_most') hoursComparator.value = String(q.hoursCmp)
@@ -1278,6 +1303,7 @@ export default {
       orderDirection,
       orderBy,
       includeAdultGames,
+      removeResultLimit,
       hoursFilterEnabled,
       hoursComparator,
       hoursValue
@@ -1296,6 +1322,7 @@ export default {
       dateMode,
       quickDateRange,
       includeAdultGames,
+      removeResultLimit,
       hoursFilterEnabled,
       hoursComparator,
       hoursValue,
@@ -1450,64 +1477,73 @@ export default {
   color: #7a7a7a !important;
 }
 
-/* Ensure table-responsive shows all columns */
+/* Table styling - no horizontal scroll */
 .table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   width: 100%;
+  overflow-x: visible;
 }
 
 .table-responsive table {
   width: 100%;
-  min-width: 1200px; /* Ensure all 8 columns are visible */
-  table-layout: auto;
+  table-layout: fixed;
 }
 
-/* Ensure all table cells are visible */
+/* All table cells except game name should not wrap */
 .table-responsive th,
 .table-responsive td {
   white-space: nowrap;
-  min-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Specific column widths for better layout */
+/* Game name column - allow wrapping with max-width */
 .table-responsive th:nth-child(1),
 .table-responsive td:nth-child(1) {
-  min-width: 200px; /* Game name */
+  width: 25%; /* Game name */
+  max-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .table-responsive th:nth-child(2),
 .table-responsive td:nth-child(2) {
-  min-width: 80px; /* Share */
+  width: 5%; /* Share */
+  min-width: 50px;
 }
 
 .table-responsive th:nth-child(3),
 .table-responsive td:nth-child(3) {
-  min-width: 150px; /* Review Score */
+  width: 12%; /* Review Score */
+  min-width: 100px;
 }
 
 .table-responsive th:nth-child(4),
 .table-responsive td:nth-child(4) {
-  min-width: 120px; /* Release Date */
+  width: 10%; /* Release Date */
+  min-width: 90px;
 }
 
 .table-responsive th:nth-child(5),
 .table-responsive td:nth-child(5) {
-  min-width: 150px; /* Steam Review Score */
+  width: 15%; /* Steam Review Score */
+  min-width: 120px;
 }
 
 .table-responsive th:nth-child(6),
 .table-responsive td:nth-child(6) {
-  min-width: 120px; /* Total Reviews */
+  width: 10%; /* Total Reviews */
+  min-width: 90px;
 }
 
 .table-responsive th:nth-child(7),
 .table-responsive td:nth-child(7) {
-  min-width: 100px; /* Hours */
+  width: 8%; /* Hours */
+  min-width: 70px;
 }
 
 .table-responsive th:nth-child(8),
 .table-responsive td:nth-child(8) {
-  min-width: 120px; /* ITAD Price */
+  width: 10%; /* ITAD Price */
+  min-width: 90px;
 }
 </style>
