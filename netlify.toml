@@ -13,6 +13,11 @@
 [build.environment]
   NODE_VERSION = "18"
 
+[dev]
+  command = "npm run dev:vite"
+  port = 3000
+  publish = "dist"
+
 # Security Headers
 [[headers]]
   for = "/*"

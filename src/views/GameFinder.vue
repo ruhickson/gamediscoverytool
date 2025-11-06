@@ -320,7 +320,7 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
-        <div v-if="games.length > 0 && !isLoading" class="btn-group" role="group">
+        <div v-if="games.length > 0 && !isLoading" class="d-flex gap-2">
           <button 
             class="btn btn-outline-light btn-sm" 
             @click="copyCurrentUrl"
@@ -429,12 +429,12 @@
                 <td :class="{ 'hours-na': game.hours == null }">{{ game.hours != null ? formatNumber(game.hours) : 'N/A' }}</td>
                 <td>
                   <a 
-                    :href="getItadUrl(game.name)" 
+                    :href="game.itadUrl || getItadUrl(game.name)" 
                     target="_blank" 
                     class="itad-link"
-                    title="View on IsThereAnyDeal"
+                    :title="game.itadPrice ? `Current lowest price: ${game.itadPrice}${game.itadShop ? ' at ' + game.itadShop : ''}` : 'View on IsThereAnyDeal'"
                   >
-                    ITAD
+                    {{ game.itadPrice || 'ITAD' }}
                   </a>
                 </td>
               </tr>
@@ -453,6 +453,7 @@ import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
 // Steam price hidden
 import { getItadUrl } from '../services/itadService'
+import axios from 'axios'
 
 export default {
   name: 'GameFinder',
@@ -875,7 +876,71 @@ export default {
         console.log('After assignment. games.value.length:', games.value.length)
         console.log('Search completed. Found', processedGames.length, 'games')
         
-        // Steam price hidden; no async fetch
+        // Fetch ITAD prices for each game individually after table loads
+        // This happens asynchronously so the table shows immediately
+        if (processedGames.length > 0) {
+          // Start fetching prices for each game in the background
+          processedGames.forEach(async (game) => {
+            try {
+              console.log(`Fetching ITAD price for: ${game.name}`)
+              
+              // Step 1: Get game ID from game name using ITAD lookup API
+              const lookupResponse = await axios.post(
+                '/.netlify/functions/itad-lookup',
+                { game: game.name },
+                { timeout: 10000, headers: { 'Content-Type': 'application/json' } }
+              )
+              
+              console.log(`Lookup response for ${game.name}:`, lookupResponse.data)
+              
+              const gameId = lookupResponse.data?.id
+              if (!gameId) {
+                console.log(`No ITAD ID found for ${game.name}`)
+                return
+              }
+              
+              console.log(`Found ITAD ID for ${game.name}: ${gameId}`)
+              
+              // Step 2: Get prices using game ID
+              const pricesResponse = await axios.post(
+                '/.netlify/functions/itad-prices',
+                { id: gameId, country: 'us' },
+                { timeout: 15000, headers: { 'Content-Type': 'application/json' } }
+              )
+              
+              console.log(`Prices response for ${game.name}:`, pricesResponse.data)
+              
+              const priceData = pricesResponse.data?.price
+              if (priceData && priceData.amount) {
+                // Format price: amount is already in dollars (e.g., 44.95)
+                const currency = priceData.currency || 'USD'
+                const currencySymbols = { 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥' }
+                const symbol = currencySymbols[currency] || currency
+                const formattedPrice = `${symbol}${priceData.amount.toFixed(2)}`
+                
+                console.log(`Formatted price for ${game.name}: ${formattedPrice}`)
+                
+                // Update the game in the games array
+                const gameIndex = games.value.findIndex(g => g.appId === game.appId)
+                if (gameIndex !== -1) {
+                  games.value[gameIndex] = {
+                    ...games.value[gameIndex],
+                    itadPrice: formattedPrice,
+                    itadUrl: priceData.url || `https://isthereanydeal.com/game/${gameId}/info/`,
+                    itadShop: priceData.shop
+                  }
+                  console.log(`Updated price for ${game.name} in games array`)
+                }
+              } else {
+                console.log(`No price data for ${game.name}`)
+              }
+            } catch (err) {
+              console.error(`Error fetching ITAD price for ${game.name}:`, err)
+              console.error('Error details:', err.response?.data || err.message)
+              // Continue without price for this game
+            }
+          })
+        }
         
       } catch (err) {
         console.error('Search error:', err)
@@ -979,7 +1044,8 @@ export default {
       
       // Create CSV rows
       const rows = games.value.map(game => {
-        const price = 'N/A'
+        const price = game.itadPrice || 'N/A'
+        const priceUrl = game.itadUrl || getItadUrl(game.name)
         return [
           `"${game.name}"`,
           game.appId,
@@ -990,7 +1056,7 @@ export default {
           game.totalReviews,
           game.hours != null ? game.hours : 'N/A',
           price,
-          getItadUrl(game.name)
+          priceUrl
         ]
       })
       
@@ -1367,5 +1433,66 @@ export default {
 /* Dark grey text for N/A hours values */
 .hours-na {
   color: #7a7a7a !important;
+}
+
+/* Ensure table-responsive shows all columns */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.table-responsive table {
+  width: 100%;
+  min-width: 1200px; /* Ensure all 8 columns are visible */
+  table-layout: auto;
+}
+
+/* Ensure all table cells are visible */
+.table-responsive th,
+.table-responsive td {
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+/* Specific column widths for better layout */
+.table-responsive th:nth-child(1),
+.table-responsive td:nth-child(1) {
+  min-width: 200px; /* Game name */
+}
+
+.table-responsive th:nth-child(2),
+.table-responsive td:nth-child(2) {
+  min-width: 80px; /* Share */
+}
+
+.table-responsive th:nth-child(3),
+.table-responsive td:nth-child(3) {
+  min-width: 150px; /* Review Score */
+}
+
+.table-responsive th:nth-child(4),
+.table-responsive td:nth-child(4) {
+  min-width: 120px; /* Release Date */
+}
+
+.table-responsive th:nth-child(5),
+.table-responsive td:nth-child(5) {
+  min-width: 150px; /* Steam Review Score */
+}
+
+.table-responsive th:nth-child(6),
+.table-responsive td:nth-child(6) {
+  min-width: 120px; /* Total Reviews */
+}
+
+.table-responsive th:nth-child(7),
+.table-responsive td:nth-child(7) {
+  min-width: 100px; /* Hours */
+}
+
+.table-responsive th:nth-child(8),
+.table-responsive td:nth-child(8) {
+  min-width: 120px; /* ITAD Price */
 }
 </style>
