@@ -879,6 +879,21 @@ export default {
         // Fetch ITAD prices for each game individually after table loads
         // This happens asynchronously so the table shows immediately
         if (processedGames.length > 0) {
+          // Detect user's country from browser locale
+          const getUserCountry = () => {
+            try {
+              // navigator.language returns values like "en-US", "en-GB", "fr-FR"
+              const locale = navigator.language || navigator.userLanguage || 'en-US'
+              const countryCode = locale.split('-')[1] || 'US'
+              return countryCode.toUpperCase()
+            } catch {
+              return 'US' // Default to US if detection fails
+            }
+          }
+          
+          const userCountry = getUserCountry()
+          console.log(`Detected user country: ${userCountry}`)
+          
           // Start fetching prices for each game in the background
           processedGames.forEach(async (game) => {
             try {
@@ -901,10 +916,10 @@ export default {
               
               console.log(`Found ITAD ID for ${game.name}: ${gameId}`)
               
-              // Step 2: Get prices using game ID
+              // Step 2: Get prices using game ID with user's country
               const pricesResponse = await axios.post(
                 '/.netlify/functions/itad-prices',
-                { id: gameId, country: 'us' },
+                { id: gameId, country: userCountry.toLowerCase() },
                 { timeout: 15000, headers: { 'Content-Type': 'application/json' } }
               )
               

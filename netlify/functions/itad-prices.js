@@ -67,6 +67,9 @@ exports.handler = async function(event, context) {
     
     // Call ITAD prices endpoint
     const url = `https://api.isthereanydeal.com/games/prices/v3?key=${encodeURIComponent(itadSecret)}&country=${country}`
+    console.log('Calling ITAD prices endpoint:', url)
+    console.log('Request body:', [gameId])
+    
     const response = await axios.post(
       url,
       [gameId], // Body is array of game IDs
@@ -77,6 +80,9 @@ exports.handler = async function(event, context) {
         timeout: 15000
       }
     )
+    
+    console.log('ITAD prices response status:', response.status)
+    console.log('ITAD prices response data:', JSON.stringify(response.data, null, 2))
     
     // Response is an array: [{ id: "game-id", deals: [...], historyLow: {...} }, ...]
     const priceData = Array.isArray(response.data) 
@@ -117,12 +123,19 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({ price: null })
     }
   } catch (error) {
-    console.error('ITAD prices error:', error.message)
+    console.error('=== ITAD PRICES ERROR ===')
+    console.error('Error message:', error.message)
+    console.error('Error status:', error.response?.status)
+    console.error('Error response data:', error.response?.data)
+    console.error('Error stack:', error.stack)
+    
     return {
-      statusCode: 500,
+      statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         error: error.message || 'Failed to fetch prices',
+        status: error.response?.status,
+        details: error.response?.data || error.stack,
         price: null
       })
     }
