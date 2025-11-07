@@ -1116,6 +1116,7 @@ export default {
       // Also copy formatted list to clipboard
       const first10Games = games.value.slice(0, 10)
       const tagsText = selectedTags.value.length > 0 ? selectedTags.value.join(', ') : 'filtered'
+      const timeRangeText = getTimeRangeDescription()
       const gameList = first10Games.map(game => {
         const steamLink = `https://store.steampowered.com/app/${game.appId}`
         const scoreText = game.scorePercent ? `${game.scorePercent}%` : 'N/A'
@@ -1123,13 +1124,54 @@ export default {
         return `${game.name} - ${steamLink} - ${scoreText} - ${reviewsText} reviews`
       }).join('\n')
       
-      const shareText = `I found these ${tagsText} games using https://gamediscoverytool.com:\n\n${gameList}`
+      const shareLines = [
+        `I found these ${tagsText} games ${timeRangeText} using https://gamediscoverytool.com :`,
+        '',
+        gameList,
+        '',
+        `Recreate Search: ${window.location.href}`
+      ]
+      const shareText = shareLines.join('\n')
       
       navigator.clipboard.writeText(shareText).then(() => {
         showCopyMessage('Results exported and copied!')
       }).catch(() => {
         showCopyMessage('Results exported!')
       })
+    }
+
+    const getTimeRangeDescription = () => {
+      if (dateMode.value === 'quick') {
+        const quickMap = {
+          last3days: 'over the last 3 days',
+          lastweek: 'over the last week',
+          last2weeks: 'over the last 2 weeks',
+          lastmonth: 'over the last month',
+          last3months: 'over the last 3 months',
+          lastyear: 'over the last year',
+          last2years: 'over the last 2 years',
+          last3years: 'over the last 3 years',
+          last5years: 'over the last 5 years',
+          beginning: 'since the beginning of time'
+        }
+        if (quickDateRange.value && quickMap[quickDateRange.value]) {
+          return quickMap[quickDateRange.value]
+        }
+        return 'recently'
+      }
+
+      const hasMin = !!minDate.value
+      const hasMax = !!maxDate.value
+      if (hasMin && hasMax) {
+        return `between ${formatDate(minDate.value)} and ${formatDate(maxDate.value)}`
+      }
+      if (hasMin) {
+        return `since ${formatDate(minDate.value)}`
+      }
+      if (hasMax) {
+        return `up to ${formatDate(maxDate.value)}`
+      }
+      return 'recently'
     }
 
     const formatDate = (date) => {
