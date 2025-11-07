@@ -833,7 +833,7 @@ export default {
         // Process the results
         console.log('Processing results, count:', searchResults.length)
         console.log('Sample raw game:', searchResults[0])
-        const processedGames = searchResults.map(game => {
+        let processedGames = searchResults.map(game => {
           // Calculate Steam score percentage
           const positiveReviews = game['Games.totalPositiveReviews'] || 0
           const negativeReviews = game['Games.totalNegativeReviews'] || 0
@@ -1477,7 +1477,7 @@ export default {
   color: #7a7a7a !important;
 }
 
-/* Table styling - no horizontal scroll */
+/* Table styling - no horizontal scroll on desktop, enable on mobile */
 .table-responsive {
   width: 100%;
   overflow-x: visible;
@@ -1486,6 +1486,19 @@ export default {
 .table-responsive table {
   width: 100%;
   table-layout: fixed;
+}
+
+/* Enable horizontal scroll on mobile devices */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table-responsive table {
+    table-layout: auto;
+    min-width: 800px; /* Ensure all columns are visible on mobile */
+  }
 }
 
 /* All table cells except game name should not wrap */
