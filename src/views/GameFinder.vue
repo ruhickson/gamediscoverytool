@@ -794,9 +794,17 @@ export default {
             }
           }
           
+          // Also filter out games with problematic content descriptors
+          try {
+            const contentDescriptorAppIds = await cubeService.getAppIdsForContentDescriptors()
+            adultExcludedAppIds.push(...contentDescriptorAppIds)
+          } catch (err) {
+            console.error('Error getting app IDs for content descriptors:', err)
+          }
+          
           const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
           
-          // Remove games with adult content tags
+          // Remove games with adult content tags or problematic content descriptors
           if (uniqueAdultExcludedAppIds.length > 0) {
             searchResults = searchResults.filter(game => 
               !uniqueAdultExcludedAppIds.includes(game['Games.appId'])

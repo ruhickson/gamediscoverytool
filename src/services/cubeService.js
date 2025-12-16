@@ -803,6 +803,79 @@ export async function getTagsForAppId(appId, limit = 5) {
   }
 }
 
+// Get app IDs for games with problematic content descriptors
+// Filters games that contain: sexual assault, non-consensual, BDSM, extreme violence, or rape
+export async function getAppIdsForContentDescriptors() {
+  try {
+    // Define the problematic content descriptor patterns
+    const problematicPatterns = [
+      'sexual assault',
+      'non-consensual',
+      'BDSM',
+      'extreme violence',
+      'rape'
+    ]
+    
+    // Try different possible dimension names for content_descriptors
+    const possibleDimensionNames = [
+      'Games.contentDescriptors',
+      'Games.content_descriptors',
+      'Games.contentDescriptor'
+    ]
+    
+    for (const dimensionName of possibleDimensionNames) {
+      try {
+        const query = {
+          dimensions: [
+            'Games.appId',
+            dimensionName
+          ],
+          filters: [
+            { member: 'Games.type', operator: 'equals', values: ['game'] }
+          ]
+        }
+        
+        const result = await queryCube(query)
+        
+        if (Array.isArray(result) && result.length > 0) {
+          // Filter results client-side based on content descriptor patterns
+          const excludedAppIds = []
+          
+          for (const row of result) {
+            const contentDescriptors = row[dimensionName]
+            if (!contentDescriptors) continue
+            
+            // Convert to lowercase string for case-insensitive matching
+            const descriptorsStr = String(contentDescriptors).toLowerCase()
+            
+            // Check if any problematic pattern matches
+            for (const pattern of problematicPatterns) {
+              if (descriptorsStr.includes(pattern.toLowerCase())) {
+                excludedAppIds.push(row['Games.appId'])
+                break // Only add once per game
+              }
+            }
+          }
+          
+          console.log(`Found ${excludedAppIds.length} games with problematic content descriptors using dimension: ${dimensionName}`)
+          return [...new Set(excludedAppIds)]
+        }
+      } catch (dimensionError) {
+        // Try next dimension name
+        continue
+      }
+    }
+    
+    // If none of the dimension names worked, log a warning
+    console.warn('content_descriptors dimension not found. Content descriptor filtering may not work. Make sure content_descriptors is exposed as a Cube.js dimension.')
+    return []
+  } catch (error) {
+    console.error('Error fetching app IDs for content descriptors:', error)
+    // Return empty array on error to avoid breaking the filtering flow
+    return []
+  }
+}
+
 // Get all games for search (simplified query)
 export async function getAllGames(limit = 5000) {
   try {

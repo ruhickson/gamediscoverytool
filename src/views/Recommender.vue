@@ -402,9 +402,17 @@ export default {
             }
           }
           
+          // Also filter out games with problematic content descriptors
+          try {
+            const contentDescriptorAppIds = await cubeService.getAppIdsForContentDescriptors()
+            adultExcludedAppIds.push(...contentDescriptorAppIds)
+          } catch (err) {
+            console.error('Error getting app IDs for content descriptors:', err)
+          }
+          
           const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
           
-          // Remove games with adult content tags
+          // Remove games with adult content tags or problematic content descriptors
           if (uniqueAdultExcludedAppIds.length > 0) {
             results = results.filter(game => 
               !uniqueAdultExcludedAppIds.includes(game.appId)
@@ -629,9 +637,11 @@ export default {
       }).join('\n')
 
       const recreateLink = window.location.href
-      const header = `I found the following ${tagText} with gamediscoverytool.com:`
-      const footer = `\n\nRecreate this search: ${recreateLink}`
-      const shareText = `${header}\n\n${gameList}${footer}`
+      const selectedGameName = selectedGame.value ? selectedGame.value.name : 'this game'
+      const header = `I found the following games similar to ${selectedGameName} with gamediscoverytool.com with at least ${minCommonTags.value} tags in common:`
+      const tagSummary = sharedTags.length > 0 ? `Top shared tags: ${tagText}\n\n` : ''
+      const footer = `\n\nRecreate this search:\n${recreateLink}\n`
+      const shareText = `${header}\n\n${tagSummary}${gameList}${footer}`
 
       navigator.clipboard.writeText(shareText).then(() => {
         showCopyMessage('Top 10 copied to clipboard!')
