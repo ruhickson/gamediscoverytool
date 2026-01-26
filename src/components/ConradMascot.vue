@@ -70,7 +70,8 @@ export default {
 
     const loadRecentGames = async () => {
       try {
-        const games = await cubeService.getRecentTopGames(20)
+        // Exclude adult games from Conrad's suggestions by default
+        const games = await cubeService.getRecentTopGames(20, false)
         recentGames.value = games || []
       } catch (error) {
         console.log('Failed to load recent games for Conrad:', error)

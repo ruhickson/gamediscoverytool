@@ -225,32 +225,32 @@ export default {
 
 <style scoped>
 .blog-post-card {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .blog-post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .blog-post-title {
   font-size: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .blog-post-title a {
-  color: var(--pixel-text);
-  transition: color 0.3s ease;
+  color: var(--color-text);
+  transition: color 0.2s ease;
+  text-decoration: none;
 }
 
 .blog-post-title a:hover {
-  color: var(--pixel-cyan);
+  color: var(--color-accent);
 }
 
 .blog-post-excerpt {
   font-size: 1.1rem;
   line-height: 1.6;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .blog-post-meta {
@@ -260,23 +260,30 @@ export default {
 .blog-post-image {
   max-height: 200px;
   object-fit: cover;
+  border-radius: var(--radius);
 }
 
 .pagination .page-link {
-  background-color: var(--pixel-dark-bg);
-  border-color: var(--pixel-border);
-  color: var(--pixel-text);
+  background-color: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  transition: all 0.2s ease;
 }
 
 .pagination .page-link:hover {
-  background-color: var(--pixel-light-bg);
-  border-color: var(--pixel-cyan);
-  color: var(--pixel-cyan);
+  background-color: var(--color-bg-alt);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .pagination .page-item.active .page-link {
-  background-color: var(--pixel-cyan);
-  border-color: var(--pixel-cyan);
-  color: var(--pixel-darker-bg);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

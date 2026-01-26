@@ -255,7 +255,7 @@ export async function searchTagsByName(query, limit = 100) {
 }
 
 // Get recent top games for initial load
-export async function getRecentTopGames(limit = 100) {
+export async function getRecentTopGames(limit = 100, includeAdultGames = false) {
   try {
     // First try the materialized view/relation (Cube: RecentTopGames)
     const query = {
@@ -300,7 +300,43 @@ export async function getRecentTopGames(limit = 100) {
         return newRow
       })
       
-      return ensureNumeric(standardized, ['Games.totalReviewsValue', 'Games.totalPositiveReviews', 'Games.totalNegativeReviews'])
+      let games = ensureNumeric(standardized, ['Games.totalReviewsValue', 'Games.totalPositiveReviews', 'Games.totalNegativeReviews'])
+      
+      // Apply adult content filter if not including adult games
+      if (!includeAdultGames) {
+        console.log('Applying adult content filter to recent top games')
+        const adultContentTags = ['Sexual Content', 'Hentai']
+        const adultExcludedAppIds = []
+        
+        for (const tag of adultContentTags) {
+          try {
+            const tagAppIds = await getAppIdsForTag(tag)
+            adultExcludedAppIds.push(...tagAppIds)
+          } catch (err) {
+            console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
+          }
+        }
+        
+        // Also filter out games with problematic content descriptors
+        try {
+          const contentDescriptorAppIds = await getAppIdsForContentDescriptors()
+          adultExcludedAppIds.push(...contentDescriptorAppIds)
+        } catch (err) {
+          console.error('Error getting app IDs for content descriptors:', err)
+        }
+        
+        const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
+        
+        // Remove games with adult content tags or problematic content descriptors
+        if (uniqueAdultExcludedAppIds.length > 0) {
+          games = games.filter(game => 
+            !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
+          )
+          console.log('After adult content filter:', games.length, 'recent top games')
+        }
+      }
+      
+      return games
     }
     
     return []
@@ -322,6 +358,41 @@ export async function getRecentTopGames(limit = 100) {
         limit: limit,
         reviewScoreOrBetter: true
       })
+      
+      // Apply adult content filter to fallback results as well
+      if (!includeAdultGames && Array.isArray(fallbackResult) && fallbackResult.length > 0) {
+        console.log('Applying adult content filter to fallback recent top games')
+        const adultContentTags = ['Sexual Content', 'Hentai']
+        const adultExcludedAppIds = []
+        
+        for (const tag of adultContentTags) {
+          try {
+            const tagAppIds = await getAppIdsForTag(tag)
+            adultExcludedAppIds.push(...tagAppIds)
+          } catch (err) {
+            console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
+          }
+        }
+        
+        // Also filter out games with problematic content descriptors
+        try {
+          const contentDescriptorAppIds = await getAppIdsForContentDescriptors()
+          adultExcludedAppIds.push(...contentDescriptorAppIds)
+        } catch (err) {
+          console.error('Error getting app IDs for content descriptors:', err)
+        }
+        
+        const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
+        
+        // Remove games with adult content tags or problematic content descriptors
+        if (uniqueAdultExcludedAppIds.length > 0) {
+          const filtered = fallbackResult.filter(game => 
+            !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
+          )
+          console.log('After adult content filter (fallback):', filtered.length, 'games')
+          return filtered
+        }
+      }
       
       console.log('Fallback search returned', fallbackResult.length, 'games')
       return fallbackResult

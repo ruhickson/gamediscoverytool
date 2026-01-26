@@ -683,25 +683,9 @@ export default {
 </script>
 
 <style scoped>
-/* Sortable table headers */
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.2s ease;
-}
-
-.sortable:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.sortable i {
-  margin-left: 5px;
-  font-size: 0.8em;
-}
-
 .game-search-container {
   position: relative;
-  overflow: visible; /* Allow dropdown to extend beyond container */
+  overflow: visible;
 }
 
 .search-loading-indicator {
@@ -709,7 +693,7 @@ export default {
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6c757d;
+  color: var(--color-text-muted);
   z-index: 10;
 }
 
@@ -718,37 +702,38 @@ export default {
   top: 100%;
   left: 0;
   right: 0;
-  background: #2d2d2d;
-  border: 1px solid #4d4d4d;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-top: none;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: var(--shadow-md);
   z-index: 1000;
-  max-height: 400px; /* Increased to accommodate 10 items */
+  max-height: 400px;
   overflow-y: auto;
   margin-top: 2px;
 }
 
 .game-option {
-  padding: 8px 12px;
+  padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
-  border-bottom: 1px solid #4d4d4d;
-  color: #e0e0e0;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background 0.2s ease;
 }
 
 .game-option:hover {
-  background-color: #3d3d3d;
+  background: var(--color-bg-alt);
 }
 
 .game-search-card {
-  overflow: visible; /* Allow dropdown to extend beyond card */
+  overflow: visible;
 }
 
 .game-search-card .card-body {
-  overflow: visible; /* Allow dropdown to extend beyond card body */
+  overflow: visible;
 }
 
 .game-option:last-child {
@@ -756,140 +741,67 @@ export default {
 }
 
 .game-app-id {
-  color: #9ca3af;
-  font-size: 12px;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }
 
 .selected-game-info {
-  margin-top: 15px;
+  margin-top: var(--spacing-lg);
 }
 
 .similarity-score {
   width: 100px;
-  height: 20px;
-  background-color: #3d3d3d;
-  border: 1px solid #4d4d4d;
-  border-radius: 3px;
+  height: 24px;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   overflow: hidden;
   position: relative;
 }
 
 .score-bar {
   height: 100%;
-  background-color: var(--steam-blue);
+  background: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: bold;
-  font-size: 11px;
+  font-weight: 500;
+  font-size: 0.75rem;
   transition: width 0.3s ease;
 }
 
 /* Similarity Score Color Classes */
 .similarity-excellent {
-  background-color: #28a745 !important; /* Green */
+  background: var(--color-success) !important;
 }
 
 .similarity-good {
-  background-color: #ffc107 !important; /* Gold */
-  color: #000 !important; /* Black text for gold background */
+  background: #84cc16 !important;
 }
 
 .similarity-fair {
-  background-color: #fd7e14 !important; /* Orange */
+  background: var(--color-warning) !important;
 }
 
 .similarity-poor {
-  background-color: #dc3545 !important; /* Red */
+  background: var(--color-error) !important;
 }
 
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 
 .tag-badge {
   display: inline-block;
-  background-color: transparent;
-  color: var(--steam-blue);
-  border: 1px solid var(--steam-blue);
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 10px;
+  background: var(--color-bg-alt);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
   font-weight: 500;
-}
-
-/* Steam Score Bar Styles */
-.steam-score-bar {
-  width: 100%;
-  height: 20px;
-  background-color: #1b2838;
-  border: 1px solid #2a475e;
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-}
-
-.steam-score-fill {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  transition: width 0.3s ease;
-}
-
-.steam-score-fill.overwhelmingly-positive {
-  background-color: #4c6b22;
-  color: white;
-}
-
-.steam-score-fill.very-positive {
-  background-color: #5ba3d4;
-  color: white;
-}
-
-.steam-score-fill.mostly-positive {
-  background-color: #66c0f4;
-  color: white;
-}
-
-.steam-score-fill.positive {
-  background-color: #8fbc8f;
-  color: white;
-}
-
-.steam-score-fill.mixed {
-  background-color: #b8860b;
-  color: white;
-}
-
-.steam-score-fill.mostly-negative {
-  background-color: #cd853f;
-  color: white;
-}
-
-.steam-score-fill.negative {
-  background-color: #cd5c5c;
-  color: white;
-}
-
-.steam-score-fill.very-negative {
-  background-color: #dc143c;
-  color: white;
-}
-
-.steam-score-fill.overwhelmingly-negative {
-  background-color: #8b0000;
-  color: white;
-}
-
-.steam-score-fill.na {
-  background-color: #6c757d;
-  color: white !important;
 }
 </style>

@@ -1,9 +1,9 @@
 <template>
   <div id="app" :class="{ 'hc-contrast': isHighContrast }">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg">
       <div class="container-fluid">
         <a class="navbar-brand" href="https://gamediscoverytool.com">
-          <i class="fas fa-gamepad me-2"></i>
+          <i class="fas fa-gamepad"></i>
           <span class="d-none d-sm-inline">Game Discovery Tool</span>
           <span class="d-sm-none">Game Discovery</span>
         </a>
@@ -16,6 +16,7 @@
           aria-controls="mobileNavbar"
           aria-expanded="showMobileMenu"
           aria-label="Toggle navigation"
+          style="border: 1px solid var(--color-border); border-radius: var(--radius); padding: 0.25rem 0.5rem;"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -35,83 +36,72 @@
     </nav>
     
     <!-- Mobile Navigation Menu -->
-    <div v-if="showMobileMenu" class="d-lg-none mobile-nav bg-dark">
+    <div v-if="showMobileMenu" class="d-lg-none mobile-nav">
       <div class="container-fluid">
         <ul class="nav flex-column">
           <li class="nav-item">
             <router-link 
               to="/" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'GameFinder' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-search me-2"></i>
+              <i class="fas fa-search"></i>
               Find a Game for Me
             </router-link>
           </li>
           <li class="nav-item">
             <router-link 
               to="/recommender" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'Recommender' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-magic me-2"></i>
+              <i class="fas fa-magic"></i>
               Recommender
             </router-link>
           </li>
           <li class="nav-item">
             <router-link 
-              to="/blog" 
-              class="nav-link text-light"
-              :class="{ active: $route.name === 'Blog' || $route.name === 'BlogPost' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-blog me-2"></i>
-              Blog
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
               to="/how-to-use" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'HowToUse' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-question-circle me-2"></i>
+              <i class="fas fa-question-circle"></i>
               How to Use
             </router-link>
           </li>
           <li class="nav-item">
             <router-link 
               to="/about" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'About' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-info-circle me-2"></i>
+              <i class="fas fa-info-circle"></i>
               About
             </router-link>
           </li>
           <li class="nav-item">
             <router-link 
               to="/faq" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'FAQ' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-comments me-2"></i>
+              <i class="fas fa-comments"></i>
               FAQ
             </router-link>
           </li>
           <li class="nav-item">
             <router-link 
               to="/report" 
-              class="nav-link text-light"
+              class="nav-link"
               :class="{ active: $route.name === 'ReportIssue' }"
               @click="closeMobileMenu"
             >
-              <i class="fas fa-flag me-2"></i>
+              <i class="fas fa-flag"></i>
               Report an Issue
             </router-link>
           </li>
@@ -143,16 +133,6 @@
                 >
                   <i class="fas fa-magic"></i>
                   Recommender
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/blog" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'Blog' || $route.name === 'BlogPost' }"
-                >
-                  <i class="fas fa-blog"></i>
-                  Blog
                 </router-link>
               </li>
               <li class="nav-item">
@@ -216,8 +196,8 @@
               </div>
             </div>
             
-            <!-- Conrad Mascot Container -->
-            <div class="conrad-container">
+            <!-- Conrad Mascot Container - Hidden in minimalist design -->
+            <div class="conrad-container" style="display: none;">
               <ConradMascot />
             </div>
           </div>
@@ -263,19 +243,19 @@ export default {
 <style>
 /* Responsive Navbar Brand */
 .navbar-brand {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100vw - 200px); /* Leave space for toggle button and accessibility button */
+  max-width: calc(100vw - 200px);
 }
 
 /* Mobile-specific navbar brand adjustments */
 @media (max-width: 991.98px) {
   .navbar-brand {
     font-size: 1rem;
-    max-width: calc(100vw - 120px); /* More space for mobile toggle */
+    max-width: calc(100vw - 120px);
   }
 }
 
@@ -286,7 +266,7 @@ export default {
   }
   
   .navbar-brand i {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
   
   .accessibility-btn {
@@ -295,41 +275,21 @@ export default {
   }
 }
 
-/* Extra small screens - make title even more compact */
+/* Extra small screens */
 @media (max-width: 400px) {
   .navbar-brand {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     max-width: calc(100vw - 80px);
   }
   
   .navbar-brand i {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
   }
   
   .accessibility-btn {
     padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
   }
-}
-
-/* Mobile Navigation */
-.mobile-nav {
-  border-top: 1px solid #495057;
-  padding: 1rem 0;
-}
-
-.mobile-nav .nav-link {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #495057;
-}
-
-.mobile-nav .nav-link:hover {
-  background-color: #495057;
-}
-
-.mobile-nav .nav-link.active {
-  background-color: #0d6efd;
-  color: white !important;
 }
 
 /* Ensure mobile menu is visible on small screens */
@@ -339,57 +299,14 @@ export default {
   }
 }
 
-/* Conrad container to contain speech bubbles */
-.conrad-container {
-  position: relative;
-  overflow: visible;
-  margin-top: 20px;
-  padding-bottom: 80px; /* Space for speech bubble */
-}
-
-/* Sidebar Support Section */
-.support-section {
-  margin-top: 2rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--pixel-border);
-}
-
-.support-title {
-  color: var(--pixel-text);
-  font-size: 10px;
-  font-weight: 500;
-  text-align: center;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.support-links {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.support-link {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.support-link:hover {
-  transform: scale(1.05);
-}
-
-.support-image {
-  max-width: 120px;
-  height: auto;
-  border: 1px solid var(--pixel-border);
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.support-image:hover {
-  border-color: var(--pixel-cyan);
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+.navbar-toggler-icon {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: middle;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100%;
 }
 </style>
