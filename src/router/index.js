@@ -7,6 +7,7 @@ import About from '../views/About.vue'
 import Blog from '../views/Blog.vue'
 import BlogPost from '../views/BlogPost.vue'
 import ReportIssue from '../views/ReportIssue.vue'
+import Newsletter from '../views/Newsletter.vue'
 
 const routes = [
   {
@@ -48,6 +49,11 @@ const routes = [
     path: '/report',
     name: 'ReportIssue',
     component: ReportIssue
+  },
+  {
+    path: '/newsletter',
+    name: 'Newsletter',
+    component: Newsletter
   }
 ]
 

@@ -96,6 +96,17 @@
           </li>
           <li class="nav-item">
             <router-link 
+              to="/newsletter" 
+              class="nav-link"
+              :class="{ active: $route.name === 'Newsletter' }"
+              @click="closeMobileMenu"
+            >
+              <i class="fas fa-envelope"></i>
+              Newsletter
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link 
               to="/report" 
               class="nav-link"
               :class="{ active: $route.name === 'ReportIssue' }"
@@ -163,6 +174,16 @@
                 >
                   <i class="fas fa-info-circle"></i>
                   About
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link 
+                  to="/newsletter" 
+                  class="nav-link"
+                  :class="{ active: $route.name === 'Newsletter' }"
+                >
+                  <i class="fas fa-envelope"></i>
+                  Newsletter
                 </router-link>
               </li>
               <li class="nav-item">
