@@ -5,10 +5,16 @@
         <h5><i class="fas fa-envelope"></i> Newsletter</h5>
       </div>
       <div class="card-body info-section">
-        <h4>Stay in the loop</h4>
+        <h4>Weekly game picks, curated for you</h4>
         <p>
-          Get occasional updates on new features, game discovery tips, and blog posts from
-          Game Discovery Tool. No spam — unsubscribe any time.
+          With nearly 10,000 games released each month, it's hard to keep on top of enjoyable
+          releases that are worth your time. Every week we recommend six games — chosen for
+          quality, novelty, style, and fun.
+        </p>
+        <p>
+          Five picks come from the last two months; one is a gem from at least five years ago
+          that you may have missed. Subscribe below to get them in your inbox. No spam —
+          unsubscribe any time.
         </p>
 
         <div v-if="!buttondownUsername" class="alert alert-warning mt-4 mb-0">

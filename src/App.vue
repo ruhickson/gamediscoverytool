@@ -85,17 +85,6 @@
           </li>
           <li class="nav-item">
             <router-link 
-              to="/faq" 
-              class="nav-link"
-              :class="{ active: $route.name === 'FAQ' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-comments"></i>
-              FAQ
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
               to="/newsletter" 
               class="nav-link"
               :class="{ active: $route.name === 'Newsletter' }"
@@ -103,17 +92,6 @@
             >
               <i class="fas fa-envelope"></i>
               Newsletter
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
-              to="/report" 
-              class="nav-link"
-              :class="{ active: $route.name === 'ReportIssue' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-flag"></i>
-              Report an Issue
             </router-link>
           </li>
         </ul>
@@ -158,16 +136,6 @@
               </li>
               <li class="nav-item">
                 <router-link 
-                  to="/faq" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'FAQ' }"
-                >
-                  <i class="fas fa-question"></i>
-                  F.A.Q.
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
                   to="/about" 
                   class="nav-link"
                   :class="{ active: $route.name === 'About' }"
@@ -184,16 +152,6 @@
                 >
                   <i class="fas fa-envelope"></i>
                   Newsletter
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/report" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'ReportIssue' }"
-                >
-                  <i class="fas fa-flag"></i>
-                  Report an Issue
                 </router-link>
               </li>
             </ul>
