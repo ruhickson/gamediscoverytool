@@ -546,7 +546,7 @@ export default {
         position: fixed;
         top: 20px;
         right: 20px;
-        background-color: var(--steam-blue);
+        background-color: var(--color-accent);
         color: white;
         padding: 12px 20px;
         border-radius: 6px;
