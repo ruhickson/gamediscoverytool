@@ -2,13 +2,24 @@
   <div class="game-finder">
     <!-- Filters Card -->
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
-        <button class="btn btn-outline-light btn-sm" @click="copyCurrentUrl" title="Copy shareable link">
+      <div 
+        class="card-header d-flex justify-content-between align-items-center filters-header"
+        @click="toggleFiltersCollapsed"
+        :title="filtersCollapsed ? 'Click to expand filters' : 'Click to collapse filters'"
+      >
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+          <i :class="filtersCollapsed ? 'fas fa-chevron-down' : 'fas fa-chevron-up'"></i>
+        </div>
+        <button 
+          class="btn btn-outline-light btn-sm" 
+          @click.stop="copyCurrentUrl" 
+          title="Copy shareable link"
+        >
           <i class="fas fa-link me-1"></i> Share
         </button>
       </div>
-      <div class="card-body">
+      <div class="card-body" v-show="!filtersCollapsed">
         <p class="text-muted fst-italic">Please wait for the 'Tags' dropdown to populate before searching.</p>
         
         <div class="row mb-3">
@@ -514,6 +525,9 @@ export default {
     const showTagDropdown = ref(false)
     const showExcludeTagDropdown = ref(false)
     
+    // Filters collapse state
+    const filtersCollapsed = ref(true)
+    
     // Debounce timers
     let tagSearchTimeout = null
     let excludeTagSearchTimeout = null
@@ -689,6 +703,10 @@ export default {
       showExcludeTagDropdown.value = false
     }
 
+    const toggleFiltersCollapsed = () => {
+      filtersCollapsed.value = !filtersCollapsed.value
+    }
+
     // Date range methods
     // Removed ITAD asynchronous fetching
 
@@ -754,7 +772,7 @@ export default {
         // Sync URL for shareable searches
         updateRouteFromFilters()
 
-        // Prepare search parameters
+        // Prepare search parameters — limit + adult/exclude filtering are applied in Cube
         const searchParams = {
           tags: selectedTags.value.length > 0 ? selectedTags.value : null,
           reviewScore: reviewScore.value,
@@ -763,7 +781,11 @@ export default {
           minDate: minDate.value,
           maxDate: maxDate.value,
           reviewScoreOrBetter: reviewScoreOrBetter.value,
-          hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null
+          hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null,
+          excludeTags: excludeTags.value.length > 0 ? excludeTags.value : null,
+          includeAdultGames: includeAdultGames.value,
+          limit: removeResultLimit.value ? null : 100,
+          orderBy: orderBy.value
         }
         
         console.log('Search params minDate:', searchParams.minDate)
@@ -774,69 +796,10 @@ export default {
 
         // Call the Cube.js service
         console.log('Calling findGames with params:', searchParams)
-        let searchResults = await cubeService.findGames(searchParams)
+        const searchResults = await cubeService.findGames(searchParams)
         console.log('Search results received:', searchResults)
         console.log('Type:', typeof searchResults, 'Is array:', Array.isArray(searchResults))
         console.log('Length:', searchResults?.length)
-        
-        // Apply adult content filter if not including adult games
-        if (!includeAdultGames.value) {
-          console.log('Applying adult content filter')
-          const adultContentTags = ['Sexual Content', 'Hentai']
-          const adultExcludedAppIds = []
-          
-          for (const tag of adultContentTags) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              adultExcludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
-            }
-          }
-          
-          // Also filter out games with problematic content descriptors
-          try {
-            const contentDescriptorAppIds = await cubeService.getAppIdsForContentDescriptors()
-            adultExcludedAppIds.push(...contentDescriptorAppIds)
-          } catch (err) {
-            console.error('Error getting app IDs for content descriptors:', err)
-          }
-          
-          const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
-          
-          // Remove games with adult content tags or problematic content descriptors
-          if (uniqueAdultExcludedAppIds.length > 0) {
-            searchResults = searchResults.filter(game => 
-              !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
-            )
-            console.log('After adult content filter:', searchResults.length, 'games')
-          }
-        }
-        
-        // Apply exclude tags filter if any are selected
-        if (excludeTags.value.length > 0) {
-          console.log('Applying exclude tags filter')
-          const excludedAppIds = []
-          
-          for (const tag of excludeTags.value) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              excludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for exclude tag ${tag}:`, err)
-            }
-          }
-          
-          const uniqueExcludedAppIds = [...new Set(excludedAppIds)]
-          
-          // Remove games with excluded tags
-          if (uniqueExcludedAppIds.length > 0) {
-            searchResults = searchResults.filter(game => 
-              !uniqueExcludedAppIds.includes(game['Games.appId'])
-            )
-            console.log('After exclude tags filter:', searchResults.length, 'games')
-          }
-        }
         
         // Process the results
         console.log('Processing results, count:', searchResults.length)
@@ -895,12 +858,6 @@ export default {
               return 0
           }
         })
-        
-        // Apply result limit (100) unless user opted to remove it
-        if (!removeResultLimit.value && processedGames.length > 100) {
-          console.log(`Limiting results from ${processedGames.length} to 100`)
-          processedGames = processedGames.slice(0, 100)
-        }
         
         console.log('About to assign games.value. processedGames.length:', processedGames.length)
         games.value = processedGames
@@ -1284,7 +1241,8 @@ export default {
         if (Object.keys(q).length) {
           await searchGames()
         } else {
-          const recentGames = await cubeService.getRecentTopGames(100)
+          // Use includeAdultGames value from URL if present, otherwise default to false (exclude adult games)
+          const recentGames = await cubeService.getRecentTopGames(100, includeAdultGames.value)
           if (recentGames && recentGames.length > 0) {
             const processedGames = recentGames.map(game => {
               const positiveReviews = game['Games.totalPositiveReviews'] || 0
@@ -1412,119 +1370,29 @@ export default {
       showCopyMessage,
       sortBy,
       sortField,
-      sortDirection
+      sortDirection,
+      filtersCollapsed,
+      toggleFiltersCollapsed
     }
   }
 }
 </script>
 
 <style scoped>
+/* Filters collapse animation */
+.card-body {
+  transition: opacity 0.2s ease, max-height 0.3s ease;
+  overflow: hidden;
+}
 
-/* Sortable table headers */
-.sortable {
+.filters-header {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
 }
 
-.sortable:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.sortable i {
-  margin-left: 5px;
-  font-size: 0.8em;
-}
-
-/* Quick Date Select Dropdown Styling */
-.quick-date-select {
-  background-color: #2d2d2d !important;
-  border-color: #4d4d4d !important;
-  color: #e0e0e0 !important;
-}
-
-.quick-date-select:focus {
-  background-color: #2d2d2d !important;
-  border-color: #6c757d !important;
-  color: #e0e0e0 !important;
-  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
-}
-
-.quick-date-select option {
-  background-color: #2d2d2d !important;
-  color: #e0e0e0 !important;
-}
-
-.quick-date-select option:hover {
-  background-color: #4d4d4d !important;
-}
-
-/* Override Bootstrap form-select styling for dark theme */
-.form-select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e0e0e0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
-  position: relative !important;
-}
-
-/* Remove any decorative elements from form selects */
-.form-select::before,
-.form-select::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* Override any pixel art styling that might add decorative elements */
-.form-select {
-  background: #2d2d2d !important;
-  border: 1px solid #4d4d4d !important;
-  color: #e0e0e0 !important;
-  font-family: inherit !important;
-  font-size: 14px !important;
-  text-transform: none !important;
-  box-shadow: none !important;
-}
-
-.quick-date-select {
-  background: #2d2d2d !important;
-  border: 1px solid #4d4d4d !important;
-  color: #e0e0e0 !important;
-  font-family: inherit !important;
-  font-size: 14px !important;
-  text-transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Fix dropdown animations and prevent wave effects */
-.tag-dropdown, .game-dropdown {
-  animation: none !important;
-  transition: none !important;
-}
-
-.tag-dropdown *, .game-dropdown * {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Ensure dropdowns are stable */
-.tag-option, .game-option {
-  animation: none !important;
-  transition: none !important;
-  transform: none !important;
-}
-
-/* Override any Bootstrap dropdown animations */
-.dropdown-menu {
-  animation: none !important;
-  transition: none !important;
-}
-
-.dropdown-menu * {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Dark grey text for N/A hours values */
-.hours-na {
-  color: #7a7a7a !important;
+.filters-header:hover {
+  background-color: var(--color-bg) !important;
 }
 
 /* Table styling - no horizontal scroll on desktop, enable on mobile */
@@ -1547,7 +1415,7 @@ export default {
   
   .table-responsive table {
     table-layout: auto;
-    min-width: 800px; /* Ensure all columns are visible on mobile */
+    min-width: 800px;
   }
 }
 
@@ -1562,7 +1430,7 @@ export default {
 /* Game name column - allow wrapping with max-width */
 .table-responsive th:nth-child(1),
 .table-responsive td:nth-child(1) {
-  width: 25%; /* Game name */
+  width: 25%;
   max-width: 300px;
   white-space: normal;
   word-wrap: break-word;
@@ -1570,43 +1438,43 @@ export default {
 
 .table-responsive th:nth-child(2),
 .table-responsive td:nth-child(2) {
-  width: 5%; /* Share */
+  width: 5%;
   min-width: 50px;
 }
 
 .table-responsive th:nth-child(3),
 .table-responsive td:nth-child(3) {
-  width: 12%; /* Review Score */
+  width: 12%;
   min-width: 100px;
 }
 
 .table-responsive th:nth-child(4),
 .table-responsive td:nth-child(4) {
-  width: 10%; /* Release Date */
+  width: 10%;
   min-width: 90px;
 }
 
 .table-responsive th:nth-child(5),
 .table-responsive td:nth-child(5) {
-  width: 15%; /* Steam Review Score */
+  width: 15%;
   min-width: 120px;
 }
 
 .table-responsive th:nth-child(6),
 .table-responsive td:nth-child(6) {
-  width: 10%; /* Total Reviews */
+  width: 10%;
   min-width: 90px;
 }
 
 .table-responsive th:nth-child(7),
 .table-responsive td:nth-child(7) {
-  width: 8%; /* Hours */
+  width: 8%;
   min-width: 70px;
 }
 
 .table-responsive th:nth-child(8),
 .table-responsive td:nth-child(8) {
-  width: 10%; /* ITAD Price */
+  width: 10%;
   min-width: 90px;
 }
 </style>

@@ -20,11 +20,19 @@
           <li>Responsive design for all devices</li>
         </ul>
         
-        <h4>Data Source</h4>
-        <p>This tool uses data from Steam, including game information, user reviews, tags, and release dates. The data is regularly updated to ensure accuracy and completeness.</p>
+        <h4>Data Sources</h4>
+        <ul>
+          <li>Steam API</li>
+          <li>GOG</li>
+          <li>Is There Any Deal</li>
+          <li>How Long to Beat</li>
+        </ul>
         
-        <h4>YouTube Channel</h4>
-        <p>Stay tuned for our upcoming YouTube channel where we'll showcase game discoveries, provide tutorials on using this tool effectively, and share gaming insights and recommendations.</p>
+        <h4>Contact</h4>
+        <p>
+          Want to reach out? Email me at topohaihai[at]gmail.com or find me on Reddit as
+          <a href="https://www.reddit.com/user/topohaihai/" target="_blank" rel="noopener noreferrer">topohaihai</a>.
+        </p>
         
         <div class="highlight-box">
           <p>Happy gaming! 🎮</p>

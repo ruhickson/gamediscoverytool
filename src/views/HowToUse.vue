@@ -21,22 +21,21 @@
           <li>Choose a minimum review score (e.g., 'Very Positive' or better)</li>
           <li>Check 'or better' to include games with higher scores</li>
           <li>Set minimum and maximum review counts to filter by popularity</li>
-          <li>Games with more reviews are generally more established</li>
         </ul>
         
         <h5>Step 3: Set Release Date Range</h5>
         <ul>
           <li>Choose when you want games to have been released</li>
-          <li>Recent games (2023-2025) for the latest titles</li>
-          <li>Older games (2020-2022) for established favorites</li>
-          <li>Leave dates wide open to see all games</li>
+          <li>Release Date Range has default ranges in the Quick drop down</li>
+          <li>Custom mode allows you to set your own date range</li>
+          <li>Select "Beginning of Time" to see all games (takes longer)</li>
         </ul>
         
         <h5>Step 4: Choose How to Sort Results</h5>
         <ul>
-          <li>Sort by release date to see newest or oldest games first</li>
-          <li>Sort by review score to see best or worst reviewed games</li>
-          <li>Sort by total reviews to see most or least popular games</li>
+          <li>Sort by release date to see newest (DESC) or oldest (ASC) games first</li>
+          <li>Sort by review score to see best (DESC) or worst (ASC) reviewed games</li>
+          <li>Sort by total reviews to see most (DESC) or least (ASC) popular games</li>
           <li>Sort by game name for alphabetical browsing</li>
         </ul>
         
@@ -46,6 +45,13 @@
           <li>Results show all games matching your criteria</li>
           <li>Click on game names to open them in Steam</li>
           <li>Use 'Reset Filters' to start over with a new search</li>
+        </ul>
+        
+        <h5>Optional: Search and Explore</h5>
+        <ul>
+          <li>There is a tag for games with adult content that is turned off by default. You can turn it on if you want to see them.</li>
+          <li>You can filter games by how long it takes to play them, if they have a valid result on How Long to Beat</li>
+          <li>There is a limit of 100 results by default to speed up loading times. You can remove the limit if you want to see more results.</li>
         </ul>
       </div>
     </div>

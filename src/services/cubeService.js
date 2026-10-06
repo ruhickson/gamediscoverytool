@@ -115,17 +115,159 @@ const reviewDescOrder = [
   'Negative', 'Mostly Negative', 'Very Negative', 'Overwhelmingly Negative'
 ]
 
-// Helper function to make Cube.js API calls with retry logic
+// ------------------------------------------------------------
+// Cached exclusion sets (adult tags, user exclude tags, content descriptors)
+// Avoids re-querying Cube for the same large appId lists on every search.
+// ------------------------------------------------------------
+const EXCLUDE_CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const LS_EXCLUDE_TAG_PREFIX = 'gd_exclude_tag_v1:'
+const LS_CONTENT_DESC_KEY = 'gd_exclude_content_desc_v1'
+const ADULT_CONTENT_TAGS = ['Sexual Content', 'Hentai']
+const tagAppIdCache = new Map() // tag -> { ts, appIds }
+let contentDescriptorMemoryCache = null // { ts, appIds }
+
+function readJsonCache(key, ttlMs) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.appIds)) return null
+    if (Date.now() - (parsed.ts || 0) >= ttlMs) return null
+    return parsed.appIds
+  } catch (_) {
+    return null
+  }
+}
+
+function writeJsonCache(key, appIds) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), appIds }))
+  } catch (_) {
+    // ignore quota errors
+  }
+}
+
+async function getCachedAppIdsForTag(tag) {
+  const mem = tagAppIdCache.get(tag)
+  if (mem && Date.now() - mem.ts < EXCLUDE_CACHE_TTL_MS) {
+    return mem.appIds
+  }
+
+  const fromLs = readJsonCache(`${LS_EXCLUDE_TAG_PREFIX}${tag}`, EXCLUDE_CACHE_TTL_MS)
+  if (fromLs) {
+    tagAppIdCache.set(tag, { ts: Date.now(), appIds: fromLs })
+    return fromLs
+  }
+
+  const appIds = await getAppIdsForTag(tag)
+  tagAppIdCache.set(tag, { ts: Date.now(), appIds })
+  writeJsonCache(`${LS_EXCLUDE_TAG_PREFIX}${tag}`, appIds)
+  return appIds
+}
+
+async function getCachedContentDescriptorAppIds() {
+  if (
+    contentDescriptorMemoryCache &&
+    Date.now() - contentDescriptorMemoryCache.ts < EXCLUDE_CACHE_TTL_MS
+  ) {
+    return contentDescriptorMemoryCache.appIds
+  }
+
+  const fromLs = readJsonCache(LS_CONTENT_DESC_KEY, EXCLUDE_CACHE_TTL_MS)
+  if (fromLs) {
+    contentDescriptorMemoryCache = { ts: Date.now(), appIds: fromLs }
+    return fromLs
+  }
+
+  const appIds = await getAppIdsForContentDescriptors()
+  contentDescriptorMemoryCache = { ts: Date.now(), appIds }
+  writeJsonCache(LS_CONTENT_DESC_KEY, appIds)
+  return appIds
+}
+
+/**
+ * Resolve app IDs that should be excluded from results.
+ * Fetches tag/content-descriptor sets in parallel and caches them for 24h.
+ */
+export async function resolveExcludedAppIds({
+  excludeTags = [],
+  includeAdultGames = true
+} = {}) {
+  const tagsToExclude = [
+    ...(Array.isArray(excludeTags) ? excludeTags : []),
+    ...(!includeAdultGames ? ADULT_CONTENT_TAGS : [])
+  ]
+
+  const uniqueTags = [...new Set(tagsToExclude.filter(Boolean))]
+  const tagIdLists = await Promise.all(
+    uniqueTags.map(async (tag) => {
+      try {
+        return await getCachedAppIdsForTag(tag)
+      } catch (err) {
+        console.error(`Error getting app IDs for exclude tag ${tag}:`, err)
+        return []
+      }
+    })
+  )
+
+  const allIds = tagIdLists.flat()
+
+  if (!includeAdultGames) {
+    try {
+      allIds.push(...(await getCachedContentDescriptorAppIds()))
+    } catch (err) {
+      console.error('Error getting content descriptor exclusions:', err)
+    }
+  }
+
+  return [...new Set(allIds)]
+}
+
+function buildAppIdExcludeFilter(member, excludedAppIds) {
+  if (!excludedAppIds || excludedAppIds.length === 0) return null
+  // Keep original types from Cube so notEquals matches the dimension type
+  return {
+    member,
+    operator: 'notEquals',
+    values: excludedAppIds
+  }
+}
+
+/** Map UI orderBy keys to Cube order so server-side limit keeps the right top-N. */
+function mapOrderByToCube(orderBy) {
+  switch (orderBy) {
+    case 'release_date_asc':
+      return [['Games.releaseDate', 'asc']]
+    case 'release_date_desc':
+      return [['Games.releaseDate', 'desc']]
+    case 'total_reviews_asc':
+      return [['Games.totalReviewsValue', 'asc']]
+    case 'total_reviews_desc':
+      return [['Games.totalReviewsValue', 'desc']]
+    case 'game_name_asc':
+      return [['Games.name', 'asc']]
+    case 'game_name_desc':
+      return [['Games.name', 'desc']]
+    case 'review_score_asc':
+    case 'steam_score_asc':
+      // No percent measure in Cube; approximate with positive review count
+      return [['Games.totalPositiveReviews', 'asc']]
+    case 'review_score_desc':
+    case 'steam_score_desc':
+      return [['Games.totalPositiveReviews', 'desc']]
+    default:
+      return [['Games.totalReviewsValue', 'desc']]
+  }
+}
+
+// Helper function to make Cube.js API calls with retry logic.
+// Uses POST so large exclusion filters are not limited by GET URL length.
 async function queryCube(query, maxRetries = 3, baseDelay = 1) {
-  const queryJson = JSON.stringify(query)
-  const queryParam = encodeURIComponent(queryJson)
-  const url = `/load?query=${queryParam}`
-  
   console.log('Cube.js Query:', query)
   
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
-      const response = await cubeApi.get(url)
+      const response = await cubeApi.post('/load', { query })
       
       if (response.data.error) {
         const errorMsg = response.data.error
@@ -255,8 +397,11 @@ export async function searchTagsByName(query, limit = 100) {
 }
 
 // Get recent top games for initial load
-export async function getRecentTopGames(limit = 100) {
+export async function getRecentTopGames(limit = 100, includeAdultGames = false) {
   try {
+    const excludedAppIds = await resolveExcludedAppIds({ includeAdultGames })
+    const excludeFilter = buildAppIdExcludeFilter('RecentTopGames.appId', excludedAppIds)
+
     // First try the materialized view/relation (Cube: RecentTopGames)
     const query = {
       measures: [
@@ -271,7 +416,8 @@ export async function getRecentTopGames(limit = 100) {
         'RecentTopGames.releaseDate'
       ],
       order: [['RecentTopGames.totalReviews', 'desc']],
-      limit
+      limit,
+      ...(excludeFilter ? { filters: [excludeFilter] } : {})
     }
     
     const result = await queryCube(query)
@@ -320,7 +466,8 @@ export async function getRecentTopGames(limit = 100) {
         minDate: twoWeeksAgo.toISOString().split('T')[0],
         maxDate: new Date().toISOString().split('T')[0],
         limit: limit,
-        reviewScoreOrBetter: true
+        reviewScoreOrBetter: true,
+        includeAdultGames
       })
       
       console.log('Fallback search returned', fallbackResult.length, 'games')
@@ -340,14 +487,27 @@ export async function findGames({
   maxReviews = 1000000,
   minDate = null,
   maxDate = null,
-  limit = null,
+  limit = 100,
   reviewScoreOrBetter = true,
-  hours = null // { comparator: 'at_least' | 'at_most', value: number } | null
+  hours = null, // { comparator: 'at_least' | 'at_most', value: number } | null
+  excludeTags = null,
+  includeAdultGames = true,
+  orderBy = 'total_reviews_desc'
 }) {
   try {
+    const excludedAppIds = await resolveExcludedAppIds({
+      excludeTags: excludeTags || [],
+      includeAdultGames
+    })
+    const excludeFilter = buildAppIdExcludeFilter('Games.appId', excludedAppIds)
+    const cubeOrder = mapOrderByToCube(orderBy)
+
     const filters = [
       { member: 'Games.type', operator: 'equals', values: ['game'] }
     ]
+    if (excludeFilter) {
+      filters.push(excludeFilter)
+    }
 
     // Tag intersection logic
     if (tags && tags.length > 0) {
@@ -365,7 +525,9 @@ export async function findGames({
           maxDate,
           limit: null, // Don't limit individual tag queries
           reviewScoreOrBetter,
-          hours
+          hours,
+          excludedAppIds,
+          orderBy
         })
         
         // Apply limit AFTER finding the intersection
@@ -426,7 +588,7 @@ export async function findGames({
         'Games.totalReviewsValue'
       ],
       filters,
-      order: [['Games.releaseDate', 'desc']]
+      order: cubeOrder
     }
 
     // Add timeDimensions only if not empty
@@ -434,7 +596,7 @@ export async function findGames({
       query.timeDimensions = timeDimensions
     }
 
-    // Add limit only if specified
+    // Add limit only if specified (null = unbounded, e.g. remove-limit checkbox)
     if (limit !== null) {
       query.limit = limit
     }
@@ -523,35 +685,11 @@ export async function findGames({
         'Games.hours'
       ])
       
-      // Convert releaseDate to Date and sort
-      const processed = numeric.map(row => ({
+      // Convert releaseDate to Date; Cube already applied the requested order + limit
+      return numeric.map(row => ({
         ...row,
         'Games.releaseDate': row['Games.releaseDate'] ? new Date(row['Games.releaseDate']) : null
       }))
-      
-      // Sort by release date (desc), nulls last, then by total reviews, then by name
-      return processed.sort((a, b) => {
-        // Handle null dates
-        const dateA = a['Games.releaseDate']
-        const dateB = b['Games.releaseDate']
-        
-        if (dateA && !dateB) return -1
-        if (!dateA && dateB) return 1
-        if (!dateA && !dateB) return 0
-        
-        // Compare dates
-        const dateCompare = dateB - dateA
-        if (dateCompare !== 0) return dateCompare
-        
-        // Compare total reviews
-        const reviewsA = a['Games.totalReviewsValue'] || 0
-        const reviewsB = b['Games.totalReviewsValue'] || 0
-        const reviewsCompare = reviewsB - reviewsA
-        if (reviewsCompare !== 0) return reviewsCompare
-        
-        // Compare names
-        return (a['Games.name'] || '').localeCompare(b['Games.name'] || '')
-      })
     } else {
       // Return empty array with correct structure
       return []
@@ -574,7 +712,9 @@ async function findGamesWithMultipleTags({
   maxDate,
   limit, // This parameter is ignored - limit should be applied after intersection
   reviewScoreOrBetter,
-  hours
+  hours,
+  excludedAppIds = [],
+  orderBy = 'total_reviews_desc'
 }) {
   console.log('Multi-Tag Search Debug')
   console.log('Tags:', tags.join(', '))
@@ -597,7 +737,9 @@ async function findGamesWithMultipleTags({
       maxDate,
       limit: null, // Explicitly set to null to get all matching games
       reviewScoreOrBetter,
-      hours
+      hours,
+      excludedAppIds,
+      orderBy
     })
 
     console.log(`Tag ${tags[i]} returned ${tagResult.length} games`)
@@ -646,13 +788,19 @@ async function findGamesSingleTag({
   maxDate,
   limit,
   reviewScoreOrBetter,
-  hours
+  hours,
+  excludedAppIds = [],
+  orderBy = 'total_reviews_desc'
 }) {
   // Build the same query structure as findGames but for a single tag
   const filters = [
     { member: 'Games.type', operator: 'equals', values: ['game'] },
     { member: 'GameTags.tag', operator: 'equals', values: [tag] }
   ]
+  const excludeFilter = buildAppIdExcludeFilter('Games.appId', excludedAppIds)
+  if (excludeFilter) {
+    filters.push(excludeFilter)
+  }
 
   // Add review score filter
   if (reviewScore !== 'Any') {
@@ -703,7 +851,7 @@ async function findGamesSingleTag({
       'Games.totalReviewsValue'
     ],
     filters,
-    order: [['Games.releaseDate', 'desc']]
+    order: mapOrderByToCube(orderBy)
   }
 
   if (timeDimensions.length > 0) {
@@ -1111,5 +1259,6 @@ export default {
   prefetchWarmNames,
   filterWarmNames,
   populateDailyCache,
-  ensureDailyCache
+  ensureDailyCache,
+  resolveExcludedAppIds
 }
