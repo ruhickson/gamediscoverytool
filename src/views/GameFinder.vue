@@ -772,7 +772,7 @@ export default {
         // Sync URL for shareable searches
         updateRouteFromFilters()
 
-        // Prepare search parameters
+        // Prepare search parameters — limit + adult/exclude filtering are applied in Cube
         const searchParams = {
           tags: selectedTags.value.length > 0 ? selectedTags.value : null,
           reviewScore: reviewScore.value,
@@ -781,7 +781,11 @@ export default {
           minDate: minDate.value,
           maxDate: maxDate.value,
           reviewScoreOrBetter: reviewScoreOrBetter.value,
-          hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null
+          hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null,
+          excludeTags: excludeTags.value.length > 0 ? excludeTags.value : null,
+          includeAdultGames: includeAdultGames.value,
+          limit: removeResultLimit.value ? null : 100,
+          orderBy: orderBy.value
         }
         
         console.log('Search params minDate:', searchParams.minDate)
@@ -792,69 +796,10 @@ export default {
 
         // Call the Cube.js service
         console.log('Calling findGames with params:', searchParams)
-        let searchResults = await cubeService.findGames(searchParams)
+        const searchResults = await cubeService.findGames(searchParams)
         console.log('Search results received:', searchResults)
         console.log('Type:', typeof searchResults, 'Is array:', Array.isArray(searchResults))
         console.log('Length:', searchResults?.length)
-        
-        // Apply adult content filter if not including adult games
-        if (!includeAdultGames.value) {
-          console.log('Applying adult content filter')
-          const adultContentTags = ['Sexual Content', 'Hentai']
-          const adultExcludedAppIds = []
-          
-          for (const tag of adultContentTags) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              adultExcludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
-            }
-          }
-          
-          // Also filter out games with problematic content descriptors
-          try {
-            const contentDescriptorAppIds = await cubeService.getAppIdsForContentDescriptors()
-            adultExcludedAppIds.push(...contentDescriptorAppIds)
-          } catch (err) {
-            console.error('Error getting app IDs for content descriptors:', err)
-          }
-          
-          const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
-          
-          // Remove games with adult content tags or problematic content descriptors
-          if (uniqueAdultExcludedAppIds.length > 0) {
-            searchResults = searchResults.filter(game => 
-              !uniqueAdultExcludedAppIds.includes(game['Games.appId'])
-            )
-            console.log('After adult content filter:', searchResults.length, 'games')
-          }
-        }
-        
-        // Apply exclude tags filter if any are selected
-        if (excludeTags.value.length > 0) {
-          console.log('Applying exclude tags filter')
-          const excludedAppIds = []
-          
-          for (const tag of excludeTags.value) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              excludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for exclude tag ${tag}:`, err)
-            }
-          }
-          
-          const uniqueExcludedAppIds = [...new Set(excludedAppIds)]
-          
-          // Remove games with excluded tags
-          if (uniqueExcludedAppIds.length > 0) {
-            searchResults = searchResults.filter(game => 
-              !uniqueExcludedAppIds.includes(game['Games.appId'])
-            )
-            console.log('After exclude tags filter:', searchResults.length, 'games')
-          }
-        }
         
         // Process the results
         console.log('Processing results, count:', searchResults.length)
@@ -913,12 +858,6 @@ export default {
               return 0
           }
         })
-        
-        // Apply result limit (100) unless user opted to remove it
-        if (!removeResultLimit.value && processedGames.length > 100) {
-          console.log(`Limiting results from ${processedGames.length} to 100`)
-          processedGames = processedGames.slice(0, 100)
-        }
         
         console.log('About to assign games.value. processedGames.length:', processedGames.length)
         games.value = processedGames

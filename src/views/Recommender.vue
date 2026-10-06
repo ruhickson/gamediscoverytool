@@ -387,36 +387,12 @@ export default {
         // Only now do we query the API for similar games using the selected game's app_id
         let results = await cubeService.findSimilarGames(selectedGame.value.appId, minCommonTags.value)
         
-        // Apply adult content filter if not including adult games
+        // Apply cached adult-content exclusions (same sets as homepage search)
         if (!includeAdultGames.value) {
-          console.log('Applying adult content filter to similar games')
-          const adultContentTags = ['Sexual Content', 'Hentai']
-          const adultExcludedAppIds = []
-          
-          for (const tag of adultContentTags) {
-            try {
-              const tagAppIds = await cubeService.getAppIdsForTag(tag)
-              adultExcludedAppIds.push(...tagAppIds)
-            } catch (err) {
-              console.error(`Error getting app IDs for adult content tag ${tag}:`, err)
-            }
-          }
-          
-          // Also filter out games with problematic content descriptors
-          try {
-            const contentDescriptorAppIds = await cubeService.getAppIdsForContentDescriptors()
-            adultExcludedAppIds.push(...contentDescriptorAppIds)
-          } catch (err) {
-            console.error('Error getting app IDs for content descriptors:', err)
-          }
-          
-          const uniqueAdultExcludedAppIds = [...new Set(adultExcludedAppIds)]
-          
-          // Remove games with adult content tags or problematic content descriptors
-          if (uniqueAdultExcludedAppIds.length > 0) {
-            results = results.filter(game => 
-              !uniqueAdultExcludedAppIds.includes(game.appId)
-            )
+          const excludedAppIds = await cubeService.resolveExcludedAppIds({ includeAdultGames: false })
+          if (excludedAppIds.length > 0) {
+            const excluded = new Set(excludedAppIds.map(String))
+            results = results.filter(game => !excluded.has(String(game.appId)))
             console.log('After adult content filter:', results.length, 'similar games')
           }
         }

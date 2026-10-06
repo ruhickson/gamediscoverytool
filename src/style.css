@@ -454,6 +454,11 @@ body {
 }
 
 /* Info sections */
+.info-section,
+.info-section p {
+  color: #ffffff;
+}
+
 .info-section h4 {
   color: var(--color-text);
   margin-top: var(--spacing-xl);
