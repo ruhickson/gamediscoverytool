@@ -43,6 +43,17 @@
             <router-link 
               to="/" 
               class="nav-link"
+              :class="{ active: $route.name === 'StateOfSteam' }"
+              @click="closeMobileMenu"
+            >
+              <i class="fas fa-chart-area"></i>
+              State of Steam
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link 
+              to="/find" 
+              class="nav-link"
               :class="{ active: $route.name === 'GameFinder' }"
               @click="closeMobileMenu"
             >
@@ -83,17 +94,6 @@
               About
             </router-link>
           </li>
-          <li class="nav-item">
-            <router-link 
-              to="/newsletter" 
-              class="nav-link"
-              :class="{ active: $route.name === 'Newsletter' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-envelope"></i>
-              Newsletter
-            </router-link>
-          </li>
         </ul>
       </div>
     </div>
@@ -107,6 +107,16 @@
               <li class="nav-item">
                 <router-link 
                   to="/" 
+                  class="nav-link"
+                  :class="{ active: $route.name === 'StateOfSteam' }"
+                >
+                  <i class="fas fa-chart-area"></i>
+                  State of Steam
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link 
+                  to="/find" 
                   class="nav-link"
                   :class="{ active: $route.name === 'GameFinder' }"
                 >
@@ -144,22 +154,21 @@
                   About
                 </router-link>
               </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/newsletter" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'Newsletter' }"
-                >
-                  <i class="fas fa-envelope"></i>
-                  Newsletter
-                </router-link>
-              </li>
             </ul>
             
             <!-- Support Section -->
             <div class="support-section">
               <h6 class="support-title">Game Discovery Tool loves and supports</h6>
               <div class="support-links">
+                <a href="https://ardan.ie" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/ardan.png" alt="Ardan" class="support-image">
+                </a>
+                <a href="https://lookingfor.game" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/lookingfor.png" alt="lookingfor.game" class="support-image">
+                </a>
+                <a href="https://aftermath.site" target="_blank" rel="noopener noreferrer" class="support-link">
+                  <img src="/aftermath.webp" alt="Aftermath" class="support-image">
+                </a>
                 <a href="https://www.imirt.ie/" target="_blank" rel="noopener noreferrer" class="support-link">
                   <img src="/imirt.jpg" alt="Imirt" class="support-image">
                 </a>
@@ -283,7 +292,7 @@ export default {
   width: 1.5em;
   height: 1.5em;
   vertical-align: middle;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28212, 175, 55, 0.9%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100%;
