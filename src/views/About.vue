@@ -2,24 +2,12 @@
   <div class="about">
     <div class="card">
       <div class="card-header">
-        <h5><i class="fas fa-info-circle"></i> About Game Discovery Tool</h5>
+        <h5><i class="fas fa-info-circle"></i> About the Game Discovery Tool</h5>
       </div>
       <div class="card-body info-section">
-        <h4>About This Tool</h4>
-        <p>The Game Discovery Tool is designed to help you find the perfect games to play by leveraging Steam's vast library and review system. Whether you're looking for your next favorite indie game or want to explore popular AAA titles, this tool makes game discovery simple and effective.</p>
-        
-        <h4>Features</h4>
-        <ul>
-          <li>Advanced filtering by game tags, genres, and themes</li>
-          <li>Review score filtering with 'or better' options</li>
-          <li>Release date range selection</li>
-          <li>Tag exclusion to avoid unwanted game types</li>
-          <li>Multiple sorting options for different preferences</li>
-          <li>Direct links to Steam store pages</li>
-          <li>Game sharing functionality</li>
-          <li>Responsive design for all devices</li>
-        </ul>
-        
+        <h4>What is it></h4>
+        <p>I built the game discovery tool for two reasons. 1: I wanted a better means to search through games on Steam that would be more to my tastes and 2: to get a better idea of what's going on in the ecosystem, both at the moment and historically. I come from an analytics background, hence all the charts and the dashboard. If there are any metrics you'd like to see, or if you'd like access to the data, drop me a message. I'm also planning on getting my hands on other marketplaces too, so please bear with me on that one.</p>
+
         <h4>Data Sources</h4>
         <ul>
           <li>Steam API</li>
@@ -27,16 +15,12 @@
           <li>Is There Any Deal</li>
           <li>How Long to Beat</li>
         </ul>
-        
+
         <h4>Contact</h4>
         <p>
-          Want to reach out? Email me at topohaihai[at]gmail.com or find me on Reddit as
+          Inquiries: topohaihai[at]gmail.com or find me on Reddit as
           <a href="https://www.reddit.com/user/topohaihai/" target="_blank" rel="noopener noreferrer">topohaihai</a>.
         </p>
-        
-        <div class="highlight-box">
-          <p>Happy gaming! 🎮</p>
-        </div>
       </div>
     </div>
   </div>

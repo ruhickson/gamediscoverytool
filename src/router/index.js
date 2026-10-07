@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import StateOfSteam from '../views/StateOfSteam.vue'
 import GameFinder from '../views/GameFinder.vue'
 import Recommender from '../views/Recommender.vue'
-import HowToUse from '../views/HowToUse.vue'
 import About from '../views/About.vue'
 import Blog from '../views/Blog.vue'
 import BlogPost from '../views/BlogPost.vue'
@@ -26,8 +25,7 @@ const routes = [
   },
   {
     path: '/how-to-use',
-    name: 'HowToUse',
-    component: HowToUse
+    redirect: '/'
   },
   {
     path: '/about',

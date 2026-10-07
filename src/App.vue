@@ -74,17 +74,6 @@
           </li>
           <li class="nav-item">
             <router-link 
-              to="/how-to-use" 
-              class="nav-link"
-              :class="{ active: $route.name === 'HowToUse' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-question-circle"></i>
-              How to Use
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
               to="/about" 
               class="nav-link"
               :class="{ active: $route.name === 'About' }"
@@ -132,16 +121,6 @@
                 >
                   <i class="fas fa-magic"></i>
                   Recommender
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/how-to-use" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'HowToUse' }"
-                >
-                  <i class="fas fa-question-circle"></i>
-                  How to Use
                 </router-link>
               </li>
               <li class="nav-item">
