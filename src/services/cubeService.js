@@ -2067,6 +2067,43 @@ function queueHistorical(period, metrics, signal, onHistorical) {
 }
 
 /**
+ * Search genres or tags that had releases in a date range.
+ * @param {{ kind: 'genre' | 'tag', dateRange: [string, string], query: string, limit?: number, signal?: AbortSignal }} opts
+ */
+export async function searchStateOfSteamCategories({
+  kind,
+  dateRange,
+  query,
+  limit = 12,
+  signal = null
+} = {}) {
+  const dimension = kind === 'tag' ? 'GameTags.tag' : 'Genres.name'
+  const q = String(query || '').trim()
+  if (!dateRange || dateRange.length !== 2 || !q) return []
+
+  const rows = await queryCube({
+    measures: ['Games.count'],
+    dimensions: [dimension],
+    timeDimensions: [{
+      dimension: 'Games.releaseDate',
+      dateRange
+    }],
+    order: [['Games.count', 'desc']],
+    filters: [
+      { member: dimension, operator: 'contains', values: [q] }
+    ],
+    limit
+  }, 2, 1, { analytics: true, signal })
+
+  return (rows || [])
+    .map((row) => ({
+      name: row[dimension] || '',
+      count: Number(row['Games.count']) || 0
+    }))
+    .filter((row) => row.name && row.count > 0)
+}
+
+/**
  * Drill-down game list for State of Steam charts.
  * @param {{ dateRange: [string, string], day?: string, genre?: string, tag?: string, isFree?: boolean|null, limit?: number, signal?: AbortSignal }} opts
  */
@@ -2147,5 +2184,6 @@ export default {
   ensureDailyCache,
   resolveExcludedAppIds,
   getStateOfSteamMetrics,
-  getStateOfSteamDrilldownGames
+  getStateOfSteamDrilldownGames,
+  searchStateOfSteamCategories
 }

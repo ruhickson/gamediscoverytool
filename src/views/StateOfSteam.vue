@@ -119,12 +119,51 @@
               </div>
             </div>
             <div v-if="metrics.period.isCurrent" class="col-lg-6">
-              <div class="chart-panel">
+              <div
+                class="chart-panel"
+                data-drill-root="upcoming"
+                @pointerdown.stop
+              >
                 <h6 class="chart-title">Games due for release — next 7 days</h6>
                 <p class="chart-subtitle text-muted">
                   Daily count · total {{ formatNumber(dueNext7Total) }}
+                  <span v-if="drill?.chart !== 'upcoming'"> · click a bar for games</span>
                 </p>
-                <div class="chart-wrap">
+                <div v-if="drill?.chart === 'upcoming'" class="drilldown-panel">
+                  <div class="drilldown-header">
+                    <button type="button" class="btn btn-outline-light btn-sm" @click="clearDrill">
+                      <i class="fas fa-arrow-left"></i> Back to chart
+                    </button>
+                    <span class="drilldown-title">{{ drill.title }}</span>
+                  </div>
+                  <div v-if="drill.loading" class="drilldown-status">Loading games…</div>
+                  <div v-else-if="drill.error" class="drilldown-status error">{{ drill.error }}</div>
+                  <ul v-else class="drilldown-list">
+                    <li v-for="game in drill.games" :key="game.appId" class="drilldown-item">
+                      <div class="drilldown-game-name">{{ game.name }}</div>
+                      <div class="drilldown-meta">
+                        <span v-if="game.reviewScoreDesc" class="text-muted">{{ game.reviewScoreDesc }}</span>
+                        <span v-if="game.totalReviews" class="text-muted">{{ formatNumber(game.totalReviews) }} reviews</span>
+                      </div>
+                      <div class="drilldown-links">
+                        <a
+                          :href="`https://store.steampowered.com/app/${game.appId}`"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="game-link"
+                        >Steam</a>
+                        <a
+                          :href="getItadUrl(game.name)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="game-link"
+                        >ITAD</a>
+                      </div>
+                    </li>
+                    <li v-if="!drill.games.length" class="drilldown-status text-muted">No games due this day.</li>
+                  </ul>
+                </div>
+                <div v-else class="chart-wrap chart-wrap-clickable">
                   <canvas ref="upcomingChartEl"></canvas>
                 </div>
               </div>
@@ -143,6 +182,44 @@
                   Games released that month by genre
                   <span v-if="drill?.chart !== 'genres'"> · click a bar for games</span>
                 </p>
+                <div class="chart-filter">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm chart-filter-input"
+                    v-model="genreFilter.query"
+                    placeholder="Search genres…"
+                    autocomplete="off"
+                    role="combobox"
+                    aria-label="Search genres"
+                    :aria-expanded="genreFilter.open ? 'true' : 'false'"
+                    aria-controls="genreFilterList"
+                    @focus="openCategoryFilter('genre')"
+                    @click="openCategoryFilter('genre')"
+                    @input="onCategoryFilterInput('genre')"
+                    @keydown="onCategoryFilterKeydown('genre', $event)"
+                    @blur="closeCategoryFilterSoon('genre')"
+                  >
+                  <ul
+                    v-if="genreFilter.open"
+                    id="genreFilterList"
+                    class="chart-filter-menu"
+                    role="listbox"
+                  >
+                    <li v-if="genreFilter.loading && !genreFilter.options.length" class="chart-filter-status">Searching…</li>
+                    <li v-else-if="!genreFilter.options.length" class="chart-filter-status">No matching genres</li>
+                    <li
+                      v-for="(option, index) in genreFilter.options"
+                      :key="option.name"
+                      role="option"
+                      class="chart-filter-option"
+                      :class="{ active: index === genreFilter.active }"
+                      @mousedown.prevent="selectCategory('genre', option.name)"
+                    >
+                      <span>{{ option.name }}</span>
+                      <span class="text-muted">{{ formatNumber(option.count) }}</span>
+                    </li>
+                  </ul>
+                </div>
                 <div v-if="drill?.chart === 'genres'" class="drilldown-panel">
                   <div class="drilldown-header">
                     <button type="button" class="btn btn-outline-light btn-sm" @click="clearDrill">
@@ -197,6 +274,44 @@
                   Top tags on games released that month
                   <span v-if="drill?.chart !== 'tags'"> · click a bar for games</span>
                 </p>
+                <div class="chart-filter">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm chart-filter-input"
+                    v-model="tagFilter.query"
+                    placeholder="Search tags…"
+                    autocomplete="off"
+                    role="combobox"
+                    aria-label="Search tags"
+                    :aria-expanded="tagFilter.open ? 'true' : 'false'"
+                    aria-controls="tagFilterList"
+                    @focus="openCategoryFilter('tag')"
+                    @click="openCategoryFilter('tag')"
+                    @input="onCategoryFilterInput('tag')"
+                    @keydown="onCategoryFilterKeydown('tag', $event)"
+                    @blur="closeCategoryFilterSoon('tag')"
+                  >
+                  <ul
+                    v-if="tagFilter.open"
+                    id="tagFilterList"
+                    class="chart-filter-menu"
+                    role="listbox"
+                  >
+                    <li v-if="tagFilter.loading && !tagFilter.options.length" class="chart-filter-status">Searching…</li>
+                    <li v-else-if="!tagFilter.options.length" class="chart-filter-status">No matching tags</li>
+                    <li
+                      v-for="(option, index) in tagFilter.options"
+                      :key="option.name"
+                      role="option"
+                      class="chart-filter-option"
+                      :class="{ active: index === tagFilter.active }"
+                      @mousedown.prevent="selectCategory('tag', option.name)"
+                    >
+                      <span>{{ option.name }}</span>
+                      <span class="text-muted">{{ formatNumber(option.count) }}</span>
+                    </li>
+                  </ul>
+                </div>
                 <div v-if="drill?.chart === 'tags'" class="drilldown-panel">
                   <div class="drilldown-header">
                     <button type="button" class="btn btn-outline-light btn-sm" @click="clearDrill">
@@ -393,7 +508,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   Chart,
   BarController,
@@ -609,6 +724,12 @@ export default {
     const drill = ref(null)
     let drillToken = 0
 
+    const genreFilter = reactive({ query: '', open: false, loading: false, options: [], active: 0 })
+    const tagFilter = reactive({ query: '', open: false, loading: false, options: [], active: 0 })
+    const categoryFilters = { genre: genreFilter, tag: tagFilter }
+    const categorySearchTimers = { genre: 0, tag: 0 }
+    const categorySearchAborts = { genre: null, tag: null }
+
     const charts = []
 
     const periodLabel = computed(() =>
@@ -792,6 +913,11 @@ export default {
       openDrill('released', `Released ${formatDayLabel(row.date)}`, { day: row.date })
     }
 
+    const onUpcomingBarClick = (row) => {
+      if (!row?.date) return
+      openDrill('upcoming', `Due ${formatDayLabel(row.date)}`, { day: row.date })
+    }
+
     const onGenreBarClick = (genre) => {
       if (!genre) return
       openDrill('genres', `${genre} — ${metrics.value?.period?.label || ''}`, { genre })
@@ -800,6 +926,126 @@ export default {
     const onTagBarClick = (tag) => {
       if (!tag) return
       openDrill('tags', `${tag} — ${metrics.value?.period?.label || ''}`, { tag })
+    }
+
+    const chartCategoryOptions = (kind, query) => {
+      const q = String(query || '').trim().toLowerCase()
+      const rows = kind === 'genre'
+        ? (metrics.value?.genresInMonth || [])
+        : (metrics.value?.tagsInMonth || [])
+      return rows
+        .map((row) => ({
+          name: kind === 'genre' ? row.genre : row.tag,
+          count: row.count
+        }))
+        .filter((row) => row.name && (!q || row.name.toLowerCase().includes(q)))
+        .slice(0, 12)
+    }
+
+    const resetCategoryFilters = () => {
+      for (const kind of ['genre', 'tag']) {
+        clearTimeout(categorySearchTimers[kind])
+        if (categorySearchAborts[kind]) categorySearchAborts[kind].abort()
+        const filter = categoryFilters[kind]
+        filter.query = ''
+        filter.open = false
+        filter.loading = false
+        filter.options = []
+        filter.active = 0
+      }
+    }
+
+    const openCategoryFilter = (kind) => {
+      const filter = categoryFilters[kind]
+      filter.open = true
+      filter.active = 0
+      const q = filter.query.trim()
+      if (!q) {
+        filter.loading = false
+        filter.options = chartCategoryOptions(kind, '')
+        return
+      }
+      if (!filter.options.length) {
+        filter.options = chartCategoryOptions(kind, q)
+      }
+    }
+
+    const closeCategoryFilterSoon = (kind) => {
+      setTimeout(() => {
+        categoryFilters[kind].open = false
+      }, 150)
+    }
+
+    const runCategorySearch = async (kind) => {
+      const filter = categoryFilters[kind]
+      const q = filter.query.trim()
+      if (!q) return
+      if (categorySearchAborts[kind]) categorySearchAborts[kind].abort()
+      const controller = new AbortController()
+      categorySearchAborts[kind] = controller
+      filter.loading = true
+      try {
+        const options = await cubeService.searchStateOfSteamCategories({
+          kind,
+          dateRange: metrics.value?.period?.range,
+          query: q,
+          signal: controller.signal
+        })
+        if (controller.signal.aborted || filter.query.trim() !== q) return
+        filter.options = options
+        filter.active = 0
+      } catch (err) {
+        if (err?.name === 'AbortError' || controller.signal.aborted) return
+        console.warn('Category search failed:', err)
+      } finally {
+        if (categorySearchAborts[kind] === controller) filter.loading = false
+      }
+    }
+
+    const onCategoryFilterInput = (kind) => {
+      const filter = categoryFilters[kind]
+      filter.open = true
+      filter.active = 0
+      const q = filter.query.trim()
+      filter.options = chartCategoryOptions(kind, q)
+      clearTimeout(categorySearchTimers[kind])
+      if (!q) {
+        if (categorySearchAborts[kind]) categorySearchAborts[kind].abort()
+        filter.loading = false
+        return
+      }
+      filter.loading = true
+      categorySearchTimers[kind] = setTimeout(() => runCategorySearch(kind), 250)
+    }
+
+    const selectCategory = (kind, name) => {
+      if (!name) return
+      const filter = categoryFilters[kind]
+      filter.query = name
+      filter.open = false
+      if (kind === 'genre') onGenreBarClick(name)
+      else onTagBarClick(name)
+    }
+
+    const onCategoryFilterKeydown = (kind, event) => {
+      const filter = categoryFilters[kind]
+      if (event.key === 'Escape') {
+        filter.open = false
+        return
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        if (!filter.open) openCategoryFilter(kind)
+        if (!filter.options.length) return
+        const delta = event.key === 'ArrowDown' ? 1 : -1
+        filter.active = (filter.active + delta + filter.options.length) % filter.options.length
+        return
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        const option = filter.options[filter.active] || filter.options[0]
+        if (option) selectCategory(kind, option.name)
+      }
     }
 
     const onFreePaidSliceClick = (label) => {
@@ -830,7 +1076,12 @@ export default {
         ))
       }
       if (m.period.isCurrent && upcomingChartEl.value && m.dueNext7Days?.length) {
-        safeChart(() => buildDayBarChart(upcomingChartEl.value, m.dueNext7Days, 'Due'))
+        safeChart(() => buildDayBarChart(
+          upcomingChartEl.value,
+          m.dueNext7Days,
+          'Due',
+          onUpcomingBarClick
+        ))
       }
       if (genresChartEl.value && m.genresInMonth?.length) {
         safeChart(() => buildHorizontalBarChart(
@@ -890,6 +1141,7 @@ export default {
       metrics.value = null
       drill.value = null
       drillToken += 1
+      resetCategoryFilters()
       try {
         metrics.value = await cubeService.getStateOfSteamMetrics(selectedMonth.value, {
           signal,
@@ -919,6 +1171,7 @@ export default {
 
     onBeforeUnmount(() => {
       if (loadAbort) loadAbort.abort()
+      resetCategoryFilters()
       document.removeEventListener('pointerdown', onDocumentPointerDown)
       destroyCharts()
     })
@@ -940,6 +1193,13 @@ export default {
       sentimentChartEl,
       drill,
       clearDrill,
+      genreFilter,
+      tagFilter,
+      openCategoryFilter,
+      onCategoryFilterInput,
+      onCategoryFilterKeydown,
+      closeCategoryFilterSoon,
+      selectCategory,
       getItadUrl,
       releasedMonthTotal,
       dueNext7Total,
@@ -1016,8 +1276,66 @@ export default {
 }
 
 .chart-subtitle {
-  margin: 0.25rem 0 1rem;
+  margin: 0.25rem 0 0.75rem;
   font-size: 0.85rem;
+}
+
+.chart-filter {
+  position: relative;
+  margin-bottom: 0.85rem;
+}
+
+.chart-filter-input {
+  background: var(--color-surface);
+  border-color: rgba(212, 175, 55, 0.45);
+  color: var(--color-text);
+}
+
+.chart-filter-input:focus {
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.chart-filter-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.2rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  background: #0f172a;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+
+.chart-filter-option,
+.chart-filter-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.chart-filter-option {
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.chart-filter-option.active,
+.chart-filter-option:hover {
+  background: rgba(212, 175, 55, 0.16);
+}
+
+.chart-filter-status {
+  color: var(--color-text-muted);
 }
 
 .chart-wrap {
