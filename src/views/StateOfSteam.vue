@@ -11,7 +11,7 @@
             id="timeMachine"
             class="form-select form-select-sm time-machine-select"
             v-model="selectedMonth"
-            :disabled="isLoading"
+            :disabled="isLoading && !metrics"
             @change="loadMetrics"
           >
             <option
@@ -25,7 +25,7 @@
           <button
             class="btn btn-outline-light btn-sm"
             type="button"
-            :disabled="isLoading"
+            :disabled="isLoading && !metrics"
             @click="loadMetrics"
             title="Refresh metrics"
           >
@@ -68,13 +68,13 @@
           </div>
 
           <div class="row g-3 mb-4">
-            <div :class="metrics.period.isCurrent ? 'col-lg-6' : 'col-12'">
+            <div class="col-12">
               <div
                 class="chart-panel"
                 data-drill-root="released"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Games released — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Games released: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Daily count · total {{ formatNumber(releasedMonthTotal) }}
                   <span v-if="drill?.chart !== 'released'"> · click a bar for games</span>
@@ -113,58 +113,11 @@
                     <li v-if="!drill.games.length" class="drilldown-status text-muted">No games for this day.</li>
                   </ul>
                 </div>
-                <div v-else class="chart-wrap chart-wrap-clickable">
-                  <canvas ref="releasedChartEl"></canvas>
-                </div>
-              </div>
-            </div>
-            <div v-if="metrics.period.isCurrent" class="col-lg-6">
-              <div
-                class="chart-panel"
-                data-drill-root="upcoming"
-                @pointerdown.stop
-              >
-                <h6 class="chart-title">Games due for release — next 7 days</h6>
-                <p class="chart-subtitle text-muted">
-                  Daily count · total {{ formatNumber(dueNext7Total) }}
-                  <span v-if="drill?.chart !== 'upcoming'"> · click a bar for games</span>
-                </p>
-                <div v-if="drill?.chart === 'upcoming'" class="drilldown-panel">
-                  <div class="drilldown-header">
-                    <button type="button" class="btn btn-outline-light btn-sm" @click="clearDrill">
-                      <i class="fas fa-arrow-left"></i> Back to chart
-                    </button>
-                    <span class="drilldown-title">{{ drill.title }}</span>
+                <div v-else class="chart-wrap" :class="{ 'chart-wrap-clickable': metrics.releasedInMonthDaily != null }">
+                  <div v-if="metrics.releasedInMonthDaily == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
                   </div>
-                  <div v-if="drill.loading" class="drilldown-status">Loading games…</div>
-                  <div v-else-if="drill.error" class="drilldown-status error">{{ drill.error }}</div>
-                  <ul v-else class="drilldown-list">
-                    <li v-for="game in drill.games" :key="game.appId" class="drilldown-item">
-                      <div class="drilldown-game-name">{{ game.name }}</div>
-                      <div class="drilldown-meta">
-                        <span v-if="game.reviewScoreDesc" class="text-muted">{{ game.reviewScoreDesc }}</span>
-                        <span v-if="game.totalReviews" class="text-muted">{{ formatNumber(game.totalReviews) }} reviews</span>
-                      </div>
-                      <div class="drilldown-links">
-                        <a
-                          :href="`https://store.steampowered.com/app/${game.appId}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="game-link"
-                        >Steam</a>
-                        <a
-                          :href="getItadUrl(game.name)"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="game-link"
-                        >ITAD</a>
-                      </div>
-                    </li>
-                    <li v-if="!drill.games.length" class="drilldown-status text-muted">No games due this day.</li>
-                  </ul>
-                </div>
-                <div v-else class="chart-wrap chart-wrap-clickable">
-                  <canvas ref="upcomingChartEl"></canvas>
+                  <canvas v-show="metrics.releasedInMonthDaily != null" ref="releasedChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -177,7 +130,7 @@
                 data-drill-root="genres"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Genres released — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Genres released: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Games released that month by genre
                   <span v-if="drill?.chart !== 'genres'"> · click a bar for games</span>
@@ -256,10 +209,14 @@
                 </div>
                 <div
                   v-else
-                  class="chart-wrap chart-wrap-genres chart-wrap-clickable"
+                  class="chart-wrap chart-wrap-genres"
+                  :class="{ 'chart-wrap-clickable': metrics.genresInMonth != null }"
                   :style="{ '--genre-count': metrics.genresInMonth?.length || 8 }"
                 >
-                  <canvas ref="genresChartEl"></canvas>
+                  <div v-if="metrics.genresInMonth == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.genresInMonth != null" ref="genresChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -269,7 +226,7 @@
                 data-drill-root="tags"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Popular tags — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Popular tags: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Top tags on games released that month
                   <span v-if="drill?.chart !== 'tags'"> · click a bar for games</span>
@@ -348,10 +305,14 @@
                 </div>
                 <div
                   v-else
-                  class="chart-wrap chart-wrap-genres chart-wrap-clickable"
+                  class="chart-wrap chart-wrap-genres"
+                  :class="{ 'chart-wrap-clickable': metrics.tagsInMonth != null }"
                   :style="{ '--genre-count': metrics.tagsInMonth?.length || 8 }"
                 >
-                  <canvas ref="tagsChartEl"></canvas>
+                  <div v-if="metrics.tagsInMonth == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.tagsInMonth != null" ref="tagsChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -403,8 +364,11 @@
                     <li v-if="!drill.games.length" class="drilldown-status text-muted">No games in this category.</li>
                   </ul>
                 </div>
-                <div v-else class="chart-wrap chart-wrap-doughnut chart-wrap-clickable">
-                  <canvas ref="freePaidChartEl"></canvas>
+                <div v-else class="chart-wrap chart-wrap-doughnut" :class="{ 'chart-wrap-clickable': metrics.freeVsPaid != null }">
+                  <div v-if="metrics.freeVsPaid == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.freeVsPaid != null" ref="freePaidChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -416,7 +380,10 @@
                   class="chart-wrap chart-wrap-genres"
                   :style="{ '--genre-count': metrics.reviewScoreMix?.length || 8 }"
                 >
-                  <canvas ref="scoreMixChartEl"></canvas>
+                  <div v-if="metrics.reviewScoreMix == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.reviewScoreMix != null" ref="scoreMixChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -427,7 +394,10 @@
                   Review volume for games released in {{ metrics.period.label }}
                 </p>
                 <div class="chart-wrap chart-wrap-doughnut">
-                  <canvas ref="sentimentChartEl"></canvas>
+                  <div v-if="metrics.reviewTotals == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.reviewTotals != null" ref="sentimentChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -460,7 +430,12 @@
                         </td>
                         <td>{{ board.format(game) }}</td>
                       </tr>
-                      <tr v-if="!board.rows?.length">
+                      <tr v-if="board.rows == null">
+                        <td colspan="3" class="chart-loader-cell">
+                          <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
+                        </td>
+                      </tr>
+                      <tr v-else-if="!board.rows.length">
                         <td colspan="3" class="text-muted">No games met the review threshold.</td>
                       </tr>
                     </tbody>
@@ -492,7 +467,12 @@
                         <td>{{ formatNumber(studio.games) }}</td>
                         <td>{{ board.format(studio) }}</td>
                       </tr>
-                      <tr v-if="!board.rows?.length">
+                      <tr v-if="board.rows == null">
+                        <td colspan="4" class="chart-loader-cell">
+                          <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
+                        </td>
+                      </tr>
+                      <tr v-else-if="!board.rows.length">
                         <td colspan="4" class="text-muted">No studios found for this period.</td>
                       </tr>
                     </tbody>
@@ -713,7 +693,6 @@ export default {
     let loadAbort = null
 
     const releasedChartEl = ref(null)
-    const upcomingChartEl = ref(null)
     const genresChartEl = ref(null)
     const tagsChartEl = ref(null)
     const freePaidChartEl = ref(null)
@@ -739,28 +718,29 @@ export default {
     const releasedMonthTotal = computed(() =>
       (metrics.value?.releasedInMonthDaily || []).reduce((sum, row) => sum + (row.count || 0), 0)
     )
-    const dueNext7Total = computed(() =>
-      (metrics.value?.dueNext7Days || []).reduce((sum, row) => sum + (row.count || 0), 0)
-    )
 
     const bigNumberCards = computed(() => {
       const m = metrics.value
       if (!m) return []
       const histPending = m.historicalStatus === 'loading'
       return [
-        { label: `Released — ${m.period.label}`, value: m.selectedMonthReleases, pending: false },
         {
-          label: `Released — ${m.period.prevMonthLabel}`,
+          label: `Released: ${m.period.label}`,
+          value: m.selectedMonthReleases,
+          pending: m.selectedMonthReleases == null
+        },
+        {
+          label: `Released: ${m.period.prevMonthLabel}`,
           value: m.previousMonthReleases,
           pending: histPending && m.previousMonthReleases == null
         },
         {
-          label: `Released — ${m.period.yearLabel}`,
+          label: `Released: ${m.period.yearLabel}`,
           value: m.selectedYearReleases,
           pending: histPending && m.selectedYearReleases == null
         },
         {
-          label: `Released — ${m.period.prevYearLabel}`,
+          label: `Released: ${m.period.prevYearLabel}`,
           value: m.previousYearReleases,
           pending: histPending && m.previousYearReleases == null
         },
@@ -774,7 +754,14 @@ export default {
 
     const reviewStatCards = computed(() => {
       const t = metrics.value?.reviewTotals
-      if (!t) return []
+      if (!t) {
+        return [
+          { label: 'Positive reviews', display: '…' },
+          { label: 'Negative reviews', display: '…' },
+          { label: 'Total reviews', display: '…' },
+          { label: 'Positive share', display: '…' }
+        ]
+      }
       const share = Number(t.positiveShare) || 0
       return [
         { label: 'Positive reviews', display: formatNumber(t.positive) },
@@ -913,19 +900,14 @@ export default {
       openDrill('released', `Released ${formatDayLabel(row.date)}`, { day: row.date })
     }
 
-    const onUpcomingBarClick = (row) => {
-      if (!row?.date) return
-      openDrill('upcoming', `Due ${formatDayLabel(row.date)}`, { day: row.date })
-    }
-
     const onGenreBarClick = (genre) => {
       if (!genre) return
-      openDrill('genres', `${genre} — ${metrics.value?.period?.label || ''}`, { genre })
+      openDrill('genres', `${genre}: ${metrics.value?.period?.label || ''}`, { genre })
     }
 
     const onTagBarClick = (tag) => {
       if (!tag) return
-      openDrill('tags', `${tag} — ${metrics.value?.period?.label || ''}`, { tag })
+      openDrill('tags', `${tag}: ${metrics.value?.period?.label || ''}`, { tag })
     }
 
     const chartCategoryOptions = (kind, query) => {
@@ -1051,7 +1033,7 @@ export default {
     const onFreePaidSliceClick = (label) => {
       if (label !== 'Free' && label !== 'Paid') return
       const isFree = label === 'Free'
-      openDrill('freePaid', `${label} games — ${metrics.value?.period?.label || ''}`, { isFree })
+      openDrill('freePaid', `${label} games: ${metrics.value?.period?.label || ''}`, { isFree })
     }
 
     const onDocumentPointerDown = (event) => {
@@ -1063,9 +1045,10 @@ export default {
 
     const renderCharts = async () => {
       await nextTick()
+      if (drill.value) return
       destroyCharts()
       const m = metrics.value
-      if (!m || drill.value) return
+      if (!m) return
 
       if (releasedChartEl.value && m.releasedInMonthDaily?.length) {
         safeChart(() => buildDayBarChart(
@@ -1073,14 +1056,6 @@ export default {
           m.releasedInMonthDaily,
           'Released',
           onReleasedBarClick
-        ))
-      }
-      if (m.period.isCurrent && upcomingChartEl.value && m.dueNext7Days?.length) {
-        safeChart(() => buildDayBarChart(
-          upcomingChartEl.value,
-          m.dueNext7Days,
-          'Due',
-          onUpcomingBarClick
         ))
       }
       if (genresChartEl.value && m.genresInMonth?.length) {
@@ -1142,9 +1117,26 @@ export default {
       drill.value = null
       drillToken += 1
       resetCategoryFilters()
+      let renderChain = Promise.resolve()
+      let renderTimer = null
+      const scheduleRender = () => {
+        clearTimeout(renderTimer)
+        renderTimer = setTimeout(() => {
+          renderChain = renderChain.then(async () => {
+            if (signal.aborted) return
+            await renderCharts()
+          })
+        }, 80)
+      }
       try {
-        metrics.value = await cubeService.getStateOfSteamMetrics(selectedMonth.value, {
+        const result = await cubeService.getStateOfSteamMetrics(selectedMonth.value, {
           signal,
+          onUpdate: (next) => {
+            if (signal.aborted || !next) return
+            metrics.value = next
+            historicalError.value = next.historicalError || ''
+            scheduleRender()
+          },
           onHistorical: (hist) => {
             if (signal.aborted || !metrics.value) return
             metrics.value = { ...metrics.value, ...hist }
@@ -1152,8 +1144,11 @@ export default {
           }
         })
         if (signal.aborted) return
+        if (!metrics.value && result) metrics.value = result
         historicalError.value = metrics.value?.historicalError || ''
-        await renderCharts()
+        clearTimeout(renderTimer)
+        await renderChain
+        if (!signal.aborted) await renderCharts()
       } catch (err) {
         if (err?.name === 'AbortError' || signal.aborted) return
         console.error('State of Steam metrics failed:', err)
@@ -1185,7 +1180,6 @@ export default {
       historicalError,
       periodLabel,
       releasedChartEl,
-      upcomingChartEl,
       genresChartEl,
       tagsChartEl,
       freePaidChartEl,
@@ -1202,7 +1196,6 @@ export default {
       selectCategory,
       getItadUrl,
       releasedMonthTotal,
-      dueNext7Total,
       bigNumberCards,
       reviewStatCards,
       sentimentBoards,
@@ -1341,6 +1334,22 @@ export default {
 .chart-wrap {
   position: relative;
   height: 240px;
+}
+
+.chart-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  font-size: 1.4rem;
+}
+
+.chart-loader-cell {
+  text-align: center;
+  color: var(--color-accent);
+  padding: 1.25rem 0;
 }
 
 .chart-wrap-clickable {

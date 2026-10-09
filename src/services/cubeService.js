@@ -1368,7 +1368,8 @@ async function queryDailyCounts(cube, measure, dateRange, signal = null) {
 const COUNT_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 const MONTH_PAYLOAD_TTL_MS = 60 * 60 * 1000
 const MONTH_PAYLOAD_CURRENT_TTL_MS = 15 * 60 * 1000
-const SOS_CONCURRENCY = 3
+const MONTH_PAYLOAD_STALE_MS = 24 * 60 * 60 * 1000
+const SOS_CONCURRENCY = 6
 const countQueryCache = new Map() // rangeKey -> { ts, value }
 const monthPayloadCache = new Map() // monthKey -> { ts, value }
 let monthlyReleaseSeriesCache = null // { ts, rows: [{ month: 'YYYY-MM', count }] }
@@ -1408,29 +1409,50 @@ function monthPayloadCacheKey(monthKey) {
   return `gd_sos_month_v4_${monthKey}`
 }
 
+function readStoredMonthEntry(monthKey) {
+  const mem = monthPayloadCache.get(monthKey)
+  if (mem?.value) return mem
+  const stores = [sessionStorage, localStorage]
+  for (const store of stores) {
+    try {
+      const raw = store.getItem(monthPayloadCacheKey(monthKey))
+      if (!raw) continue
+      const parsed = JSON.parse(raw)
+      if (!parsed?.value || !parsed.ts) continue
+      monthPayloadCache.set(monthKey, parsed)
+      return parsed
+    } catch (_) {
+      // ignore quota / private mode
+    }
+  }
+  return null
+}
+
 function readMonthPayloadCache(monthKey, isCurrent) {
   const ttl = isCurrent ? MONTH_PAYLOAD_CURRENT_TTL_MS : MONTH_PAYLOAD_TTL_MS
-  const mem = monthPayloadCache.get(monthKey)
-  if (mem && Date.now() - mem.ts < ttl) return mem.value
-  try {
-    const raw = sessionStorage.getItem(monthPayloadCacheKey(monthKey))
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    if (!parsed || Date.now() - (parsed.ts || 0) >= ttl) return null
-    monthPayloadCache.set(monthKey, { ts: parsed.ts, value: parsed.value })
-    return parsed.value
-  } catch (_) {
-    return null
-  }
+  const entry = readStoredMonthEntry(monthKey)
+  if (!entry || Date.now() - entry.ts >= ttl) return null
+  return entry.value
+}
+
+function readStaleMonthPayload(monthKey) {
+  const entry = readStoredMonthEntry(monthKey)
+  if (!entry) return null
+  const age = Date.now() - entry.ts
+  if (age >= MONTH_PAYLOAD_STALE_MS) return null
+  return entry.value
 }
 
 function writeMonthPayloadCache(monthKey, value) {
   const entry = { ts: Date.now(), value }
   monthPayloadCache.set(monthKey, entry)
-  try {
-    sessionStorage.setItem(monthPayloadCacheKey(monthKey), JSON.stringify(entry))
-  } catch (_) {
-    // ignore quota
+  const raw = JSON.stringify(entry)
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      store.setItem(monthPayloadCacheKey(monthKey), raw)
+    } catch (_) {
+      // ignore quota
+    }
   }
 }
 
@@ -1812,8 +1834,39 @@ async function fetchStateOfSteamSnapshot(monthKey, signal = null) {
   }
 }
 
-async function loadStateOfSteamLivePanel(period, signal = null) {
-  const { range, isCurrent, today } = period
+function livePatchFromTask(key, value) {
+  if (key === 'releasedDaily') {
+    const rows = value || []
+    return {
+      releasedInMonthDaily: rows,
+      selectedMonthReleases: rows.reduce((sum, row) => sum + (row.count || 0), 0)
+    }
+  }
+  if (key === 'genresInMonth') return { genresInMonth: value || [] }
+  if (key === 'tagsInMonth') return { tagsInMonth: value || [] }
+  if (key === 'reviewTotals') return { reviewTotals: value || emptyReviewTotals() }
+  if (key === 'reviewScoreMix') return { reviewScoreMix: value || [] }
+  if (key === 'freeVsPaid') return { freeVsPaid: value || emptyFreeVsPaid() }
+  if (key === 'sentimentRows') return rankSentimentGames(value)
+  if (key === 'publisherStudios') {
+    const publishers = rankStudios(value || [])
+    return {
+      prolificPublishers: publishers.prolific,
+      reveredPublishers: publishers.revered
+    }
+  }
+  if (key === 'developerStudios') {
+    const developers = rankStudios(value || [])
+    return {
+      prolificDevelopers: developers.prolific,
+      reveredDevelopers: developers.revered
+    }
+  }
+  return null
+}
+
+async function loadStateOfSteamLivePanel(period, signal = null, onProgress = null) {
+  const { range } = period
   const monthDays = eachDayInclusive(period.monthStart, period.monthEnd)
 
   const tasks = [
@@ -1823,17 +1876,6 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
         fillDailySeries(rows, ['Games.releaseDate'], ['Games.count'], monthDays)
       ),
       fallback: monthDays.map((date) => ({ date, count: 0 }))
-    },
-    {
-      key: 'dueNext7Days',
-      run: async () => {
-        if (!isCurrent) return []
-        const next7End = addDays(new Date(), 6)
-        const next7Days = eachDayInclusive(new Date(), next7End)
-        const rows = await queryDailyCounts('Games', 'count', [today, formatYmd(next7End)], signal)
-        return fillDailySeries(rows, ['Games.releaseDate'], ['Games.count'], next7Days)
-      },
-      fallback: []
     },
     {
       key: 'genresInMonth',
@@ -1877,10 +1919,22 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
     }
   ]
 
-  const settled = await mapPool(tasks, SOS_CONCURRENCY, async (task) => ({
-    key: task.key,
-    value: await softQuery(task.key, task.fallback, task.run)
-  }))
+  const settled = await mapPool(tasks, SOS_CONCURRENCY, async (task) => {
+    let value = task.fallback
+    let ok = false
+    try {
+      value = await task.run()
+      ok = true
+    } catch (error) {
+      if (isAbortError(error)) throw error
+      console.warn(`State of Steam soft-fail (${task.key}):`, error)
+    }
+    if (ok && onProgress) {
+      const patch = livePatchFromTask(task.key, value)
+      if (patch) onProgress(patch)
+    }
+    return { key: task.key, value }
+  })
 
   const byKey = Object.fromEntries(settled.map((row) => [row.key, row.value]))
   const { mostLoved, mostHated, mostMixed } = rankSentimentGames(byKey.sentimentRows)
@@ -1891,7 +1945,6 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
 
   return {
     releasedInMonthDaily: releasedDailyRows,
-    dueNext7Days: byKey.dueNext7Days || [],
     genresInMonth: byKey.genresInMonth || [],
     tagsInMonth: byKey.tagsInMonth || [],
     reviewTotals: byKey.reviewTotals || emptyReviewTotals(),
@@ -1954,53 +2007,101 @@ async function loadStateOfSteamHistorical(period, signal = null) {
   }
 }
 
+function metricsFromSnapshot(period, snapshot) {
+  return {
+    period,
+    ...snapshot,
+    previousMonthReleases: snapshot.previousMonthReleases ?? null,
+    selectedYearReleases: snapshot.selectedYearReleases ?? null,
+    previousYearReleases: snapshot.previousYearReleases ?? null,
+    releasedToDate: snapshot.releasedToDate ?? null,
+    historicalStatus: snapshot.releasedToDate != null ? 'ready' : 'loading',
+    historicalError: null,
+    source: 'snapshot'
+  }
+}
+
 /**
  * State of Steam dashboard metrics for a Time Machine month selection.
  *
  * Load strategy:
- *  1) Session cache
- *  2) Precomputed monthly snapshot (Cube StateOfSteamMonthly) for historical months
- *  3) Live month panel with concurrency + soft-fail per chart
- *  4) Historical rollups via monthly series (soft-fail; optional onHistorical callback)
+ *  1) Fresh session/local cache
+ *  2) Stale cache painted immediately, then refreshed
+ *  3) Precomputed monthly snapshot painted as soon as it arrives
+ *  4) Live panel queries (higher concurrency), each section published as it finishes
+ *  5) Historical rollups in parallel with the live panel
  *
  * @param {string} monthKey 'this-month' or 'YYYY-MM'
- * @param {{ signal?: AbortSignal, onHistorical?: (hist: object) => void }} [opts]
+ * @param {{ signal?: AbortSignal, onUpdate?: (metrics: object) => void, onHistorical?: (hist: object) => void }} [opts]
  */
 export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {}) {
-  const { signal = null, onHistorical = null } = opts
+  const { signal = null, onHistorical = null, onUpdate = null } = opts
   const period = resolveTimeMachinePeriod(monthKey)
   const cacheKey = period.key
 
   const cached = readMonthPayloadCache(cacheKey, period.isCurrent)
   if (cached?.period) {
     const restored = { ...cached, period }
-    if (onHistorical && restored.historicalStatus === 'ready') {
-      // already complete
-    } else if (onHistorical) {
+    onUpdate?.(restored)
+    if (restored.historicalStatus !== 'ready' && onHistorical) {
       queueHistorical(period, restored, signal, onHistorical)
+    } else if (onHistorical && restored.historicalStatus === 'ready') {
+      onHistorical({
+        previousMonthReleases: restored.previousMonthReleases,
+        selectedYearReleases: restored.selectedYearReleases,
+        previousYearReleases: restored.previousYearReleases,
+        releasedToDate: restored.releasedToDate,
+        historicalStatus: 'ready',
+        historicalError: null
+      })
     }
     return restored
   }
 
-  // Snapshots are ideal for historical months; current month still prefers live freshness
+  let latest = {
+    period,
+    previousMonthReleases: null,
+    selectedYearReleases: null,
+    previousYearReleases: null,
+    releasedToDate: null,
+    historicalStatus: 'loading',
+    historicalError: null
+  }
+  let livePieces = 0
+  let panelSettled = false
+
+  const publish = (patch) => {
+    if (signal?.aborted) return latest
+    latest = { ...latest, ...patch, period }
+    onUpdate?.(latest)
+    return latest
+  }
+
+  const stale = readStaleMonthPayload(cacheKey)
+  let blockSnapshot = Boolean(stale)
+  if (stale && typeof stale === 'object') {
+    publish({ ...stale, period })
+  }
+
+  let snapshotPromise = null
+  const loadSnapshot = () => {
+    if (!snapshotPromise) {
+      snapshotPromise = softQuery('snapshot', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+    }
+    return snapshotPromise
+  }
+
   if (!period.isCurrent) {
-    const snapshot = await softQuery('snapshot', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+    const snapshot = await loadSnapshot()
     if (snapshot) {
-      const metrics = {
-        period,
-        ...snapshot,
-        dueNext7Days: [],
-        previousMonthReleases: snapshot.previousMonthReleases ?? null,
-        selectedYearReleases: snapshot.selectedYearReleases ?? null,
-        previousYearReleases: snapshot.previousYearReleases ?? null,
-        releasedToDate: snapshot.releasedToDate ?? null,
-        historicalStatus: snapshot.releasedToDate != null ? 'ready' : 'loading',
-        historicalError: null,
-        source: 'snapshot'
-      }
+      const metrics = publish(metricsFromSnapshot(period, snapshot))
       writeMonthPayloadCache(cacheKey, metrics)
       if (metrics.historicalStatus !== 'ready' && onHistorical) {
-        queueHistorical(period, metrics, signal, onHistorical)
+        queueHistorical(period, metrics, signal, (hist) => {
+          const merged = publish(hist)
+          writeMonthPayloadCache(cacheKey, merged)
+          onHistorical(hist)
+        })
       } else if (onHistorical && metrics.historicalStatus === 'ready') {
         onHistorical({
           previousMonthReleases: metrics.previousMonthReleases,
@@ -2013,36 +2114,56 @@ export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {})
       }
       return metrics
     }
+  } else if (!stale) {
+    // One precomputed row paints the current month while the live fan-out is still running.
+    loadSnapshot().then((snapshot) => {
+      if (!snapshot || signal?.aborted || livePieces > 0 || blockSnapshot) return
+      publish(metricsFromSnapshot(period, snapshot))
+    }).catch(() => {})
   }
 
-  const panel = await loadStateOfSteamLivePanel(period, signal)
-  const metrics = {
-    period,
-    ...panel,
-    previousMonthReleases: null,
-    selectedYearReleases: null,
-    previousYearReleases: null,
-    releasedToDate: null,
-    historicalStatus: 'loading',
-    historicalError: null
-  }
+  loadStateOfSteamHistorical(period, signal)
+    .then((hist) => {
+      if (signal?.aborted) return
+      blockSnapshot = true
+      publish(hist)
+      if (panelSettled) writeMonthPayloadCache(cacheKey, latest)
+      if (onHistorical) onHistorical(hist)
+    })
+    .catch((error) => {
+      if (isAbortError(error) || signal?.aborted) return
+      console.warn('Historical State of Steam load failed:', error)
+      const hist = {
+        previousMonthReleases: latest.previousMonthReleases ?? 0,
+        selectedYearReleases: latest.selectedYearReleases ?? 0,
+        previousYearReleases: latest.previousYearReleases ?? 0,
+        releasedToDate: latest.releasedToDate ?? 0,
+        historicalStatus: 'error',
+        historicalError: 'Could not load historical release totals.'
+      }
+      publish(hist)
+      if (onHistorical) onHistorical(hist)
+    })
 
-  // Current month: try snapshot only as soft fallback if live panel is empty
-  if (period.isCurrent && (metrics.selectedMonthReleases || 0) === 0) {
-    const snapshot = await softQuery('snapshot-current', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+  const panel = await loadStateOfSteamLivePanel(period, signal, (patch) => {
+    livePieces += 1
+    publish({ ...patch, source: 'live' })
+  })
+
+  if (livePieces > 0) {
+    publish({ ...panel, source: 'live' })
+  } else if ((latest.selectedMonthReleases || 0) === 0) {
+    const snapshot = await loadSnapshot()
     if (snapshot && (snapshot.selectedMonthReleases || 0) > 0) {
-      Object.assign(metrics, snapshot, { period, source: 'snapshot', dueNext7Days: metrics.dueNext7Days })
+      publish(metricsFromSnapshot(period, snapshot))
+    } else {
+      publish({ ...panel, source: 'live' })
     }
   }
 
-  writeMonthPayloadCache(cacheKey, metrics)
-  queueHistorical(period, metrics, signal, (hist) => {
-    const merged = { ...metrics, ...hist }
-    writeMonthPayloadCache(cacheKey, merged)
-    if (onHistorical) onHistorical(hist)
-  })
-
-  return metrics
+  panelSettled = true
+  writeMonthPayloadCache(cacheKey, latest)
+  return latest
 }
 
 function queueHistorical(period, metrics, signal, onHistorical) {
