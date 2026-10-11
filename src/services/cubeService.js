@@ -273,7 +273,7 @@ function mapOrderByToCube(orderBy) {
 
 // Helper function to make Cube.js API calls with retry logic.
 // Uses POST so large exclusion filters are not limited by GET URL length.
-async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = false, signal = null } = {}) {
+async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = false, signal = null, continueWaitDelayMs = null } = {}) {
   console.log('Cube.js Query:', query)
   const client = analytics ? cubeAnalyticsApi : cubeApi
 
@@ -293,7 +293,9 @@ async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = fal
         if (errorMsg.toLowerCase().includes('timeout') ||
             errorMsg.toLowerCase().includes('continue wait')) {
           if (attempt <= maxRetries) {
-            const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random()
+            const delay = continueWaitDelayMs != null
+              ? continueWaitDelayMs / 1000
+              : baseDelay * Math.pow(2, attempt - 1) + Math.random()
             console.log(`Cube.js timeout error. Retrying in ${delay.toFixed(2)} seconds... (Attempt ${attempt} of ${maxRetries})`)
             await new Promise((resolve, reject) => {
               const timer = setTimeout(resolve, delay * 1000)
@@ -1216,8 +1218,11 @@ export async function findSimilarGames(appId, minCommonTags = 11) {
       ],
       limit: 100 // Get more results to filter client-side
     }
-    
-    const result = await queryCube(query)
+
+    // Cold SimilarGames queries often answer "Continue wait" for a while.
+    // Keep polling on the longer client so the page can stay on "still searching"
+    // instead of treating a timeout as an empty result set.
+    const result = await queryCube(query, 12, 1, { analytics: true, continueWaitDelayMs: 1000 })
     console.log('SimilarGames cube result:', result.length, 'rows')
     
     if (!Array.isArray(result) || result.length === 0) {

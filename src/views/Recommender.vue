@@ -123,11 +123,11 @@
           <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
         </div>
         <h5>Finding Similar Games...</h5>
-        <p class="text-muted">This may take a moment as we analyze game tags and similarities.</p>
+        <p class="text-muted">Still searching. The list appears when the comparison finishes.</p>
         <div class="alert alert-info mt-3">
           <i class="fas fa-clock me-2"></i>
-          <strong>Please wait up to 30 seconds for recommendations</strong>
-          <p class="mb-0 small">We're analyzing thousands of games to find the most similar ones based on your selected game's tags.</p>
+          <strong>This can take a minute the first time</strong>
+          <p class="mb-0 small">A slow search stays on this screen. An empty result is a separate message, after the search finishes.</p>
         </div>
         <div class="progress mt-3" style="height: 6px;">
           <div class="progress-bar progress-bar-striped progress-bar-animated" 
@@ -266,8 +266,21 @@
       </div>
     </div>
 
-    <!-- No Results Message -->
-    <div v-else-if="!isLoading && selectedGame && similarGames.length === 0" class="card">
+    <!-- Search did not finish (timeout / Cube still working) -->
+    <div v-else-if="similarSearchError" class="card">
+      <div class="card-body text-center text-white py-4">
+        <i class="fas fa-hourglass-half fa-3x mb-3"></i>
+        <h5>Search still running</h5>
+        <p class="mb-3">{{ similarSearchError }}</p>
+        <button class="btn btn-primary btn-sm" @click="findSimilarGames">
+          <i class="fas fa-redo me-1"></i>
+          Try again
+        </button>
+      </div>
+    </div>
+
+    <!-- No Results Message: query finished and nothing matched -->
+    <div v-else-if="hasSearched && selectedGame && similarGames.length === 0" class="card">
       <div class="card-body text-center text-white py-4">
         <i class="fas fa-search fa-3x mb-3"></i>
         <h5>No similar games found</h5>
@@ -308,6 +321,7 @@ export default {
     const similarGames = ref([])
     const isLoading = ref(false)
     const hasSearched = ref(false)
+    const similarSearchError = ref('')
     const allGames = ref([]) // Used for client-side fallback search (lazy loaded)
     const minCommonTags = ref(11) // Minimum common tags requirement
     const isSearching = ref(false) // Loading indicator for game search
@@ -365,7 +379,8 @@ export default {
       showGameDropdown.value = false
       // Clear any previous similar games results
       similarGames.value = []
-      // Don't reset hasSearched - keep previous search state
+      similarSearchError.value = ''
+      hasSearched.value = false
     }
 
     const clearSelection = () => {
@@ -373,6 +388,7 @@ export default {
       gameSearchQuery.value = ''
       similarGames.value = []
       hasSearched.value = false
+      similarSearchError.value = ''
     }
 
     const findSimilarGames = async () => {
@@ -380,6 +396,7 @@ export default {
 
       isLoading.value = true
       hasSearched.value = true
+      similarSearchError.value = ''
       similarGames.value = [] // Clear previous results
       
       try {
@@ -403,6 +420,11 @@ export default {
         // No Steam price fetching; ITAD link shown instead
       } catch (error) {
         console.error('Error finding similar games:', error)
+        const msg = String(error?.message || '').toLowerCase()
+        const stillRunning = msg.includes('continue wait') || msg.includes('timeout') || msg.includes('network')
+        similarSearchError.value = stillRunning
+          ? 'The comparison is still running. Try again in a moment. This is not an empty result.'
+          : 'The search did not finish. Try again. This is not an empty result.'
         similarGames.value = []
       } finally {
         isLoading.value = false
@@ -634,6 +656,7 @@ export default {
       similarGames,
       isLoading,
       hasSearched,
+      similarSearchError,
       minCommonTags,
       isSearching,
       includeAdultGames,
