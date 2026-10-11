@@ -488,7 +488,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, inject, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   Chart,
   BarController,
@@ -522,6 +522,10 @@ const GRID = 'rgba(148, 163, 184, 0.18)'
 const SLATE = '#64748b'
 const POSITIVE_GREEN = '#6ee7b7'
 const NEGATIVE_RED = '#fca5a5'
+const HC_WHITE = '#ffffff'
+const HC_WHITE_SOFT = 'rgba(255, 255, 255, 0.9)'
+const HC_GREY = '#c0c0c0'
+const HC_GRID = 'rgba(255, 255, 255, 0.28)'
 
 /** Soft multi-hue palette for genre/tag bars (dark theme friendly) */
 const CATEGORY_PALETTE = [
@@ -539,8 +543,14 @@ const CATEGORY_PALETTE = [
   { fill: 'rgba(165, 180, 252, 0.78)', stroke: '#a5b4fc' }
 ]
 
-function categoryColors(count) {
-  return Array.from({ length: count }, (_, i) => CATEGORY_PALETTE[i % CATEGORY_PALETTE.length])
+const HC_CATEGORY_PALETTE = [
+  { fill: HC_WHITE_SOFT, stroke: HC_WHITE },
+  { fill: 'rgba(192, 192, 192, 0.9)', stroke: HC_GREY }
+]
+
+function categoryColors(count, highContrast = false) {
+  const palette = highContrast ? HC_CATEGORY_PALETTE : CATEGORY_PALETTE
+  return Array.from({ length: count }, (_, i) => palette[i % palette.length])
 }
 
 function formatDayLabel(ymd) {
@@ -551,7 +561,16 @@ function formatDayLabel(ymd) {
   })
 }
 
-function tooltipDefaults() {
+function tooltipDefaults(highContrast = false) {
+  if (highContrast) {
+    return {
+      backgroundColor: '#000000',
+      titleColor: HC_WHITE,
+      bodyColor: HC_WHITE,
+      borderColor: HC_WHITE,
+      borderWidth: 1
+    }
+  }
   return {
     backgroundColor: '#1e293b',
     titleColor: GOLD,
@@ -561,7 +580,9 @@ function tooltipDefaults() {
   }
 }
 
-function buildDayBarChart(canvas, series, label, onSelect) {
+function buildDayBarChart(canvas, series, label, onSelect, highContrast = false) {
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
   return new Chart(canvas, {
     type: 'bar',
     data: {
@@ -569,8 +590,8 @@ function buildDayBarChart(canvas, series, label, onSelect) {
       datasets: [{
         label,
         data: series.map((row) => row.count),
-        backgroundColor: GOLD_SOFT,
-        borderColor: GOLD,
+        backgroundColor: highContrast ? HC_WHITE_SOFT : GOLD_SOFT,
+        borderColor: highContrast ? HC_WHITE : GOLD,
         borderWidth: 1,
         borderRadius: 4,
         maxBarThickness: 36
@@ -585,17 +606,17 @@ function buildDayBarChart(canvas, series, label, onSelect) {
         const row = series[idx]
         if (row) onSelect(row, idx)
       },
-      plugins: { legend: { display: false }, tooltip: tooltipDefaults() },
+      plugins: { legend: { display: false }, tooltip: tooltipDefaults(highContrast) },
       scales: {
         x: {
-          ticks: { color: MUTED, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
-          grid: { color: GRID },
+          ticks: { color: tick, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
+          grid: { color: grid },
           border: { display: false }
         },
         y: {
           beginAtZero: true,
-          ticks: { color: MUTED, precision: 0 },
-          grid: { color: GRID },
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
           border: { display: false }
         }
       }
@@ -603,10 +624,12 @@ function buildDayBarChart(canvas, series, label, onSelect) {
   })
 }
 
-function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect, { multicolor = false } = {}) {
+function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect, { multicolor = false, highContrast = false } = {}) {
   const colors = multicolor
-    ? categoryColors(labels.length)
+    ? categoryColors(labels.length, highContrast)
     : null
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
   return new Chart(canvas, {
     type: 'bar',
     data: {
@@ -614,8 +637,12 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
       datasets: [{
         label: datasetLabel,
         data: values,
-        backgroundColor: colors ? colors.map((c) => c.fill) : GOLD_SOFT,
-        borderColor: colors ? colors.map((c) => c.stroke) : GOLD,
+        backgroundColor: colors
+          ? colors.map((c) => c.fill)
+          : (highContrast ? HC_WHITE_SOFT : GOLD_SOFT),
+        borderColor: colors
+          ? colors.map((c) => c.stroke)
+          : (highContrast ? HC_WHITE : GOLD),
         borderWidth: 1,
         borderRadius: 4,
         maxBarThickness: 28
@@ -629,16 +656,16 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
         if (!onSelect || !elements.length) return
         onSelect(labels[elements[0].index], elements[0].index)
       },
-      plugins: { legend: { display: false }, tooltip: tooltipDefaults() },
+      plugins: { legend: { display: false }, tooltip: tooltipDefaults(highContrast) },
       scales: {
         x: {
           beginAtZero: true,
-          ticks: { color: MUTED, precision: 0 },
-          grid: { color: GRID },
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
           border: { display: false }
         },
         y: {
-          ticks: { color: MUTED, autoSkip: false },
+          ticks: { color: tick, autoSkip: false },
           grid: { display: false },
           border: { display: false }
         }
@@ -647,19 +674,20 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
   })
 }
 
-function buildDoughnutChart(canvas, labels, values, colors, onSelect) {
+function buildDoughnutChart(canvas, labels, values, colors, onSelect, highContrast = false) {
   const safeValues = values.map((v) => Number(v) || 0)
   if (safeValues.every((v) => v <= 0)) {
     return null
   }
+  const hcColors = labels.map((_, i) => (i % 2 === 0 ? HC_WHITE : HC_GREY))
   return new Chart(canvas, {
     type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data: safeValues,
-        backgroundColor: colors,
-        borderColor: '#0f172a',
+        backgroundColor: highContrast ? hcColors : colors,
+        borderColor: highContrast ? '#000000' : '#0f172a',
         borderWidth: 2
       }]
     },
@@ -673,9 +701,9 @@ function buildDoughnutChart(canvas, labels, values, colors, onSelect) {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: MUTED, boxWidth: 12 }
+          labels: { color: highContrast ? HC_WHITE : MUTED, boxWidth: 12 }
         },
-        tooltip: tooltipDefaults()
+        tooltip: tooltipDefaults(highContrast)
       }
     }
   })
@@ -684,6 +712,7 @@ function buildDoughnutChart(canvas, labels, values, colors, onSelect) {
 export default {
   name: 'StateOfSteam',
   setup() {
+    const isHighContrast = inject('isHighContrast', ref(false))
     const timeMachineOptions = getTimeMachineOptions()
     const selectedMonth = ref('this-month')
     const isLoading = ref(false)
@@ -1049,13 +1078,15 @@ export default {
       destroyCharts()
       const m = metrics.value
       if (!m) return
+      const hc = !!isHighContrast.value
 
       if (releasedChartEl.value && m.releasedInMonthDaily?.length) {
         safeChart(() => buildDayBarChart(
           releasedChartEl.value,
           m.releasedInMonthDaily,
           'Released',
-          onReleasedBarClick
+          onReleasedBarClick,
+          hc
         ))
       }
       if (genresChartEl.value && m.genresInMonth?.length) {
@@ -1065,7 +1096,7 @@ export default {
           m.genresInMonth.map((r) => r.count),
           'Games',
           onGenreBarClick,
-          { multicolor: true }
+          { multicolor: true, highContrast: hc }
         ))
       }
       if (tagsChartEl.value && m.tagsInMonth?.length) {
@@ -1075,7 +1106,7 @@ export default {
           m.tagsInMonth.map((r) => r.count),
           'Games',
           onTagBarClick,
-          { multicolor: true }
+          { multicolor: true, highContrast: hc }
         ))
       }
       if (scoreMixChartEl.value && m.reviewScoreMix?.length) {
@@ -1083,7 +1114,9 @@ export default {
           scoreMixChartEl.value,
           m.reviewScoreMix.map((r) => r.score),
           m.reviewScoreMix.map((r) => r.count),
-          'Games'
+          'Games',
+          undefined,
+          { highContrast: hc }
         ))
       }
       if (freePaidChartEl.value) {
@@ -1092,7 +1125,8 @@ export default {
           ['Free', 'Paid'],
           [m.freeVsPaid?.free, m.freeVsPaid?.paid],
           [GOLD, SLATE],
-          onFreePaidSliceClick
+          onFreePaidSliceClick,
+          hc
         ))
       }
       if (sentimentChartEl.value) {
@@ -1100,10 +1134,16 @@ export default {
           sentimentChartEl.value,
           ['Positive', 'Negative'],
           [m.reviewTotals?.positive, m.reviewTotals?.negative],
-          [POSITIVE_GREEN, NEGATIVE_RED]
+          [POSITIVE_GREEN, NEGATIVE_RED],
+          undefined,
+          hc
         ))
       }
     }
+
+    watch(isHighContrast, () => {
+      renderCharts()
+    })
 
     const loadMetrics = async () => {
       if (loadAbort) loadAbort.abort()

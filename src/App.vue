@@ -180,6 +180,7 @@
 </template>
 
 <script>
+import { computed } from 'vue'
 import ConradMascot from './components/ConradMascot.vue'
 
 export default {
@@ -191,6 +192,11 @@ export default {
     return {
       isHighContrast: false,
       showMobileMenu: false
+    }
+  },
+  provide() {
+    return {
+      isHighContrast: computed(() => this.isHighContrast)
     }
   },
   methods: {

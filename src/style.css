@@ -62,6 +62,14 @@
   border: 1px solid #fff !important;
 }
 
+/* Chart.js draws on canvas; keep panel black so white series read clearly */
+.hc-contrast .chart-panel,
+.hc-contrast .chart-wrap,
+.hc-contrast .chart-wrap canvas {
+  background: #000 !important;
+  color: #fff !important;
+}
+
 body {
   background-color: var(--color-bg);
   background-image:
