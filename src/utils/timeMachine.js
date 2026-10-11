@@ -89,9 +89,12 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
   const prevYearEnd = new Date(prevYear, 11, 31)
 
   const steamLaunch = new Date(STEAM_LAUNCH.year, STEAM_LAUNCH.monthIndex, 1)
+  // "This month" is the current calendar month. Same key, ranges, and totals
+  // as selecting that month directly (for example 2026-10).
+  const canonicalKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 
   return {
-    key: isCurrent && monthKey === 'this-month' ? 'this-month' : `${year}-${String(monthIndex + 1).padStart(2, '0')}`,
+    key: canonicalKey,
     label: isCurrent && (!monthKey || monthKey === 'this-month')
       ? 'This month'
       : monthLabel(year, monthIndex),
