@@ -772,11 +772,6 @@ export default {
           label: `Released: ${m.period.prevYearLabel}`,
           value: m.previousYearReleases,
           pending: histPending && m.previousYearReleases == null
-        },
-        {
-          label: `Released to date (thru ${m.period.label})`,
-          value: m.releasedToDate,
-          pending: histPending && m.releasedToDate == null
         }
       ]
     })
