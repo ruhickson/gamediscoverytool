@@ -309,7 +309,7 @@ export default {
     const isLoading = ref(false)
     const hasSearched = ref(false)
     const allGames = ref([]) // Used for client-side fallback search (lazy loaded)
-    const minCommonTags = ref(15) // Minimum common tags requirement
+    const minCommonTags = ref(11) // Minimum common tags requirement
     const isSearching = ref(false) // Loading indicator for game search
     const includeAdultGames = ref(false) // Default: exclude adult games
     

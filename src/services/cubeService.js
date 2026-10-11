@@ -1188,7 +1188,7 @@ export async function searchGamesByName(searchTerm, limit = 100) {
 }
 
 // Find similar games using custom SimilarGames cube (single optimized query)
-export async function findSimilarGames(appId, minCommonTags = 15) {
+export async function findSimilarGames(appId, minCommonTags = 11) {
   try {
     console.log('Starting similarity search for appId:', appId)
     
