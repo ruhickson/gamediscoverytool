@@ -364,8 +364,8 @@
         </div>
       </div>
       <div class="card-body">
-        <div v-if="isLoading" class="loading">
-          <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+        <div v-if="resultsLoading" class="results-loading" role="status" aria-label="Loading search results">
+          <i class="fas fa-spinner fa-spin fa-3x"></i>
           <p>Searching for games...</p>
         </div>
         
@@ -509,6 +509,7 @@ export default {
       const hoursValue = ref(null)
       const games = ref([])
       const isLoading = ref(false)
+      const resultsLoading = ref(true)
       const error = ref('')
       const availableTags = ref([])
       // Steam price hidden; no price fetching
@@ -766,6 +767,7 @@ export default {
 
     const searchGames = async () => {
       isLoading.value = true
+      resultsLoading.value = true
       error.value = ''
       
       try {
@@ -956,6 +958,7 @@ export default {
         }
       } finally {
         isLoading.value = false
+        resultsLoading.value = false
       }
     }
 
@@ -1287,6 +1290,7 @@ export default {
         games.value = []
       } finally {
         isLoading.value = false
+        resultsLoading.value = false
       }
     }
 
@@ -1337,6 +1341,7 @@ export default {
       updateQuickDates,
       games,
       isLoading,
+      resultsLoading,
       error,
       availableTags,
       orderField,
@@ -1379,6 +1384,18 @@ export default {
 </script>
 
 <style scoped>
+.results-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 220px;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 /* Filters collapse animation */
 .card-body {
   transition: opacity 0.2s ease, max-height 0.3s ease;
