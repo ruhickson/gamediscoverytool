@@ -124,3 +124,50 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
     today: toYmd(today)
   }
 }
+
+export function parseYmd(iso) {
+  const [year, month, day] = String(iso || '').split('-').map(Number)
+  return new Date(year, (month || 1) - 1, day || 1)
+}
+
+export function addDays(date, days) {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+/** Shift a calendar date by whole years, clamping days that do not exist (29 Feb). */
+export function addYearsClamped(date, years) {
+  const year = date.getFullYear() + years
+  const month = date.getMonth()
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, Math.min(date.getDate(), lastDay))
+}
+
+/** True when the inclusive range is at most one year long. */
+export function rangeWithinOneYear(range) {
+  if (!range || range.length !== 2 || !range[0] || !range[1]) return false
+  const start = parseYmd(range[0] <= range[1] ? range[0] : range[1])
+  const end = parseYmd(range[0] <= range[1] ? range[1] : range[0])
+  return end <= addYearsClamped(start, 1)
+}
+
+/** The window of the same length immediately before an inclusive range. */
+export function previousPeriodRange(range) {
+  const [startIso, endIso] = range[0] <= range[1] ? range : [range[1], range[0]]
+  const start = parseYmd(startIso)
+  const end = parseYmd(endIso)
+  const days = Math.round((end - start) / 86400000) + 1
+  const previousEnd = addDays(start, -1)
+  const previousStart = addDays(previousEnd, -(days - 1))
+  return [toYmd(previousStart), toYmd(previousEnd)]
+}
+
+/** The same calendar dates one year earlier. */
+export function samePeriodLastYear(range) {
+  const [startIso, endIso] = range[0] <= range[1] ? range : [range[1], range[0]]
+  return [
+    toYmd(addYearsClamped(parseYmd(startIso), -1)),
+    toYmd(addYearsClamped(parseYmd(endIso), -1))
+  ]
+}
