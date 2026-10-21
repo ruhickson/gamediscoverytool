@@ -272,6 +272,22 @@
 
         <!-- (hours controls moved above) -->
 
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="aiDeclarationFilter" class="form-label">AI Declaration</label>
+            <select
+              id="aiDeclarationFilter"
+              class="form-select"
+              v-model="aiDeclaration"
+              @change="updateRouteFromFilters"
+            >
+              <option value="declared">Yes</option>
+              <option value="not_declared">No</option>
+              <option value="any">Doesn't Matter</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Include Adult Games moved below Release Date Range -->
         <div class="row mb-3">
           <div class="col-md-6">
@@ -507,6 +523,7 @@ export default {
       const hoursFilterEnabled = ref(false)
       const hoursComparator = ref('at_least')
       const hoursValue = ref(null)
+      const aiDeclaration = ref('any')
       const games = ref([])
       const isLoading = ref(false)
       const resultsLoading = ref(true)
@@ -567,7 +584,8 @@ export default {
             removeLimit: removeResultLimit.value ? '1' : undefined,
             hoursEnabled: hoursFilterEnabled.value ? '1' : undefined,
             hoursCmp: hoursFilterEnabled.value ? hoursComparator.value : undefined,
-            hoursVal: hoursFilterEnabled.value && hoursValue.value != null && hoursValue.value !== '' ? String(hoursValue.value) : undefined
+            hoursVal: hoursFilterEnabled.value && hoursValue.value != null && hoursValue.value !== '' ? String(hoursValue.value) : undefined,
+            ai: aiDeclaration.value !== 'any' ? aiDeclaration.value : undefined
           }
           Object.keys(query).forEach(k => query[k] === undefined && delete query[k])
           router.replace({ name: 'GameFinder', query }).catch(() => {})
@@ -784,6 +802,7 @@ export default {
           maxDate: maxDate.value,
           reviewScoreOrBetter: reviewScoreOrBetter.value,
           hours: hoursFilterEnabled.value ? { comparator: hoursComparator.value, value: hoursValue.value } : null,
+          aiDeclaration: aiDeclaration.value,
           excludeTags: excludeTags.value.length > 0 ? excludeTags.value : null,
           includeAdultGames: includeAdultGames.value,
           limit: removeResultLimit.value ? null : 100,
@@ -976,6 +995,7 @@ export default {
       maxDate.value = today.toISOString().split('T')[0]
       includeAdultGames.value = false
       removeResultLimit.value = false
+      aiDeclaration.value = 'any'
       games.value = []
       error.value = ''
     }
@@ -1235,6 +1255,7 @@ export default {
           hoursFilterEnabled.value = q.hoursEnabled === '1'
           if (q.hoursCmp === 'at_least' || q.hoursCmp === 'at_most') hoursComparator.value = String(q.hoursCmp)
           if (q.hoursVal) hoursValue.value = parseInt(q.hoursVal, 10)
+          if (q.ai === 'declared' || q.ai === 'not_declared') aiDeclaration.value = String(q.ai)
         }
 
         // Load tags first
@@ -1318,7 +1339,8 @@ export default {
       removeResultLimit,
       hoursFilterEnabled,
       hoursComparator,
-      hoursValue
+      hoursValue,
+      aiDeclaration
     ], updateRouteFromFilters, { deep: true })
 
     return {
@@ -1338,6 +1360,7 @@ export default {
       hoursFilterEnabled,
       hoursComparator,
       hoursValue,
+      aiDeclaration,
       updateQuickDates,
       games,
       isLoading,

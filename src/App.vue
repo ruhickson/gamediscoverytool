@@ -39,42 +39,25 @@
     <div v-if="showMobileMenu" class="d-lg-none mobile-nav">
       <div class="container-fluid">
         <ul class="nav flex-column">
-          <li class="nav-item">
-            <router-link 
-              to="/" 
-              class="nav-link"
-              :class="{ active: $route.name === 'StateOfSteam' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-chart-area"></i>
-              State of Steam
-            </router-link>
+          <li v-for="section in navSections" :key="section.title" class="nav-section">
+            <p class="nav-section-title">{{ section.title }}</p>
+            <ul class="nav flex-column">
+              <li v-for="item in section.items" :key="item.name" class="nav-item">
+                <router-link
+                  :to="item.to"
+                  class="nav-link"
+                  :class="{ active: $route.name === item.name }"
+                  @click="closeMobileMenu"
+                >
+                  <i :class="item.icon"></i>
+                  {{ item.label }}
+                </router-link>
+              </li>
+            </ul>
           </li>
-          <li class="nav-item">
-            <router-link 
-              to="/find" 
-              class="nav-link"
-              :class="{ active: $route.name === 'GameFinder' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-search"></i>
-              Find a Game for Me
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
-              to="/recommender" 
-              class="nav-link"
-              :class="{ active: $route.name === 'Recommender' }"
-              @click="closeMobileMenu"
-            >
-              <i class="fas fa-magic"></i>
-              Recommender
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link 
-              to="/about" 
+          <li class="nav-item nav-about">
+            <router-link
+              to="/about"
               class="nav-link"
               :class="{ active: $route.name === 'About' }"
               @click="closeMobileMenu"
@@ -93,39 +76,24 @@
         <nav class="col-md-3 col-lg-2 d-none d-md-block sidebar collapse">
           <div class="position-sticky pt-3">
             <ul class="nav flex-column">
-              <li class="nav-item">
-                <router-link 
-                  to="/" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'StateOfSteam' }"
-                >
-                  <i class="fas fa-chart-area"></i>
-                  State of Steam
-                </router-link>
+              <li v-for="section in navSections" :key="section.title" class="nav-section">
+                <p class="nav-section-title">{{ section.title }}</p>
+                <ul class="nav flex-column">
+                  <li v-for="item in section.items" :key="item.name" class="nav-item">
+                    <router-link
+                      :to="item.to"
+                      class="nav-link"
+                      :class="{ active: $route.name === item.name }"
+                    >
+                      <i :class="item.icon"></i>
+                      {{ item.label }}
+                    </router-link>
+                  </li>
+                </ul>
               </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/find" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'GameFinder' }"
-                >
-                  <i class="fas fa-search"></i>
-                  Find a Game for Me
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/recommender" 
-                  class="nav-link"
-                  :class="{ active: $route.name === 'Recommender' }"
-                >
-                  <i class="fas fa-magic"></i>
-                  Recommender
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link 
-                  to="/about" 
+              <li class="nav-item nav-about">
+                <router-link
+                  to="/about"
                   class="nav-link"
                   :class="{ active: $route.name === 'About' }"
                 >
@@ -191,7 +159,23 @@ export default {
   data() {
     return {
       isHighContrast: false,
-      showMobileMenu: false
+      showMobileMenu: false,
+      navSections: [
+        {
+          title: 'Game Discovery',
+          items: [
+            { to: '/find', name: 'GameFinder', label: 'Find a Game for Me', icon: 'fas fa-search' },
+            { to: '/recommender', name: 'Recommender', label: 'Recommender', icon: 'fas fa-magic' }
+          ]
+        },
+        {
+          title: 'Industry',
+          items: [
+            { to: '/', name: 'StateOfSteam', label: 'State of Steam', icon: 'fas fa-chart-area' },
+            { to: '/trends', name: 'TrendAnalysis', label: 'Trend Analysis', icon: 'fas fa-chart-line' }
+          ]
+        }
+      ]
     }
   },
   provide() {

@@ -1,17 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import StateOfSteam from '../views/StateOfSteam.vue'
+import TrendAnalysis from '../views/TrendAnalysis.vue'
 import GameFinder from '../views/GameFinder.vue'
 import Recommender from '../views/Recommender.vue'
 import About from '../views/About.vue'
 import Blog from '../views/Blog.vue'
 import BlogPost from '../views/BlogPost.vue'
 import Newsletter from '../views/Newsletter.vue'
+import YouTube from '../views/YouTube.vue'
+import Podcast from '../views/Podcast.vue'
 
 const routes = [
   {
     path: '/',
     name: 'StateOfSteam',
     component: StateOfSteam
+  },
+  {
+    path: '/trends',
+    name: 'TrendAnalysis',
+    component: TrendAnalysis
   },
   {
     path: '/find',
@@ -46,6 +54,16 @@ const routes = [
     path: '/newsletter',
     name: 'Newsletter',
     component: Newsletter
+  },
+  {
+    path: '/youtube',
+    name: 'YouTube',
+    component: YouTube
+  },
+  {
+    path: '/podcast',
+    name: 'Podcast',
+    component: Podcast
   }
 ]
 

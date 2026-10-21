@@ -1,7 +1,13 @@
 import axios from 'axios'
 import { searchGames, getSearchSuggestions, preloadIndex } from './searchEngine.js'
 import { searchTags, getTagSuggestions, preloadIndex as preloadTagsIndex } from './tagsSearchEngine.js'
-import { resolveTimeMachinePeriod, toYmd as formatYmd } from '../utils/timeMachine.js'
+import {
+  resolveTimeMachinePeriod,
+  toYmd as formatYmd,
+  previousPeriodRange,
+  samePeriodLastYear,
+  rangeWithinOneYear
+} from '../utils/timeMachine.js'
 
 // Cube.js API configuration
 const CUBEJS_API_URL = import.meta.env.VITE_CUBEJS_API_URL || ''
@@ -528,6 +534,7 @@ export async function findGames({
   limit = 100,
   reviewScoreOrBetter = true,
   hours = null, // { comparator: 'at_least' | 'at_most', value: number } | null
+  aiDeclaration = 'any', // 'any' | 'declared' | 'not_declared'
   excludeTags = null,
   includeAdultGames = true,
   orderBy = 'total_reviews_desc'
@@ -564,6 +571,7 @@ export async function findGames({
           limit: null, // Don't limit individual tag queries
           reviewScoreOrBetter,
           hours,
+          aiDeclaration,
           excludedAppIds,
           orderBy
         })
@@ -605,6 +613,8 @@ export async function findGames({
       const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
       filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
     }
+
+    appendAiDeclarationFilter(filters, aiDeclaration)
 
     // Handle date range
     const timeDimensions = []
@@ -751,6 +761,7 @@ async function findGamesWithMultipleTags({
   limit, // This parameter is ignored - limit should be applied after intersection
   reviewScoreOrBetter,
   hours,
+  aiDeclaration = 'any',
   excludedAppIds = [],
   orderBy = 'total_reviews_desc'
 }) {
@@ -776,6 +787,7 @@ async function findGamesWithMultipleTags({
       limit: null, // Explicitly set to null to get all matching games
       reviewScoreOrBetter,
       hours,
+      aiDeclaration,
       excludedAppIds,
       orderBy
     })
@@ -827,6 +839,7 @@ async function findGamesSingleTag({
   limit,
   reviewScoreOrBetter,
   hours,
+  aiDeclaration = 'any',
   excludedAppIds = [],
   orderBy = 'total_reviews_desc'
 }) {
@@ -868,6 +881,8 @@ async function findGamesSingleTag({
     const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
     filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
   }
+
+  appendAiDeclarationFilter(filters, aiDeclaration)
 
   // Handle date range
   const timeDimensions = []
@@ -1372,6 +1387,14 @@ async function queryDailyCounts(cube, measure, dateRange, signal = null) {
     order: [[`${cube}.releaseDate`, 'asc']]
   }
   return queryCube(query, 2, 1, { analytics: true, signal })
+}
+
+function appendAiDeclarationFilter(filters, aiDeclaration) {
+  if (aiDeclaration === 'declared') {
+    filters.push({ member: 'Games.madeWithAi', operator: 'equals', values: [true] })
+  } else if (aiDeclaration === 'not_declared') {
+    filters.push({ member: 'Games.madeWithAi', operator: 'equals', values: [false] })
+  }
 }
 
 function isMadeWithAi(value) {
@@ -2312,6 +2335,292 @@ function queueHistorical(period, metrics, signal, onHistorical) {
     })
 }
 
+const TREND_GENRE_LIMIT = 100
+const TREND_TAG_LIMIT = 200
+
+async function queryDimensionReleaseCounts(dimension, dateRange, limit, signal = null) {
+  const rows = await queryCube({
+    measures: ['Games.count'],
+    dimensions: [dimension],
+    timeDimensions: [{
+      dimension: 'Games.releaseDate',
+      dateRange
+    }],
+    order: [['Games.count', 'desc']],
+    filters: [
+      { member: dimension, operator: 'set' }
+    ],
+    limit
+  }, 2, 1, { analytics: true, signal })
+
+  return (rows || [])
+    .map((row) => ({
+      name: row[dimension] || '',
+      count: Number(row['Games.count']) || 0
+    }))
+    .filter((row) => row.name && row.count > 0)
+}
+
+async function queryDimensionCountsForNames(dimension, dateRange, names, signal = null) {
+  const counts = new Map()
+  if (!names.length) return counts
+
+  const chunkSize = 80
+  const chunks = []
+  for (let i = 0; i < names.length; i += chunkSize) {
+    chunks.push(names.slice(i, i + chunkSize))
+  }
+
+  await mapPool(chunks, 3, async (chunk) => {
+    const rows = await queryCube({
+      measures: ['Games.count'],
+      dimensions: [dimension],
+      timeDimensions: [{
+        dimension: 'Games.releaseDate',
+        dateRange
+      }],
+      filters: [
+        { member: dimension, operator: 'equals', values: chunk }
+      ],
+      limit: chunk.length
+    }, 2, 1, { analytics: true, signal })
+
+    for (const row of rows || []) {
+      const name = row[dimension]
+      if (name) counts.set(name, Number(row['Games.count']) || 0)
+    }
+  })
+
+  return counts
+}
+
+async function buildTrendSeries(dimension, currentRange, previousRange, limit, signal = null) {
+  const [currentRows, previousRows] = await Promise.all([
+    queryDimensionReleaseCounts(dimension, currentRange, limit, signal),
+    queryDimensionReleaseCounts(dimension, previousRange, limit, signal)
+  ])
+
+  const currentMap = new Map(currentRows.map((row) => [row.name, row.count]))
+  const previousMap = new Map(previousRows.map((row) => [row.name, row.count]))
+  const names = [...new Set([...currentMap.keys(), ...previousMap.keys()])]
+
+  const [filledCurrent, filledPrevious] = await Promise.all([
+    queryDimensionCountsForNames(
+      dimension,
+      currentRange,
+      names.filter((name) => !currentMap.has(name)),
+      signal
+    ),
+    queryDimensionCountsForNames(
+      dimension,
+      previousRange,
+      names.filter((name) => !previousMap.has(name)),
+      signal
+    )
+  ])
+
+  for (const [name, count] of filledCurrent) currentMap.set(name, count)
+  for (const [name, count] of filledPrevious) previousMap.set(name, count)
+
+  return names
+    .map((name) => ({
+      name,
+      current: currentMap.get(name) || 0,
+      previous: previousMap.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+    .sort((a, b) => b.current - a.current || b.previous - a.previous || a.name.localeCompare(b.name))
+}
+
+function trendRowValue(row, suffixes) {
+  const key = pickRowKey(row, suffixes)
+  return key ? row[key] : undefined
+}
+
+function mapsFromTrendRows(rows) {
+  const genres = new Map()
+  const tags = new Map()
+  let total = 0
+  for (const row of rows || []) {
+    const kind = trendRowValue(row, ['TrendReleaseCounts.kind'])
+    const name = trendRowValue(row, ['TrendReleaseCounts.name']) || ''
+    const count = Number(trendRowValue(row, ['TrendReleaseCounts.gameCount'])) || 0
+    if (kind === 'total') total += count
+    else if (kind === 'genre' && name) genres.set(name, count)
+    else if (kind === 'tag' && name) tags.set(name, count)
+  }
+  return { genres, tags, total, rowCount: (rows || []).length }
+}
+
+async function queryPrecomputedTrendRows(dateRange, signal) {
+  return queryCube({
+    measures: ['TrendReleaseCounts.gameCount'],
+    dimensions: ['TrendReleaseCounts.kind', 'TrendReleaseCounts.name'],
+    timeDimensions: [{
+      dimension: 'TrendReleaseCounts.releaseDate',
+      dateRange
+    }],
+    order: [['TrendReleaseCounts.gameCount', 'desc']],
+    limit: 10000
+  }, 1, 1, { analytics: true, signal })
+}
+
+function topCountedNames(counts, limit) {
+  return [...counts.entries()]
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name]) => name)
+}
+
+function seriesFromCountMaps(currentCounts, previousCounts, limit) {
+  const names = [...new Set([
+    ...topCountedNames(currentCounts, limit),
+    ...topCountedNames(previousCounts, limit)
+  ])]
+  return names
+    .map((name) => ({
+      name,
+      current: currentCounts.get(name) || 0,
+      previous: previousCounts.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+    .sort((a, b) => b.current - a.current || b.previous - a.previous || a.name.localeCompare(b.name))
+}
+
+function withTagChange(row) {
+  const current = row.current || 0
+  const previous = row.previous || 0
+  const delta = current - previous
+  return {
+    name: row.name,
+    current,
+    previous,
+    delta,
+    percent: previous > 0 ? (delta / previous) * 100 : null
+  }
+}
+
+function tagChangeRows(currentCounts, previousCounts) {
+  const names = new Set([...currentCounts.keys(), ...previousCounts.keys()])
+  return [...names]
+    .map((name) => withTagChange({
+      name,
+      current: currentCounts.get(name) || 0,
+      previous: previousCounts.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+}
+
+function trendPayload(period, currentRange, previousRange, genres, tags, currentTotal, previousTotal, tagChanges = null) {
+  const withShare = (rows) => rows.map((row) => ({
+    ...row,
+    currentShare: currentTotal > 0 ? (row.current / currentTotal) * 100 : 0,
+    previousShare: previousTotal > 0 ? (row.previous / previousTotal) * 100 : 0
+  }))
+  const sharedTags = withShare(tags)
+  return {
+    period: {
+      key: period.key,
+      label: period.label,
+      isCurrent: period.isCurrent,
+      previousLabel: period.previousLabel || period.prevMonthLabel,
+      range: currentRange,
+      previousRange,
+      compare: period.compare || 'previous',
+      yearCompareAvailable: period.yearCompareAvailable !== false,
+      compareToDate: Boolean(period.compareToDate),
+      currentTotal,
+      previousTotal
+    },
+    genres: withShare(genres),
+    tags: sharedTags,
+    tagChanges: tagChanges || sharedTags.map(withTagChange)
+  }
+}
+
+function resolveTrendRanges(monthKey, range, compare) {
+  if (Array.isArray(range) && range[0] && range[1]) {
+    const ordered = range[0] <= range[1] ? [range[0], range[1]] : [range[1], range[0]]
+    const yearCompareAvailable = rangeWithinOneYear(ordered)
+    const compareMode = compare === 'year' && yearCompareAvailable ? 'year' : 'previous'
+    return {
+      period: {
+        key: 'custom',
+        label: 'Custom range',
+        isCurrent: false,
+        previousLabel: compareMode === 'year' ? 'Previous year' : 'Previous period',
+        compare: compareMode,
+        yearCompareAvailable,
+        compareToDate: false
+      },
+      currentRange: ordered,
+      previousRange: compareMode === 'year' ? samePeriodLastYear(ordered) : previousPeriodRange(ordered)
+    }
+  }
+
+  const period = resolveTimeMachinePeriod(monthKey)
+  const currentRange = period.range
+  const compareMode = compare === 'year' ? 'year' : 'previous'
+  const previousRange = compareMode === 'year'
+    ? samePeriodLastYear(currentRange)
+    : (period.isCurrent ? period.prevMonthToDateRange : period.prevMonthRange)
+  return {
+    period: {
+      ...period,
+      compare: compareMode,
+      yearCompareAvailable: true,
+      compareToDate: Boolean(period.isCurrent && compareMode === 'previous')
+    },
+    currentRange,
+    previousRange
+  }
+}
+
+/**
+ * Genre and tag release counts for the selected month and the month before it.
+ * The current calendar month is compared with the same elapsed days last month.
+ * Counts come from trend_release_counts when that table is available.
+ * @param {string} monthKey
+ * @param {{ signal?: AbortSignal }} [opts]
+ */
+export async function getTrendAnalysis(monthKey = 'this-month', { signal = null, range = null, compare = 'previous' } = {}) {
+  const { period, currentRange, previousRange } = resolveTrendRanges(monthKey, range, compare)
+
+  try {
+    const [currentRows, previousRows] = await Promise.all([
+      queryPrecomputedTrendRows(currentRange, signal),
+      queryPrecomputedTrendRows(previousRange, signal)
+    ])
+    const current = mapsFromTrendRows(currentRows)
+    const previous = mapsFromTrendRows(previousRows)
+    if (current.rowCount + previous.rowCount > 0) {
+      return trendPayload(
+        period,
+        currentRange,
+        previousRange,
+        seriesFromCountMaps(current.genres, previous.genres, TREND_GENRE_LIMIT),
+        seriesFromCountMaps(current.tags, previous.tags, TREND_TAG_LIMIT),
+        current.total,
+        previous.total,
+        tagChangeRows(current.tags, previous.tags)
+      )
+    }
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    console.warn('Precomputed trend counts unavailable, querying games directly:', error)
+  }
+
+  const [genres, tags, currentTotal, previousTotal] = await Promise.all([
+    buildTrendSeries('Genres.name', currentRange, previousRange, TREND_GENRE_LIMIT, signal),
+    buildTrendSeries('GameTags.tag', currentRange, previousRange, TREND_TAG_LIMIT, signal),
+    queryCount('Games', 'count', currentRange, signal),
+    queryCount('Games', 'count', previousRange, signal)
+  ])
+
+  return trendPayload(period, currentRange, previousRange, genres, tags, currentTotal, previousTotal)
+}
+
 /**
  * Search genres or tags that had releases in a date range.
  * @param {{ kind: 'genre' | 'tag', dateRange: [string, string], query: string, limit?: number, signal?: AbortSignal }} opts
@@ -2326,6 +2635,33 @@ export async function searchStateOfSteamCategories({
   const dimension = kind === 'tag' ? 'GameTags.tag' : 'Genres.name'
   const q = String(query || '').trim()
   if (!dateRange || dateRange.length !== 2 || !q) return []
+
+  try {
+    const rows = await queryCube({
+      measures: ['TrendReleaseCounts.gameCount'],
+      dimensions: ['TrendReleaseCounts.name'],
+      timeDimensions: [{
+        dimension: 'TrendReleaseCounts.releaseDate',
+        dateRange
+      }],
+      order: [['TrendReleaseCounts.gameCount', 'desc']],
+      filters: [
+        { member: 'TrendReleaseCounts.kind', operator: 'equals', values: [kind === 'tag' ? 'tag' : 'genre'] },
+        { member: 'TrendReleaseCounts.name', operator: 'contains', values: [q] }
+      ],
+      limit
+    }, 1, 1, { analytics: true, signal })
+
+    return (rows || [])
+      .map((row) => ({
+        name: trendRowValue(row, ['TrendReleaseCounts.name']) || '',
+        count: Number(trendRowValue(row, ['TrendReleaseCounts.gameCount'])) || 0
+      }))
+      .filter((row) => row.name && row.count > 0)
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    console.warn('Precomputed category search unavailable, querying games directly:', error)
+  }
 
   const rows = await queryCube({
     measures: ['Games.count'],
@@ -2431,5 +2767,6 @@ export default {
   resolveExcludedAppIds,
   getStateOfSteamMetrics,
   getStateOfSteamDrilldownGames,
-  searchStateOfSteamCategories
+  searchStateOfSteamCategories,
+  getTrendAnalysis
 }
