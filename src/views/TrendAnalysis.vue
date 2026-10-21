@@ -635,64 +635,112 @@
                   <div class="col-lg-6">
                     <h6 class="mover-heading mover-heading-up">Fastest growing</h6>
                     <div v-if="!growingTags.length" class="text-muted mover-empty">No growing tags in this window.</div>
-                    <div v-else class="mover-table-wrap">
-                      <table class="mover-table">
-                        <thead>
-                          <tr>
-                            <th>Tag</th>
-                            <th class="num">Before</th>
-                            <th class="num">After</th>
-                            <th class="num">Change</th>
-                            <th class="num">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr
-                            v-for="row in growingTags"
-                            :key="`up-${row.name}`"
-                            class="mover-row"
-                            @click="openTagMover(row)"
-                          >
-                            <td>{{ row.name }}</td>
-                            <td class="num">{{ formatNumber(row.previous) }}</td>
-                            <td class="num">{{ formatNumber(row.current) }}</td>
-                            <td class="num mover-up">{{ formatDelta(row.delta) }}</td>
-                            <td class="num">{{ formatPercentChange(row.percent) }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    <template v-else>
+                      <p class="mover-range text-muted">
+                        {{ growingPageStart }}–{{ growingPageEnd }} of {{ formatNumber(growingTags.length) }}
+                      </p>
+                      <div class="mover-table-wrap">
+                        <table class="mover-table">
+                          <thead>
+                            <tr>
+                              <th>Tag</th>
+                              <th class="num">Before</th>
+                              <th class="num">After</th>
+                              <th class="num">Change</th>
+                              <th class="num">%</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="row in pagedGrowingTags"
+                              :key="`up-${row.name}`"
+                              class="mover-row"
+                              @click="openTagMover(row)"
+                            >
+                              <td>{{ row.name }}</td>
+                              <td class="num">{{ formatNumber(row.previous) }}</td>
+                              <td class="num">{{ formatNumber(row.current) }}</td>
+                              <td class="num mover-up">{{ formatDelta(row.delta) }}</td>
+                              <td class="num">{{ formatPercentChange(row.percent) }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-if="growingPageCount > 1" class="trend-pager">
+                        <button
+                          type="button"
+                          class="btn btn-outline-light btn-sm"
+                          :disabled="growPage === 0"
+                          @click="growPage -= 1"
+                        >
+                          Previous
+                        </button>
+                        <span class="text-muted">Page {{ growPage + 1 }} of {{ growingPageCount }}</span>
+                        <button
+                          type="button"
+                          class="btn btn-outline-light btn-sm"
+                          :disabled="growPage >= growingPageCount - 1"
+                          @click="growPage += 1"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </template>
                   </div>
                   <div class="col-lg-6">
                     <h6 class="mover-heading mover-heading-down">Fastest declining</h6>
                     <div v-if="!decliningTags.length" class="text-muted mover-empty">No declining tags in this window.</div>
-                    <div v-else class="mover-table-wrap">
-                      <table class="mover-table">
-                        <thead>
-                          <tr>
-                            <th>Tag</th>
-                            <th class="num">Before</th>
-                            <th class="num">After</th>
-                            <th class="num">Change</th>
-                            <th class="num">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr
-                            v-for="row in decliningTags"
-                            :key="`down-${row.name}`"
-                            class="mover-row"
-                            @click="openTagMover(row)"
-                          >
-                            <td>{{ row.name }}</td>
-                            <td class="num">{{ formatNumber(row.previous) }}</td>
-                            <td class="num">{{ formatNumber(row.current) }}</td>
-                            <td class="num mover-down">{{ formatDelta(row.delta) }}</td>
-                            <td class="num">{{ formatPercentChange(row.percent) }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    <template v-else>
+                      <p class="mover-range text-muted">
+                        {{ decliningPageStart }}–{{ decliningPageEnd }} of {{ formatNumber(decliningTags.length) }}
+                      </p>
+                      <div class="mover-table-wrap">
+                        <table class="mover-table">
+                          <thead>
+                            <tr>
+                              <th>Tag</th>
+                              <th class="num">Before</th>
+                              <th class="num">After</th>
+                              <th class="num">Change</th>
+                              <th class="num">%</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="row in pagedDecliningTags"
+                              :key="`down-${row.name}`"
+                              class="mover-row"
+                              @click="openTagMover(row)"
+                            >
+                              <td>{{ row.name }}</td>
+                              <td class="num">{{ formatNumber(row.previous) }}</td>
+                              <td class="num">{{ formatNumber(row.current) }}</td>
+                              <td class="num mover-down">{{ formatDelta(row.delta) }}</td>
+                              <td class="num">{{ formatPercentChange(row.percent) }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-if="decliningPageCount > 1" class="trend-pager">
+                        <button
+                          type="button"
+                          class="btn btn-outline-light btn-sm"
+                          :disabled="declinePage === 0"
+                          @click="declinePage -= 1"
+                        >
+                          Previous
+                        </button>
+                        <span class="text-muted">Page {{ declinePage + 1 }} of {{ decliningPageCount }}</span>
+                        <button
+                          type="button"
+                          class="btn btn-outline-light btn-sm"
+                          :disabled="declinePage >= decliningPageCount - 1"
+                          @click="declinePage += 1"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -722,7 +770,7 @@ import { getTimeMachineOptions, toYmd, rangeWithinOneYear } from '../utils/timeM
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const TAG_PAGE_SIZE = 15
-const MOVER_LIMIT = 12
+const MOVER_PAGE_SIZE = 12
 const PERCENT_FLOOR = 10
 const GOLD = '#d4af37'
 const MUTED = '#94a3b8'
@@ -900,6 +948,8 @@ export default {
     const rangeMode = ref('month')
     const compareMode = ref('previous')
     const moverMetric = ref('count')
+    const growPage = ref(0)
+    const declinePage = ref(0)
     const percentFloor = PERCENT_FLOOR
     const today = new Date()
     const todayIso = toYmd(today)
@@ -962,10 +1012,23 @@ export default {
         if (primary) return primary
         return Math.abs(b.delta) - Math.abs(a.delta) || a.name.localeCompare(b.name)
       })
-      return signed.slice(0, MOVER_LIMIT)
+      return signed
     }
     const growingTags = computed(() => rankedMovers('grow'))
     const decliningTags = computed(() => rankedMovers('decline'))
+    const pageCount = (length) => Math.max(1, Math.ceil(length / MOVER_PAGE_SIZE))
+    const pageSlice = (rows, page) => {
+      const start = page * MOVER_PAGE_SIZE
+      return rows.slice(start, start + MOVER_PAGE_SIZE)
+    }
+    const growingPageCount = computed(() => pageCount(growingTags.value.length))
+    const decliningPageCount = computed(() => pageCount(decliningTags.value.length))
+    const pagedGrowingTags = computed(() => pageSlice(growingTags.value, growPage.value))
+    const pagedDecliningTags = computed(() => pageSlice(decliningTags.value, declinePage.value))
+    const growingPageStart = computed(() => (growingTags.value.length ? growPage.value * MOVER_PAGE_SIZE + 1 : 0))
+    const growingPageEnd = computed(() => Math.min((growPage.value + 1) * MOVER_PAGE_SIZE, growingTags.value.length))
+    const decliningPageStart = computed(() => (decliningTags.value.length ? declinePage.value * MOVER_PAGE_SIZE + 1 : 0))
+    const decliningPageEnd = computed(() => Math.min((declinePage.value + 1) * MOVER_PAGE_SIZE, decliningTags.value.length))
     const previousCaption = computed(() => rangeCaption(trends.value?.period?.previousRange) || 'Last month')
     const currentCaption = computed(() => rangeCaption(trends.value?.period?.range) || 'This month')
     const tagPageCount = computed(() =>
@@ -1293,6 +1356,8 @@ export default {
       drillToken += 1
       tagPage.value = 0
       tagSharePage.value = 0
+      growPage.value = 0
+      declinePage.value = 0
       resetCategoryFilters()
       destroyCharts()
       try {
@@ -1324,6 +1389,19 @@ export default {
         drillToken += 1
       }
       renderCharts()
+    })
+
+    watch(moverMetric, () => {
+      growPage.value = 0
+      declinePage.value = 0
+    })
+
+    watch(growingPageCount, (count) => {
+      if (growPage.value > count - 1) growPage.value = Math.max(0, count - 1)
+    })
+
+    watch(decliningPageCount, (count) => {
+      if (declinePage.value > count - 1) declinePage.value = Math.max(0, count - 1)
     })
 
     watch(tagSharePage, () => {
@@ -1359,6 +1437,16 @@ export default {
       yearCompareAvailable,
       growingTags,
       decliningTags,
+      pagedGrowingTags,
+      pagedDecliningTags,
+      growPage,
+      declinePage,
+      growingPageCount,
+      decliningPageCount,
+      growingPageStart,
+      growingPageEnd,
+      decliningPageStart,
+      decliningPageEnd,
       isLoading,
       error,
       trends,
@@ -1469,9 +1557,10 @@ export default {
   color: #fca5a5;
 }
 
-.mover-empty {
-  font-size: 0.9rem;
-  padding: 0.5rem 0;
+.mover-empty,
+.mover-range {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
 }
 
 .mover-table-wrap {
