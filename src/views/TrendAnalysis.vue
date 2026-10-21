@@ -3,11 +3,43 @@
     <div class="card">
       <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h5 class="mb-0"><i class="fas fa-chart-line"></i> Trend Analysis</h5>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <label class="time-machine-label mb-0" for="trendTimeMachine">
+        <button
+          class="btn btn-outline-light btn-sm"
+          type="button"
+          :disabled="isLoading && !trends"
+          @click="loadTrends"
+          title="Refresh trends"
+        >
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': isLoading }"></i>
+          Refresh
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="trend-controls">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Range mode">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              :class="{ active: rangeMode === 'month' }"
+              @click="setRangeMode('month')"
+            >
+              Month
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              :class="{ active: rangeMode === 'custom' }"
+              @click="setRangeMode('custom')"
+            >
+              Custom range
+            </button>
+          </div>
+
+          <label v-if="rangeMode === 'month'" class="time-machine-label mb-0" for="trendTimeMachine">
             <i class="fas fa-clock"></i> Time Machine
           </label>
           <select
+            v-if="rangeMode === 'month'"
             id="trendTimeMachine"
             class="form-select form-select-sm time-machine-select"
             v-model="selectedMonth"
@@ -22,19 +54,63 @@
               {{ opt.label }}
             </option>
           </select>
-          <button
-            class="btn btn-outline-light btn-sm"
-            type="button"
-            :disabled="isLoading && !trends"
-            @click="loadTrends"
-            title="Refresh trends"
-          >
-            <i class="fas fa-sync-alt" :class="{ 'fa-spin': isLoading }"></i>
-            Refresh
-          </button>
+
+          <template v-else>
+            <label class="trend-date" for="trendStart">
+              From
+              <input
+                id="trendStart"
+                class="form-control form-control-sm"
+                type="date"
+                v-model="customStart"
+                :max="customEnd || todayIso"
+              >
+            </label>
+            <label class="trend-date" for="trendEnd">
+              To
+              <input
+                id="trendEnd"
+                class="form-control form-control-sm"
+                type="date"
+                v-model="customEnd"
+                :min="customStart || undefined"
+                :max="todayIso"
+              >
+            </label>
+            <button
+              type="button"
+              class="btn btn-outline-light btn-sm"
+              :disabled="isLoading && !trends"
+              @click="applyCustomRange"
+            >
+              Apply
+            </button>
+          </template>
+
+          <div class="btn-group btn-group-sm" role="group" aria-label="Comparison period">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              :class="{ active: compareMode === 'previous' }"
+              @click="setCompare('previous')"
+            >
+              Previous period
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              :class="{ active: compareMode === 'year' }"
+              :disabled="!yearCompareAvailable"
+              :title="yearCompareAvailable ? 'Compare with the same dates one year earlier' : 'Year comparison is available for ranges of a year or less'"
+              @click="setCompare('year')"
+            >
+              Same period last year
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="card-body">
+        <p v-if="rangeMode === 'custom' && !yearCompareAvailable" class="trend-range-note text-muted">
+          Same period last year is available when the selected range is a year or less.
+        </p>
         <div v-if="error" class="error">{{ error }}</div>
 
         <div v-if="isLoading && !trends" class="loading">
@@ -47,8 +123,14 @@
             <strong>{{ previousCaption }}</strong>
             to
             <strong>{{ currentCaption }}</strong>.
-            <span v-if="trends.period.compareToDate">
+            <span v-if="trends.period.compare === 'year'">
+              Compared with the same dates one year earlier.
+            </span>
+            <span v-else-if="trends.period.compareToDate">
               This month is still in progress, so last month is cut off on the same day.
+            </span>
+            <span v-else-if="trends.period.key === 'custom'">
+              Compared with the period of the same length immediately before.
             </span>
           </p>
 
@@ -516,6 +598,105 @@
                 </div>
               </div>
             </div>
+
+            <div class="col-12">
+              <div class="chart-panel">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <h6 class="chart-title">Fastest-moving tags</h6>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Tag movement metric">
+                    <button
+                      type="button"
+                      class="btn btn-outline-light"
+                      :class="{ active: moverMetric === 'count' }"
+                      @click="moverMetric = 'count'"
+                    >
+                      By count
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-light"
+                      :class="{ active: moverMetric === 'percent' }"
+                      @click="moverMetric = 'percent'"
+                    >
+                      By percent
+                    </button>
+                  </div>
+                </div>
+                <p class="chart-subtitle text-muted">
+                  <template v-if="moverMetric === 'percent'">
+                    Percent change for tags on at least {{ percentFloor }} games in the comparison period.
+                  </template>
+                  <template v-else>
+                    Change in how many released games carry each tag.
+                  </template>
+                  Click a tag for its games.
+                </p>
+                <div class="row g-3">
+                  <div class="col-lg-6">
+                    <h6 class="mover-heading mover-heading-up">Fastest growing</h6>
+                    <div v-if="!growingTags.length" class="text-muted mover-empty">No growing tags in this window.</div>
+                    <div v-else class="mover-table-wrap">
+                      <table class="mover-table">
+                        <thead>
+                          <tr>
+                            <th>Tag</th>
+                            <th class="num">Before</th>
+                            <th class="num">After</th>
+                            <th class="num">Change</th>
+                            <th class="num">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            v-for="row in growingTags"
+                            :key="`up-${row.name}`"
+                            class="mover-row"
+                            @click="openTagMover(row)"
+                          >
+                            <td>{{ row.name }}</td>
+                            <td class="num">{{ formatNumber(row.previous) }}</td>
+                            <td class="num">{{ formatNumber(row.current) }}</td>
+                            <td class="num mover-up">{{ formatDelta(row.delta) }}</td>
+                            <td class="num">{{ formatPercentChange(row.percent) }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <h6 class="mover-heading mover-heading-down">Fastest declining</h6>
+                    <div v-if="!decliningTags.length" class="text-muted mover-empty">No declining tags in this window.</div>
+                    <div v-else class="mover-table-wrap">
+                      <table class="mover-table">
+                        <thead>
+                          <tr>
+                            <th>Tag</th>
+                            <th class="num">Before</th>
+                            <th class="num">After</th>
+                            <th class="num">Change</th>
+                            <th class="num">%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            v-for="row in decliningTags"
+                            :key="`down-${row.name}`"
+                            class="mover-row"
+                            @click="openTagMover(row)"
+                          >
+                            <td>{{ row.name }}</td>
+                            <td class="num">{{ formatNumber(row.previous) }}</td>
+                            <td class="num">{{ formatNumber(row.current) }}</td>
+                            <td class="num mover-down">{{ formatDelta(row.delta) }}</td>
+                            <td class="num">{{ formatPercentChange(row.percent) }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </template>
       </div>
@@ -536,11 +717,13 @@ import {
 } from 'chart.js'
 import cubeService from '../services/cubeService'
 import { getItadUrl } from '../services/itadService'
-import { getTimeMachineOptions } from '../utils/timeMachine'
+import { getTimeMachineOptions, toYmd, rangeWithinOneYear } from '../utils/timeMachine'
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const TAG_PAGE_SIZE = 15
+const MOVER_LIMIT = 12
+const PERCENT_FLOOR = 10
 const GOLD = '#d4af37'
 const MUTED = '#94a3b8'
 const GRID = 'rgba(148, 163, 184, 0.18)'
@@ -548,13 +731,26 @@ const HC_WHITE = '#ffffff'
 const HC_GREY = '#c0c0c0'
 const HC_GRID = 'rgba(255, 255, 255, 0.28)'
 
+function formatDay(iso) {
+  const [year, month, day] = iso.split('-').map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
 function rangeCaption(range) {
   if (!range || range.length !== 2) return ''
   const [start, end] = range
-  const [year, month, startDay] = start.split('-').map(Number)
-  const endDay = Number(end.slice(8, 10))
-  const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short' })
-  return `${monthName} ${startDay}–${endDay}, ${year}`
+  if (start.slice(0, 7) === end.slice(0, 7)) {
+    const [year, month, startDay] = start.split('-').map(Number)
+    const endDay = Number(end.slice(8, 10))
+    const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short' })
+    if (startDay === endDay) return `${monthName} ${startDay}, ${year}`
+    return `${monthName} ${startDay}–${endDay}, ${year}`
+  }
+  return `${formatDay(start)} – ${formatDay(end)}`
 }
 
 function tooltipDefaults(highContrast = false) {
@@ -701,6 +897,14 @@ export default {
     const isHighContrast = inject('isHighContrast', ref(false))
     const timeMachineOptions = getTimeMachineOptions()
     const selectedMonth = ref('this-month')
+    const rangeMode = ref('month')
+    const compareMode = ref('previous')
+    const moverMetric = ref('count')
+    const percentFloor = PERCENT_FLOOR
+    const today = new Date()
+    const todayIso = toYmd(today)
+    const customStart = ref(toYmd(new Date(today.getFullYear(), today.getMonth(), 1)))
+    const customEnd = ref(todayIso)
     const isLoading = ref(false)
     const error = ref('')
     const trends = ref(null)
@@ -728,9 +932,40 @@ export default {
       || a.name.localeCompare(b.name)
     )
 
-    const periodLabel = computed(() =>
-      timeMachineOptions.find((opt) => opt.value === selectedMonth.value)?.label || 'This month'
-    )
+    const periodLabel = computed(() => {
+      if (rangeMode.value === 'custom' && customStart.value && customEnd.value) {
+        return rangeCaption([customStart.value, customEnd.value])
+      }
+      return timeMachineOptions.find((opt) => opt.value === selectedMonth.value)?.label || 'This month'
+    })
+    const yearCompareAvailable = computed(() => {
+      if (rangeMode.value !== 'custom') return true
+      if (!customStart.value || !customEnd.value || customStart.value > customEnd.value) return false
+      return rangeWithinOneYear([customStart.value, customEnd.value])
+    })
+    const rankedMovers = (direction) => {
+      const rows = trends.value?.tagChanges || []
+      const metric = moverMetric.value
+      const eligible = rows.filter((row) => {
+        if (metric === 'percent') return row.previous >= PERCENT_FLOOR && row.percent != null
+        return true
+      })
+      const signed = eligible.filter((row) => (
+        direction === 'grow'
+          ? (metric === 'percent' ? row.percent > 0 : row.delta > 0)
+          : (metric === 'percent' ? row.percent < 0 : row.delta < 0)
+      ))
+      signed.sort((a, b) => {
+        const av = metric === 'percent' ? a.percent : a.delta
+        const bv = metric === 'percent' ? b.percent : b.delta
+        const primary = direction === 'grow' ? bv - av : av - bv
+        if (primary) return primary
+        return Math.abs(b.delta) - Math.abs(a.delta) || a.name.localeCompare(b.name)
+      })
+      return signed.slice(0, MOVER_LIMIT)
+    }
+    const growingTags = computed(() => rankedMovers('grow'))
+    const decliningTags = computed(() => rankedMovers('decline'))
     const previousCaption = computed(() => rangeCaption(trends.value?.period?.previousRange) || 'Last month')
     const currentCaption = computed(() => rangeCaption(trends.value?.period?.range) || 'This month')
     const tagPageCount = computed(() =>
@@ -756,6 +991,17 @@ export default {
     const tagSharePageEnd = computed(() => Math.min((tagSharePage.value + 1) * TAG_PAGE_SIZE, tagShareRows.value.length))
 
     const formatNumber = (value) => (Number(value) || 0).toLocaleString()
+    const formatDelta = (value) => {
+      const number = Number(value) || 0
+      const sign = number > 0 ? '+' : ''
+      return `${sign}${number.toLocaleString()}`
+    }
+    const formatPercentChange = (value) => {
+      if (value == null || Number.isNaN(Number(value))) return '—'
+      const number = Number(value)
+      const sign = number > 0 ? '+' : ''
+      return `${sign}${number.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+    }
 
     const destroyChart = (kind) => {
       if (charts[kind]) {
@@ -1004,7 +1250,39 @@ export default {
       clearDrill()
     }
 
+    const setRangeMode = (mode) => {
+      if (rangeMode.value === mode) return
+      rangeMode.value = mode
+      if (mode === 'custom' && compareMode.value === 'year' && !yearCompareAvailable.value) {
+        compareMode.value = 'previous'
+      }
+      loadTrends()
+    }
+
+    const setCompare = (mode) => {
+      if (mode === 'year' && !yearCompareAvailable.value) return
+      if (compareMode.value === mode) return
+      compareMode.value = mode
+      loadTrends()
+    }
+
+    const applyCustomRange = () => {
+      rangeMode.value = 'custom'
+      if (compareMode.value === 'year' && !yearCompareAvailable.value) {
+        compareMode.value = 'previous'
+      }
+      loadTrends()
+    }
+
+    const openTagMover = (row) => {
+      openDrill('tags', row)
+    }
+
     const loadTrends = async () => {
+      if (rangeMode.value === 'custom' && (!customStart.value || !customEnd.value || customStart.value > customEnd.value)) {
+        error.value = 'Choose a start date on or before the end date.'
+        return
+      }
       if (loadAbort) loadAbort.abort()
       loadAbort = new AbortController()
       const { signal } = loadAbort
@@ -1018,7 +1296,11 @@ export default {
       resetCategoryFilters()
       destroyCharts()
       try {
-        const result = await cubeService.getTrendAnalysis(selectedMonth.value, { signal })
+        const options = { signal, compare: compareMode.value }
+        if (rangeMode.value === 'custom') {
+          options.range = [customStart.value, customEnd.value]
+        }
+        const result = await cubeService.getTrendAnalysis(selectedMonth.value, options)
         if (signal.aborted) return
         trends.value = result
         await renderCharts()
@@ -1067,6 +1349,16 @@ export default {
     return {
       timeMachineOptions,
       selectedMonth,
+      rangeMode,
+      compareMode,
+      moverMetric,
+      percentFloor,
+      todayIso,
+      customStart,
+      customEnd,
+      yearCompareAvailable,
+      growingTags,
+      decliningTags,
       isLoading,
       error,
       trends,
@@ -1093,8 +1385,14 @@ export default {
       genreFilter,
       tagFilter,
       formatNumber,
+      formatDelta,
+      formatPercentChange,
       getItadUrl,
       loadTrends,
+      setRangeMode,
+      setCompare,
+      applyCustomRange,
+      openTagMover,
       clearDrill,
       setDrillSide,
       openCategoryFilter,
@@ -1120,6 +1418,106 @@ export default {
   background: var(--color-surface);
   border-color: rgba(212, 175, 55, 0.45);
   color: var(--color-text);
+}
+
+.trend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.trend-controls .btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #0f172a;
+}
+
+.trend-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.trend-date input {
+  width: 10.5rem;
+  background: var(--color-surface);
+  border-color: rgba(212, 175, 55, 0.45);
+  color: var(--color-text);
+}
+
+.trend-range-note {
+  margin: -0.5rem 0 var(--spacing-lg);
+  font-size: 0.85rem;
+}
+
+.mover-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+}
+
+.mover-heading-up {
+  color: #86efac;
+}
+
+.mover-heading-down {
+  color: #fca5a5;
+}
+
+.mover-empty {
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+
+.mover-table-wrap {
+  overflow-x: auto;
+}
+
+.mover-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mover-table th,
+.mover-table td {
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mover-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.mover-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mover-row {
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.mover-row:hover {
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.mover-up {
+  color: #86efac;
+}
+
+.mover-down {
+  color: #fca5a5;
 }
 
 .period-banner {
