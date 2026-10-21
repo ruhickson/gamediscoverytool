@@ -78,6 +78,13 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
 
   const prevMonthEnd = new Date(year, monthIndex, 0)
   const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1)
+  // Current month is only partly elapsed. Compare with the same day last month
+  // (1 Oct–21 Oct against 1 Sep–21 Sep), not the whole previous month.
+  const elapsedDay = rangeEnd.getDate()
+  const prevElapsedDay = Math.min(elapsedDay, prevMonthEnd.getDate())
+  const prevToDateEnd = isCurrent
+    ? new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), prevElapsedDay)
+    : prevMonthEnd
 
   const yearStart = new Date(year, 0, 1)
   const yearEnd = isCurrent ? today : new Date(year, 11, 31)
@@ -107,6 +114,7 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
     monthStart,
     monthEnd: rangeEnd,
     prevMonthRange: [toYmd(prevMonthStart), toYmd(prevMonthEnd)],
+    prevMonthToDateRange: [toYmd(prevMonthStart), toYmd(prevToDateEnd)],
     prevMonthLabel: monthLabel(prevMonthStart.getFullYear(), prevMonthStart.getMonth()),
     yearRange: [toYmd(yearStart), toYmd(selectedYearEnd)],
     yearLabel: String(year),

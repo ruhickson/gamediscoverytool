@@ -1343,7 +1343,7 @@ function fillDailySeries(rows, datePrefixes, countPrefixes, dayList) {
   }))
 }
 
-async function queryCount(cube, measure, dateRange = null, signal = null) {
+async function queryCount(cube, measure, dateRange = null, signal = null, maxRetries = 2) {
   const query = {
     measures: [`${cube}.${measure}`]
   }
@@ -1353,7 +1353,11 @@ async function queryCount(cube, measure, dateRange = null, signal = null) {
       dateRange
     }]
   }
-  const rows = await queryCube(query, 2, 1, { analytics: true, signal })
+  const rows = await queryCube(query, maxRetries, 1, {
+    analytics: true,
+    signal,
+    continueWaitDelayMs: maxRetries > 2 ? 1000 : null
+  })
   return extractCount(rows, `${cube}.${measure}`)
 }
 
@@ -1368,6 +1372,96 @@ async function queryDailyCounts(cube, measure, dateRange, signal = null) {
     order: [[`${cube}.releaseDate`, 'asc']]
   }
   return queryCube(query, 2, 1, { analytics: true, signal })
+}
+
+function isMadeWithAi(value) {
+  return value === true || value === 'true' || value === 1 || value === '1'
+}
+
+function fillAiDailySeries(rows, dayList) {
+  const byDay = new Map()
+  for (const row of rows || []) {
+    const dateKey = pickRowKey(row, ['Games.releaseDate'])
+    const countKey = pickRowKey(row, ['Games.count'])
+    const aiKey = pickRowKey(row, ['Games.madeWithAi'])
+    if (!dateKey || !countKey) continue
+    const day = String(row[dateKey]).slice(0, 10)
+    const entry = byDay.get(day) || { withAi: 0, withoutAi: 0 }
+    const count = Number(row[countKey]) || 0
+    if (isMadeWithAi(aiKey ? row[aiKey] : false)) entry.withAi += count
+    else entry.withoutAi += count
+    byDay.set(day, entry)
+  }
+  return dayList.map((date) => ({
+    date,
+    withAi: byDay.get(date)?.withAi || 0,
+    withoutAi: byDay.get(date)?.withoutAi || 0
+  }))
+}
+
+const AI_COUNT_RETRIES = 12
+
+async function queryAiDailyCounts(dateRange, signal = null) {
+  return queryCube({
+    measures: ['Games.count'],
+    dimensions: ['Games.madeWithAi'],
+    timeDimensions: [{
+      dimension: 'Games.releaseDate',
+      granularity: 'day',
+      dateRange
+    }],
+    order: [['Games.releaseDate', 'asc']]
+  }, AI_COUNT_RETRIES, 1, { analytics: true, signal, continueWaitDelayMs: 1000 })
+}
+
+async function loadAiReleaseMetrics(period, signal = null) {
+  const monthDays = eachDayInclusive(period.monthStart, period.monthEnd)
+  const compareRange = period.prevMonthToDateRange || period.prevMonthRange
+  const jobs = [
+    queryCount('Games', 'madeWithAiCount', period.range, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'madeWithAiCount', compareRange, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'madeWithAiCount', period.toDateRange, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'count', period.range, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'count', compareRange, signal, AI_COUNT_RETRIES),
+    queryAiDailyCounts(period.range, signal)
+  ]
+  const settled = await Promise.allSettled(jobs)
+  const abort = settled.find((result) => result.status === 'rejected' && isAbortError(result.reason))
+  if (abort) throw abort.reason
+  const valueOf = (result) => (result.status === 'fulfilled' ? result.value : null)
+  const [monthCount, previousMonthCount, allTimeCount, monthTotal, previousMonthTotal, dailyRows] = settled.map(valueOf)
+  const monthReady = monthCount != null && previousMonthCount != null && monthTotal != null && previousMonthTotal != null
+  if (!monthReady && allTimeCount == null && !dailyRows) {
+    console.warn('AI release metrics failed:', settled.filter((result) => result.status === 'rejected').map((result) => result.reason))
+    return {
+      aiMonthCount: null,
+      aiPreviousMonthCount: null,
+      aiAllTimeCount: null,
+      aiMonthTotal: null,
+      aiPreviousMonthTotal: null,
+      aiDaily: null,
+      aiError: 'AI declaration figures are not available from the analytics API yet.'
+    }
+  }
+  return {
+    aiMonthCount: monthCount,
+    aiPreviousMonthCount: previousMonthCount,
+    aiAllTimeCount: allTimeCount,
+    aiMonthTotal: monthTotal,
+    aiPreviousMonthTotal: previousMonthTotal,
+    aiDaily: dailyRows ? fillAiDailySeries(dailyRows, monthDays) : null,
+    aiError: null
+  }
+}
+
+function aiMetricsReady(payload) {
+  if (payload?.aiError) return false
+  return payload?.aiMonthCount != null
+    && payload?.aiPreviousMonthCount != null
+    && payload?.aiAllTimeCount != null
+    && payload?.aiMonthTotal != null
+    && payload?.aiPreviousMonthTotal != null
+    && Array.isArray(payload?.aiDaily)
 }
 
 const COUNT_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
@@ -1411,7 +1505,7 @@ function writeCountCache(dateRange, value) {
 }
 
 function monthPayloadCacheKey(monthKey) {
-  return `gd_sos_month_v4_${monthKey}`
+  return `gd_sos_month_v7_${monthKey}`
 }
 
 function readStoredMonthEntry(monthKey) {
@@ -2046,21 +2140,32 @@ export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {})
 
   const cached = readMonthPayloadCache(cacheKey, period.isCurrent)
   if (cached?.period) {
-    const restored = { ...cached, period }
-    onUpdate?.(restored)
-    if (restored.historicalStatus !== 'ready' && onHistorical) {
-      queueHistorical(period, restored, signal, onHistorical)
-    } else if (onHistorical && restored.historicalStatus === 'ready') {
+    let current = { ...cached, period }
+    onUpdate?.(current)
+    if (current.historicalStatus !== 'ready' && onHistorical) {
+      queueHistorical(period, current, signal, onHistorical)
+    } else if (onHistorical && current.historicalStatus === 'ready') {
       onHistorical({
-        previousMonthReleases: restored.previousMonthReleases,
-        selectedYearReleases: restored.selectedYearReleases,
-        previousYearReleases: restored.previousYearReleases,
-        releasedToDate: restored.releasedToDate,
+        previousMonthReleases: current.previousMonthReleases,
+        selectedYearReleases: current.selectedYearReleases,
+        previousYearReleases: current.previousYearReleases,
+        releasedToDate: current.releasedToDate,
         historicalStatus: 'ready',
         historicalError: null
       })
     }
-    return restored
+    if (!aiMetricsReady(current)) {
+      loadAiReleaseMetrics(period, signal).then((patch) => {
+        if (signal?.aborted) return
+        current = { ...current, ...patch, period }
+        onUpdate?.(current)
+        writeMonthPayloadCache(cacheKey, current)
+      }).catch((error) => {
+        if (isAbortError(error) || signal?.aborted) return
+        console.warn('AI release metrics failed:', error)
+      })
+    }
+    return current
   }
 
   let latest = {
@@ -2069,6 +2174,12 @@ export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {})
     selectedYearReleases: null,
     previousYearReleases: null,
     releasedToDate: null,
+    aiMonthCount: null,
+    aiPreviousMonthCount: null,
+    aiAllTimeCount: null,
+    aiMonthTotal: null,
+    aiPreviousMonthTotal: null,
+    aiDaily: null,
     historicalStatus: 'loading',
     historicalError: null
   }
@@ -2081,6 +2192,15 @@ export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {})
     onUpdate?.(latest)
     return latest
   }
+
+  loadAiReleaseMetrics(period, signal).then((patch) => {
+    if (signal?.aborted) return
+    const next = publish(patch)
+    writeMonthPayloadCache(cacheKey, next)
+  }).catch((error) => {
+    if (isAbortError(error) || signal?.aborted) return
+    console.warn('AI release metrics failed:', error)
+  })
 
   const stale = readStaleMonthPayload(cacheKey)
   let blockSnapshot = Boolean(stale)

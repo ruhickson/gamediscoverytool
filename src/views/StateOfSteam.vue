@@ -481,6 +481,37 @@
               </div>
             </div>
           </div>
+
+          <div class="ai-section">
+            <h6 class="chart-title">Games released with AI declaration</h6>
+            <p v-if="metrics.aiError" class="text-muted">{{ metrics.aiError }}</p>
+            <div v-else class="metric-grid mb-4">
+              <div class="metric-card" v-for="card in aiNumberCards" :key="card.label">
+                <div class="metric-label">{{ card.label }}</div>
+                <div class="metric-value">
+                  <span v-if="card.pending" class="metric-pending">…</span>
+                  <span v-else>{{ card.display }}</span>
+                </div>
+                <div v-if="card.trend" class="metric-trend" :class="'trend-' + card.trend.direction">
+                  <span v-if="card.trend.pending" class="metric-pending">…</span>
+                  <template v-else>
+                    <i class="fas" :class="card.trend.icon" aria-hidden="true"></i>
+                    {{ card.trend.label }}
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div v-if="!metrics.aiError" class="chart-panel">
+              <h6 class="chart-title">Games released with AI declaration: {{ metrics.period.label }}</h6>
+              <p class="chart-subtitle text-muted">Daily releases in the selected month</p>
+              <div class="chart-wrap">
+                <div v-if="metrics.aiDaily == null" class="chart-loader" role="status" aria-label="Loading chart">
+                  <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <canvas v-show="metrics.aiDaily != null" ref="aiChartEl"></canvas>
+              </div>
+            </div>
+          </div>
         </template>
       </div>
     </div>
@@ -709,6 +740,98 @@ function buildDoughnutChart(canvas, labels, values, colors, onSelect, highContra
   })
 }
 
+function buildAiStackedChart(canvas, series, highContrast = false) {
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
+  return new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: series.map((row) => formatDayLabel(row.date)),
+      datasets: [
+        {
+          label: 'With AI declaration',
+          data: series.map((row) => row.withAi),
+          backgroundColor: highContrast ? HC_WHITE_SOFT : GOLD_SOFT,
+          borderColor: highContrast ? HC_WHITE : GOLD,
+          borderWidth: 1,
+          stack: 'releases',
+          maxBarThickness: 36
+        },
+        {
+          label: 'Without AI declaration',
+          data: series.map((row) => row.withoutAi),
+          backgroundColor: highContrast ? 'rgba(192, 192, 192, 0.9)' : 'rgba(100, 116, 139, 0.8)',
+          borderColor: highContrast ? HC_GREY : SLATE,
+          borderWidth: 1,
+          stack: 'releases',
+          maxBarThickness: 36
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: tick, boxWidth: 12 }
+        },
+        tooltip: tooltipDefaults(highContrast)
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: tick, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
+          grid: { color: grid },
+          border: { display: false }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
+          border: { display: false }
+        }
+      }
+    }
+  })
+}
+
+function sharePercent(part, total) {
+  if (part == null || total == null) return null
+  const numerator = Number(part)
+  const denominator = Number(total)
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null
+  return (numerator / denominator) * 100
+}
+
+function comparisonTrendLabel(period) {
+  if (!period?.isCurrent) return 'vs last month'
+  const end = period.prevMonthToDateRange?.[1]
+  const day = end ? Number(String(end).slice(8, 10)) : null
+  if (!day || !period.prevMonthLabel) return 'vs last month to date'
+  return `vs ${period.prevMonthLabel} 1–${day}`
+}
+
+function trendVsPrevious(current, previous) {
+  if (current == null || previous == null) return { pending: true, direction: 'flat', icon: 'fa-minus', label: '' }
+  if (previous === 0) {
+    if (current === 0) return { pending: false, direction: 'flat', icon: 'fa-minus', label: '0% vs last month' }
+    return { pending: false, direction: 'up', icon: 'fa-arrow-up', label: 'New vs last month' }
+  }
+  const change = ((current - previous) / previous) * 100
+  if (Math.abs(change) < 0.05) {
+    return { pending: false, direction: 'flat', icon: 'fa-minus', label: '0% vs last month' }
+  }
+  const direction = change > 0 ? 'up' : 'down'
+  return {
+    pending: false,
+    direction,
+    icon: direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down',
+    label: `${Math.abs(change).toFixed(1)}% vs last month`
+  }
+}
+
 export default {
   name: 'StateOfSteam',
   setup() {
@@ -727,6 +850,7 @@ export default {
     const freePaidChartEl = ref(null)
     const scoreMixChartEl = ref(null)
     const sentimentChartEl = ref(null)
+    const aiChartEl = ref(null)
 
     /** @type {import('vue').Ref<null | { chart: string, title: string, loading: boolean, error: string, games: any[] }>} */
     const drill = ref(null)
@@ -858,6 +982,41 @@ export default {
           metricHeader: 'Love %',
           rows: m.reveredDevelopers,
           format: (s) => `${s.loveRate.toFixed(1)}%`
+        }
+      ]
+    })
+
+    const aiNumberCards = computed(() => {
+      const m = metrics.value
+      if (!m) return []
+      const monthShare = sharePercent(m.aiMonthCount, m.aiMonthTotal)
+      const previousShare = sharePercent(m.aiPreviousMonthCount, m.aiPreviousMonthTotal)
+      const versus = comparisonTrendLabel(m.period)
+      const allTimeLabel = m.period?.isCurrent
+        ? 'Games released with AI declaration: all time'
+        : `Games released with AI declaration: thru ${m.period?.label || 'month'}`
+      const countTrend = trendVsPrevious(m.aiMonthCount, m.aiPreviousMonthCount)
+      const shareTrend = trendVsPrevious(monthShare, previousShare)
+      if (!countTrend.pending) countTrend.label = countTrend.label.replace('vs last month', versus)
+      if (!shareTrend.pending) shareTrend.label = shareTrend.label.replace('vs last month', versus)
+      return [
+        {
+          label: `Games released with AI declaration: ${m.period?.label || 'this month'}`,
+          pending: m.aiMonthCount == null,
+          display: formatNumber(m.aiMonthCount),
+          trend: countTrend
+        },
+        {
+          label: `Share of releases with AI declaration: ${m.period?.label || 'this month'}`,
+          pending: monthShare == null,
+          display: monthShare == null ? '' : `${monthShare.toFixed(1)}%`,
+          trend: shareTrend
+        },
+        {
+          label: allTimeLabel,
+          pending: m.aiAllTimeCount == null,
+          display: formatNumber(m.aiAllTimeCount),
+          trend: null
         }
       ]
     })
@@ -1134,6 +1293,9 @@ export default {
           hc
         ))
       }
+      if (aiChartEl.value && m.aiDaily?.length) {
+        safeChart(() => buildAiStackedChart(aiChartEl.value, m.aiDaily, hc))
+      }
     }
 
     watch(isHighContrast, () => {
@@ -1220,6 +1382,7 @@ export default {
       freePaidChartEl,
       scoreMixChartEl,
       sentimentChartEl,
+      aiChartEl,
       drill,
       clearDrill,
       genreFilter,
@@ -1232,6 +1395,7 @@ export default {
       getItadUrl,
       releasedMonthTotal,
       bigNumberCards,
+      aiNumberCards,
       reviewStatCards,
       sentimentBoards,
       studioBoards,
@@ -1491,6 +1655,34 @@ export default {
   font-size: clamp(1.35rem, 2.6vw, 2rem);
   font-weight: 700;
   line-height: 1.1;
+}
+
+.ai-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.metric-trend {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.metric-trend i {
+  margin-right: 0.25rem;
+}
+
+.trend-up {
+  color: #6ee7b7;
+}
+
+.trend-down {
+  color: #fca5a5;
+}
+
+.trend-flat {
+  color: var(--color-text-muted);
 }
 
 .leaderboard {
