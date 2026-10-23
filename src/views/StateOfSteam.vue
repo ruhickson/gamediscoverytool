@@ -11,7 +11,7 @@
             id="timeMachine"
             class="form-select form-select-sm time-machine-select"
             v-model="selectedMonth"
-            :disabled="isLoading"
+            :disabled="isLoading && !metrics"
             @change="loadMetrics"
           >
             <option
@@ -25,7 +25,7 @@
           <button
             class="btn btn-outline-light btn-sm"
             type="button"
-            :disabled="isLoading"
+            :disabled="isLoading && !metrics"
             @click="loadMetrics"
             title="Refresh metrics"
           >
@@ -68,13 +68,13 @@
           </div>
 
           <div class="row g-3 mb-4">
-            <div :class="metrics.period.isCurrent ? 'col-lg-6' : 'col-12'">
+            <div class="col-12">
               <div
                 class="chart-panel"
                 data-drill-root="released"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Games released — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Games released: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Daily count · total {{ formatNumber(releasedMonthTotal) }}
                   <span v-if="drill?.chart !== 'released'"> · click a bar for games</span>
@@ -113,58 +113,11 @@
                     <li v-if="!drill.games.length" class="drilldown-status text-muted">No games for this day.</li>
                   </ul>
                 </div>
-                <div v-else class="chart-wrap chart-wrap-clickable">
-                  <canvas ref="releasedChartEl"></canvas>
-                </div>
-              </div>
-            </div>
-            <div v-if="metrics.period.isCurrent" class="col-lg-6">
-              <div
-                class="chart-panel"
-                data-drill-root="upcoming"
-                @pointerdown.stop
-              >
-                <h6 class="chart-title">Games due for release — next 7 days</h6>
-                <p class="chart-subtitle text-muted">
-                  Daily count · total {{ formatNumber(dueNext7Total) }}
-                  <span v-if="drill?.chart !== 'upcoming'"> · click a bar for games</span>
-                </p>
-                <div v-if="drill?.chart === 'upcoming'" class="drilldown-panel">
-                  <div class="drilldown-header">
-                    <button type="button" class="btn btn-outline-light btn-sm" @click="clearDrill">
-                      <i class="fas fa-arrow-left"></i> Back to chart
-                    </button>
-                    <span class="drilldown-title">{{ drill.title }}</span>
+                <div v-else class="chart-wrap" :class="{ 'chart-wrap-clickable': metrics.releasedInMonthDaily != null }">
+                  <div v-if="metrics.releasedInMonthDaily == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
                   </div>
-                  <div v-if="drill.loading" class="drilldown-status">Loading games…</div>
-                  <div v-else-if="drill.error" class="drilldown-status error">{{ drill.error }}</div>
-                  <ul v-else class="drilldown-list">
-                    <li v-for="game in drill.games" :key="game.appId" class="drilldown-item">
-                      <div class="drilldown-game-name">{{ game.name }}</div>
-                      <div class="drilldown-meta">
-                        <span v-if="game.reviewScoreDesc" class="text-muted">{{ game.reviewScoreDesc }}</span>
-                        <span v-if="game.totalReviews" class="text-muted">{{ formatNumber(game.totalReviews) }} reviews</span>
-                      </div>
-                      <div class="drilldown-links">
-                        <a
-                          :href="`https://store.steampowered.com/app/${game.appId}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="game-link"
-                        >Steam</a>
-                        <a
-                          :href="getItadUrl(game.name)"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="game-link"
-                        >ITAD</a>
-                      </div>
-                    </li>
-                    <li v-if="!drill.games.length" class="drilldown-status text-muted">No games due this day.</li>
-                  </ul>
-                </div>
-                <div v-else class="chart-wrap chart-wrap-clickable">
-                  <canvas ref="upcomingChartEl"></canvas>
+                  <canvas v-show="metrics.releasedInMonthDaily != null" ref="releasedChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -177,7 +130,7 @@
                 data-drill-root="genres"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Genres released — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Genres released: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Games released that month by genre
                   <span v-if="drill?.chart !== 'genres'"> · click a bar for games</span>
@@ -256,10 +209,14 @@
                 </div>
                 <div
                   v-else
-                  class="chart-wrap chart-wrap-genres chart-wrap-clickable"
+                  class="chart-wrap chart-wrap-genres"
+                  :class="{ 'chart-wrap-clickable': metrics.genresInMonth != null }"
                   :style="{ '--genre-count': metrics.genresInMonth?.length || 8 }"
                 >
-                  <canvas ref="genresChartEl"></canvas>
+                  <div v-if="metrics.genresInMonth == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.genresInMonth != null" ref="genresChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -269,7 +226,7 @@
                 data-drill-root="tags"
                 @pointerdown.stop
               >
-                <h6 class="chart-title">Popular tags — {{ metrics.period.label }}</h6>
+                <h6 class="chart-title">Popular tags: {{ metrics.period.label }}</h6>
                 <p class="chart-subtitle text-muted">
                   Top tags on games released that month
                   <span v-if="drill?.chart !== 'tags'"> · click a bar for games</span>
@@ -348,10 +305,14 @@
                 </div>
                 <div
                   v-else
-                  class="chart-wrap chart-wrap-genres chart-wrap-clickable"
+                  class="chart-wrap chart-wrap-genres"
+                  :class="{ 'chart-wrap-clickable': metrics.tagsInMonth != null }"
                   :style="{ '--genre-count': metrics.tagsInMonth?.length || 8 }"
                 >
-                  <canvas ref="tagsChartEl"></canvas>
+                  <div v-if="metrics.tagsInMonth == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.tagsInMonth != null" ref="tagsChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -403,8 +364,11 @@
                     <li v-if="!drill.games.length" class="drilldown-status text-muted">No games in this category.</li>
                   </ul>
                 </div>
-                <div v-else class="chart-wrap chart-wrap-doughnut chart-wrap-clickable">
-                  <canvas ref="freePaidChartEl"></canvas>
+                <div v-else class="chart-wrap chart-wrap-doughnut" :class="{ 'chart-wrap-clickable': metrics.freeVsPaid != null }">
+                  <div v-if="metrics.freeVsPaid == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.freeVsPaid != null" ref="freePaidChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -416,7 +380,10 @@
                   class="chart-wrap chart-wrap-genres"
                   :style="{ '--genre-count': metrics.reviewScoreMix?.length || 8 }"
                 >
-                  <canvas ref="scoreMixChartEl"></canvas>
+                  <div v-if="metrics.reviewScoreMix == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.reviewScoreMix != null" ref="scoreMixChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -427,7 +394,10 @@
                   Review volume for games released in {{ metrics.period.label }}
                 </p>
                 <div class="chart-wrap chart-wrap-doughnut">
-                  <canvas ref="sentimentChartEl"></canvas>
+                  <div v-if="metrics.reviewTotals == null" class="chart-loader" role="status" aria-label="Loading chart">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                  <canvas v-show="metrics.reviewTotals != null" ref="sentimentChartEl"></canvas>
                 </div>
               </div>
             </div>
@@ -460,7 +430,12 @@
                         </td>
                         <td>{{ board.format(game) }}</td>
                       </tr>
-                      <tr v-if="!board.rows?.length">
+                      <tr v-if="board.rows == null">
+                        <td colspan="3" class="chart-loader-cell">
+                          <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
+                        </td>
+                      </tr>
+                      <tr v-else-if="!board.rows.length">
                         <td colspan="3" class="text-muted">No games met the review threshold.</td>
                       </tr>
                     </tbody>
@@ -492,12 +467,48 @@
                         <td>{{ formatNumber(studio.games) }}</td>
                         <td>{{ board.format(studio) }}</td>
                       </tr>
-                      <tr v-if="!board.rows?.length">
+                      <tr v-if="board.rows == null">
+                        <td colspan="4" class="chart-loader-cell">
+                          <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
+                        </td>
+                      </tr>
+                      <tr v-else-if="!board.rows.length">
                         <td colspan="4" class="text-muted">No studios found for this period.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-section">
+            <h6 class="chart-title">Games released with AI declaration</h6>
+            <p v-if="metrics.aiError" class="text-muted">{{ metrics.aiError }}</p>
+            <div v-else class="metric-grid mb-4">
+              <div class="metric-card" v-for="card in aiNumberCards" :key="card.label">
+                <div class="metric-label">{{ card.label }}</div>
+                <div class="metric-value">
+                  <span v-if="card.pending" class="metric-pending">…</span>
+                  <span v-else>{{ card.display }}</span>
+                </div>
+                <div v-if="card.trend" class="metric-trend" :class="'trend-' + card.trend.direction">
+                  <span v-if="card.trend.pending" class="metric-pending">…</span>
+                  <template v-else>
+                    <i class="fas" :class="card.trend.icon" aria-hidden="true"></i>
+                    {{ card.trend.label }}
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div v-if="!metrics.aiError" class="chart-panel">
+              <h6 class="chart-title">Games released with AI declaration: {{ metrics.period.label }}</h6>
+              <p class="chart-subtitle text-muted">Daily releases in the selected month</p>
+              <div class="chart-wrap">
+                <div v-if="metrics.aiDaily == null" class="chart-loader" role="status" aria-label="Loading chart">
+                  <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <canvas v-show="metrics.aiDaily != null" ref="aiChartEl"></canvas>
               </div>
             </div>
           </div>
@@ -508,7 +519,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, inject, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   Chart,
   BarController,
@@ -542,6 +553,10 @@ const GRID = 'rgba(148, 163, 184, 0.18)'
 const SLATE = '#64748b'
 const POSITIVE_GREEN = '#6ee7b7'
 const NEGATIVE_RED = '#fca5a5'
+const HC_WHITE = '#ffffff'
+const HC_WHITE_SOFT = 'rgba(255, 255, 255, 0.9)'
+const HC_GREY = '#c0c0c0'
+const HC_GRID = 'rgba(255, 255, 255, 0.28)'
 
 /** Soft multi-hue palette for genre/tag bars (dark theme friendly) */
 const CATEGORY_PALETTE = [
@@ -559,8 +574,14 @@ const CATEGORY_PALETTE = [
   { fill: 'rgba(165, 180, 252, 0.78)', stroke: '#a5b4fc' }
 ]
 
-function categoryColors(count) {
-  return Array.from({ length: count }, (_, i) => CATEGORY_PALETTE[i % CATEGORY_PALETTE.length])
+const HC_CATEGORY_PALETTE = [
+  { fill: HC_WHITE_SOFT, stroke: HC_WHITE },
+  { fill: 'rgba(192, 192, 192, 0.9)', stroke: HC_GREY }
+]
+
+function categoryColors(count, highContrast = false) {
+  const palette = highContrast ? HC_CATEGORY_PALETTE : CATEGORY_PALETTE
+  return Array.from({ length: count }, (_, i) => palette[i % palette.length])
 }
 
 function formatDayLabel(ymd) {
@@ -571,7 +592,16 @@ function formatDayLabel(ymd) {
   })
 }
 
-function tooltipDefaults() {
+function tooltipDefaults(highContrast = false) {
+  if (highContrast) {
+    return {
+      backgroundColor: '#000000',
+      titleColor: HC_WHITE,
+      bodyColor: HC_WHITE,
+      borderColor: HC_WHITE,
+      borderWidth: 1
+    }
+  }
   return {
     backgroundColor: '#1e293b',
     titleColor: GOLD,
@@ -581,7 +611,9 @@ function tooltipDefaults() {
   }
 }
 
-function buildDayBarChart(canvas, series, label, onSelect) {
+function buildDayBarChart(canvas, series, label, onSelect, highContrast = false) {
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
   return new Chart(canvas, {
     type: 'bar',
     data: {
@@ -589,8 +621,8 @@ function buildDayBarChart(canvas, series, label, onSelect) {
       datasets: [{
         label,
         data: series.map((row) => row.count),
-        backgroundColor: GOLD_SOFT,
-        borderColor: GOLD,
+        backgroundColor: highContrast ? HC_WHITE_SOFT : GOLD_SOFT,
+        borderColor: highContrast ? HC_WHITE : GOLD,
         borderWidth: 1,
         borderRadius: 4,
         maxBarThickness: 36
@@ -605,17 +637,17 @@ function buildDayBarChart(canvas, series, label, onSelect) {
         const row = series[idx]
         if (row) onSelect(row, idx)
       },
-      plugins: { legend: { display: false }, tooltip: tooltipDefaults() },
+      plugins: { legend: { display: false }, tooltip: tooltipDefaults(highContrast) },
       scales: {
         x: {
-          ticks: { color: MUTED, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
-          grid: { color: GRID },
+          ticks: { color: tick, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
+          grid: { color: grid },
           border: { display: false }
         },
         y: {
           beginAtZero: true,
-          ticks: { color: MUTED, precision: 0 },
-          grid: { color: GRID },
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
           border: { display: false }
         }
       }
@@ -623,10 +655,12 @@ function buildDayBarChart(canvas, series, label, onSelect) {
   })
 }
 
-function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect, { multicolor = false } = {}) {
+function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect, { multicolor = false, highContrast = false } = {}) {
   const colors = multicolor
-    ? categoryColors(labels.length)
+    ? categoryColors(labels.length, highContrast)
     : null
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
   return new Chart(canvas, {
     type: 'bar',
     data: {
@@ -634,8 +668,12 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
       datasets: [{
         label: datasetLabel,
         data: values,
-        backgroundColor: colors ? colors.map((c) => c.fill) : GOLD_SOFT,
-        borderColor: colors ? colors.map((c) => c.stroke) : GOLD,
+        backgroundColor: colors
+          ? colors.map((c) => c.fill)
+          : (highContrast ? HC_WHITE_SOFT : GOLD_SOFT),
+        borderColor: colors
+          ? colors.map((c) => c.stroke)
+          : (highContrast ? HC_WHITE : GOLD),
         borderWidth: 1,
         borderRadius: 4,
         maxBarThickness: 28
@@ -649,16 +687,16 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
         if (!onSelect || !elements.length) return
         onSelect(labels[elements[0].index], elements[0].index)
       },
-      plugins: { legend: { display: false }, tooltip: tooltipDefaults() },
+      plugins: { legend: { display: false }, tooltip: tooltipDefaults(highContrast) },
       scales: {
         x: {
           beginAtZero: true,
-          ticks: { color: MUTED, precision: 0 },
-          grid: { color: GRID },
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
           border: { display: false }
         },
         y: {
-          ticks: { color: MUTED, autoSkip: false },
+          ticks: { color: tick, autoSkip: false },
           grid: { display: false },
           border: { display: false }
         }
@@ -667,19 +705,20 @@ function buildHorizontalBarChart(canvas, labels, values, datasetLabel, onSelect,
   })
 }
 
-function buildDoughnutChart(canvas, labels, values, colors, onSelect) {
+function buildDoughnutChart(canvas, labels, values, colors, onSelect, highContrast = false) {
   const safeValues = values.map((v) => Number(v) || 0)
   if (safeValues.every((v) => v <= 0)) {
     return null
   }
+  const hcColors = labels.map((_, i) => (i % 2 === 0 ? HC_WHITE : HC_GREY))
   return new Chart(canvas, {
     type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data: safeValues,
-        backgroundColor: colors,
-        borderColor: '#0f172a',
+        backgroundColor: highContrast ? hcColors : colors,
+        borderColor: highContrast ? '#000000' : '#0f172a',
         borderWidth: 2
       }]
     },
@@ -693,17 +732,110 @@ function buildDoughnutChart(canvas, labels, values, colors, onSelect) {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: MUTED, boxWidth: 12 }
+          labels: { color: highContrast ? HC_WHITE : MUTED, boxWidth: 12 }
         },
-        tooltip: tooltipDefaults()
+        tooltip: tooltipDefaults(highContrast)
       }
     }
   })
 }
 
+function buildAiStackedChart(canvas, series, highContrast = false) {
+  const tick = highContrast ? HC_WHITE : MUTED
+  const grid = highContrast ? HC_GRID : GRID
+  return new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: series.map((row) => formatDayLabel(row.date)),
+      datasets: [
+        {
+          label: 'With AI declaration',
+          data: series.map((row) => row.withAi),
+          backgroundColor: highContrast ? HC_WHITE_SOFT : GOLD_SOFT,
+          borderColor: highContrast ? HC_WHITE : GOLD,
+          borderWidth: 1,
+          stack: 'releases',
+          maxBarThickness: 36
+        },
+        {
+          label: 'Without AI declaration',
+          data: series.map((row) => row.withoutAi),
+          backgroundColor: highContrast ? 'rgba(192, 192, 192, 0.9)' : 'rgba(100, 116, 139, 0.8)',
+          borderColor: highContrast ? HC_GREY : SLATE,
+          borderWidth: 1,
+          stack: 'releases',
+          maxBarThickness: 36
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: tick, boxWidth: 12 }
+        },
+        tooltip: tooltipDefaults(highContrast)
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: tick, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 16 },
+          grid: { color: grid },
+          border: { display: false }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { color: tick, precision: 0 },
+          grid: { color: grid },
+          border: { display: false }
+        }
+      }
+    }
+  })
+}
+
+function sharePercent(part, total) {
+  if (part == null || total == null) return null
+  const numerator = Number(part)
+  const denominator = Number(total)
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null
+  return (numerator / denominator) * 100
+}
+
+function comparisonTrendLabel(period) {
+  if (!period?.isCurrent) return 'vs last month'
+  const end = period.prevMonthToDateRange?.[1]
+  const day = end ? Number(String(end).slice(8, 10)) : null
+  if (!day || !period.prevMonthLabel) return 'vs last month to date'
+  return `vs ${period.prevMonthLabel} 1–${day}`
+}
+
+function trendVsPrevious(current, previous) {
+  if (current == null || previous == null) return { pending: true, direction: 'flat', icon: 'fa-minus', label: '' }
+  if (previous === 0) {
+    if (current === 0) return { pending: false, direction: 'flat', icon: 'fa-minus', label: '0% vs last month' }
+    return { pending: false, direction: 'up', icon: 'fa-arrow-up', label: 'New vs last month' }
+  }
+  const change = ((current - previous) / previous) * 100
+  if (Math.abs(change) < 0.05) {
+    return { pending: false, direction: 'flat', icon: 'fa-minus', label: '0% vs last month' }
+  }
+  const direction = change > 0 ? 'up' : 'down'
+  return {
+    pending: false,
+    direction,
+    icon: direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down',
+    label: `${Math.abs(change).toFixed(1)}% vs last month`
+  }
+}
+
 export default {
   name: 'StateOfSteam',
   setup() {
+    const isHighContrast = inject('isHighContrast', ref(false))
     const timeMachineOptions = getTimeMachineOptions()
     const selectedMonth = ref('this-month')
     const isLoading = ref(false)
@@ -713,12 +845,12 @@ export default {
     let loadAbort = null
 
     const releasedChartEl = ref(null)
-    const upcomingChartEl = ref(null)
     const genresChartEl = ref(null)
     const tagsChartEl = ref(null)
     const freePaidChartEl = ref(null)
     const scoreMixChartEl = ref(null)
     const sentimentChartEl = ref(null)
+    const aiChartEl = ref(null)
 
     /** @type {import('vue').Ref<null | { chart: string, title: string, loading: boolean, error: string, games: any[] }>} */
     const drill = ref(null)
@@ -739,42 +871,45 @@ export default {
     const releasedMonthTotal = computed(() =>
       (metrics.value?.releasedInMonthDaily || []).reduce((sum, row) => sum + (row.count || 0), 0)
     )
-    const dueNext7Total = computed(() =>
-      (metrics.value?.dueNext7Days || []).reduce((sum, row) => sum + (row.count || 0), 0)
-    )
 
     const bigNumberCards = computed(() => {
       const m = metrics.value
       if (!m) return []
       const histPending = m.historicalStatus === 'loading'
       return [
-        { label: `Released — ${m.period.label}`, value: m.selectedMonthReleases, pending: false },
         {
-          label: `Released — ${m.period.prevMonthLabel}`,
+          label: `Released: ${m.period.label}`,
+          value: m.selectedMonthReleases,
+          pending: m.selectedMonthReleases == null
+        },
+        {
+          label: `Released: ${m.period.prevMonthLabel}`,
           value: m.previousMonthReleases,
           pending: histPending && m.previousMonthReleases == null
         },
         {
-          label: `Released — ${m.period.yearLabel}`,
+          label: `Released: ${m.period.yearLabel}`,
           value: m.selectedYearReleases,
           pending: histPending && m.selectedYearReleases == null
         },
         {
-          label: `Released — ${m.period.prevYearLabel}`,
+          label: `Released: ${m.period.prevYearLabel}`,
           value: m.previousYearReleases,
           pending: histPending && m.previousYearReleases == null
-        },
-        {
-          label: `Released to date (thru ${m.period.label})`,
-          value: m.releasedToDate,
-          pending: histPending && m.releasedToDate == null
         }
       ]
     })
 
     const reviewStatCards = computed(() => {
       const t = metrics.value?.reviewTotals
-      if (!t) return []
+      if (!t) {
+        return [
+          { label: 'Positive reviews', display: '…' },
+          { label: 'Negative reviews', display: '…' },
+          { label: 'Total reviews', display: '…' },
+          { label: 'Positive share', display: '…' }
+        ]
+      }
       const share = Number(t.positiveShare) || 0
       return [
         { label: 'Positive reviews', display: formatNumber(t.positive) },
@@ -851,6 +986,41 @@ export default {
       ]
     })
 
+    const aiNumberCards = computed(() => {
+      const m = metrics.value
+      if (!m) return []
+      const monthShare = sharePercent(m.aiMonthCount, m.aiMonthTotal)
+      const previousShare = sharePercent(m.aiPreviousMonthCount, m.aiPreviousMonthTotal)
+      const versus = comparisonTrendLabel(m.period)
+      const allTimeLabel = m.period?.isCurrent
+        ? 'Games released with AI declaration: all time'
+        : `Games released with AI declaration: thru ${m.period?.label || 'month'}`
+      const countTrend = trendVsPrevious(m.aiMonthCount, m.aiPreviousMonthCount)
+      const shareTrend = trendVsPrevious(monthShare, previousShare)
+      if (!countTrend.pending) countTrend.label = countTrend.label.replace('vs last month', versus)
+      if (!shareTrend.pending) shareTrend.label = shareTrend.label.replace('vs last month', versus)
+      return [
+        {
+          label: `Games released with AI declaration: ${m.period?.label || 'this month'}`,
+          pending: m.aiMonthCount == null,
+          display: formatNumber(m.aiMonthCount),
+          trend: countTrend
+        },
+        {
+          label: `Share of releases with AI declaration: ${m.period?.label || 'this month'}`,
+          pending: monthShare == null,
+          display: monthShare == null ? '' : `${monthShare.toFixed(1)}%`,
+          trend: shareTrend
+        },
+        {
+          label: allTimeLabel,
+          pending: m.aiAllTimeCount == null,
+          display: formatNumber(m.aiAllTimeCount),
+          trend: null
+        }
+      ]
+    })
+
     const formatNumber = (value) => {
       const n = Number(value) || 0
       return n.toLocaleString()
@@ -913,19 +1083,14 @@ export default {
       openDrill('released', `Released ${formatDayLabel(row.date)}`, { day: row.date })
     }
 
-    const onUpcomingBarClick = (row) => {
-      if (!row?.date) return
-      openDrill('upcoming', `Due ${formatDayLabel(row.date)}`, { day: row.date })
-    }
-
     const onGenreBarClick = (genre) => {
       if (!genre) return
-      openDrill('genres', `${genre} — ${metrics.value?.period?.label || ''}`, { genre })
+      openDrill('genres', `${genre}: ${metrics.value?.period?.label || ''}`, { genre })
     }
 
     const onTagBarClick = (tag) => {
       if (!tag) return
-      openDrill('tags', `${tag} — ${metrics.value?.period?.label || ''}`, { tag })
+      openDrill('tags', `${tag}: ${metrics.value?.period?.label || ''}`, { tag })
     }
 
     const chartCategoryOptions = (kind, query) => {
@@ -1051,7 +1216,7 @@ export default {
     const onFreePaidSliceClick = (label) => {
       if (label !== 'Free' && label !== 'Paid') return
       const isFree = label === 'Free'
-      openDrill('freePaid', `${label} games — ${metrics.value?.period?.label || ''}`, { isFree })
+      openDrill('freePaid', `${label} games: ${metrics.value?.period?.label || ''}`, { isFree })
     }
 
     const onDocumentPointerDown = (event) => {
@@ -1063,24 +1228,19 @@ export default {
 
     const renderCharts = async () => {
       await nextTick()
+      if (drill.value) return
       destroyCharts()
       const m = metrics.value
-      if (!m || drill.value) return
+      if (!m) return
+      const hc = !!isHighContrast.value
 
       if (releasedChartEl.value && m.releasedInMonthDaily?.length) {
         safeChart(() => buildDayBarChart(
           releasedChartEl.value,
           m.releasedInMonthDaily,
           'Released',
-          onReleasedBarClick
-        ))
-      }
-      if (m.period.isCurrent && upcomingChartEl.value && m.dueNext7Days?.length) {
-        safeChart(() => buildDayBarChart(
-          upcomingChartEl.value,
-          m.dueNext7Days,
-          'Due',
-          onUpcomingBarClick
+          onReleasedBarClick,
+          hc
         ))
       }
       if (genresChartEl.value && m.genresInMonth?.length) {
@@ -1090,7 +1250,7 @@ export default {
           m.genresInMonth.map((r) => r.count),
           'Games',
           onGenreBarClick,
-          { multicolor: true }
+          { multicolor: true, highContrast: hc }
         ))
       }
       if (tagsChartEl.value && m.tagsInMonth?.length) {
@@ -1100,7 +1260,7 @@ export default {
           m.tagsInMonth.map((r) => r.count),
           'Games',
           onTagBarClick,
-          { multicolor: true }
+          { multicolor: true, highContrast: hc }
         ))
       }
       if (scoreMixChartEl.value && m.reviewScoreMix?.length) {
@@ -1108,7 +1268,9 @@ export default {
           scoreMixChartEl.value,
           m.reviewScoreMix.map((r) => r.score),
           m.reviewScoreMix.map((r) => r.count),
-          'Games'
+          'Games',
+          undefined,
+          { highContrast: hc }
         ))
       }
       if (freePaidChartEl.value) {
@@ -1117,7 +1279,8 @@ export default {
           ['Free', 'Paid'],
           [m.freeVsPaid?.free, m.freeVsPaid?.paid],
           [GOLD, SLATE],
-          onFreePaidSliceClick
+          onFreePaidSliceClick,
+          hc
         ))
       }
       if (sentimentChartEl.value) {
@@ -1125,10 +1288,19 @@ export default {
           sentimentChartEl.value,
           ['Positive', 'Negative'],
           [m.reviewTotals?.positive, m.reviewTotals?.negative],
-          [POSITIVE_GREEN, NEGATIVE_RED]
+          [POSITIVE_GREEN, NEGATIVE_RED],
+          undefined,
+          hc
         ))
       }
+      if (aiChartEl.value && m.aiDaily?.length) {
+        safeChart(() => buildAiStackedChart(aiChartEl.value, m.aiDaily, hc))
+      }
     }
+
+    watch(isHighContrast, () => {
+      renderCharts()
+    })
 
     const loadMetrics = async () => {
       if (loadAbort) loadAbort.abort()
@@ -1142,9 +1314,26 @@ export default {
       drill.value = null
       drillToken += 1
       resetCategoryFilters()
+      let renderChain = Promise.resolve()
+      let renderTimer = null
+      const scheduleRender = () => {
+        clearTimeout(renderTimer)
+        renderTimer = setTimeout(() => {
+          renderChain = renderChain.then(async () => {
+            if (signal.aborted) return
+            await renderCharts()
+          })
+        }, 80)
+      }
       try {
-        metrics.value = await cubeService.getStateOfSteamMetrics(selectedMonth.value, {
+        const result = await cubeService.getStateOfSteamMetrics(selectedMonth.value, {
           signal,
+          onUpdate: (next) => {
+            if (signal.aborted || !next) return
+            metrics.value = next
+            historicalError.value = next.historicalError || ''
+            scheduleRender()
+          },
           onHistorical: (hist) => {
             if (signal.aborted || !metrics.value) return
             metrics.value = { ...metrics.value, ...hist }
@@ -1152,8 +1341,11 @@ export default {
           }
         })
         if (signal.aborted) return
+        if (!metrics.value && result) metrics.value = result
         historicalError.value = metrics.value?.historicalError || ''
-        await renderCharts()
+        clearTimeout(renderTimer)
+        await renderChain
+        if (!signal.aborted) await renderCharts()
       } catch (err) {
         if (err?.name === 'AbortError' || signal.aborted) return
         console.error('State of Steam metrics failed:', err)
@@ -1185,12 +1377,12 @@ export default {
       historicalError,
       periodLabel,
       releasedChartEl,
-      upcomingChartEl,
       genresChartEl,
       tagsChartEl,
       freePaidChartEl,
       scoreMixChartEl,
       sentimentChartEl,
+      aiChartEl,
       drill,
       clearDrill,
       genreFilter,
@@ -1202,8 +1394,8 @@ export default {
       selectCategory,
       getItadUrl,
       releasedMonthTotal,
-      dueNext7Total,
       bigNumberCards,
+      aiNumberCards,
       reviewStatCards,
       sentimentBoards,
       studioBoards,
@@ -1343,6 +1535,22 @@ export default {
   height: 240px;
 }
 
+.chart-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  font-size: 1.4rem;
+}
+
+.chart-loader-cell {
+  text-align: center;
+  color: var(--color-accent);
+  padding: 1.25rem 0;
+}
+
 .chart-wrap-clickable {
   cursor: pointer;
 }
@@ -1447,6 +1655,34 @@ export default {
   font-size: clamp(1.35rem, 2.6vw, 2rem);
   font-weight: 700;
   line-height: 1.1;
+}
+
+.ai-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.metric-trend {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.metric-trend i {
+  margin-right: 0.25rem;
+}
+
+.trend-up {
+  color: #6ee7b7;
+}
+
+.trend-down {
+  color: #fca5a5;
+}
+
+.trend-flat {
+  color: var(--color-text-muted);
 }
 
 .leaderboard {

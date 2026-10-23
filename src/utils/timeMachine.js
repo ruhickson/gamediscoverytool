@@ -78,6 +78,13 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
 
   const prevMonthEnd = new Date(year, monthIndex, 0)
   const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1)
+  // Current month is only partly elapsed. Compare with the same day last month
+  // (1 Oct–21 Oct against 1 Sep–21 Sep), not the whole previous month.
+  const elapsedDay = rangeEnd.getDate()
+  const prevElapsedDay = Math.min(elapsedDay, prevMonthEnd.getDate())
+  const prevToDateEnd = isCurrent
+    ? new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), prevElapsedDay)
+    : prevMonthEnd
 
   const yearStart = new Date(year, 0, 1)
   const yearEnd = isCurrent ? today : new Date(year, 11, 31)
@@ -89,9 +96,12 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
   const prevYearEnd = new Date(prevYear, 11, 31)
 
   const steamLaunch = new Date(STEAM_LAUNCH.year, STEAM_LAUNCH.monthIndex, 1)
+  // "This month" is the current calendar month. Same key, ranges, and totals
+  // as selecting that month directly (for example 2026-10).
+  const canonicalKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 
   return {
-    key: isCurrent && monthKey === 'this-month' ? 'this-month' : `${year}-${String(monthIndex + 1).padStart(2, '0')}`,
+    key: canonicalKey,
     label: isCurrent && (!monthKey || monthKey === 'this-month')
       ? 'This month'
       : monthLabel(year, monthIndex),
@@ -104,6 +114,7 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
     monthStart,
     monthEnd: rangeEnd,
     prevMonthRange: [toYmd(prevMonthStart), toYmd(prevMonthEnd)],
+    prevMonthToDateRange: [toYmd(prevMonthStart), toYmd(prevToDateEnd)],
     prevMonthLabel: monthLabel(prevMonthStart.getFullYear(), prevMonthStart.getMonth()),
     yearRange: [toYmd(yearStart), toYmd(selectedYearEnd)],
     yearLabel: String(year),
@@ -112,4 +123,51 @@ export function resolveTimeMachinePeriod(monthKey = 'this-month') {
     toDateRange: [toYmd(steamLaunch), toYmd(rangeEnd)],
     today: toYmd(today)
   }
+}
+
+export function parseYmd(iso) {
+  const [year, month, day] = String(iso || '').split('-').map(Number)
+  return new Date(year, (month || 1) - 1, day || 1)
+}
+
+export function addDays(date, days) {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+/** Shift a calendar date by whole years, clamping days that do not exist (29 Feb). */
+export function addYearsClamped(date, years) {
+  const year = date.getFullYear() + years
+  const month = date.getMonth()
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, Math.min(date.getDate(), lastDay))
+}
+
+/** True when the inclusive range is at most one year long. */
+export function rangeWithinOneYear(range) {
+  if (!range || range.length !== 2 || !range[0] || !range[1]) return false
+  const start = parseYmd(range[0] <= range[1] ? range[0] : range[1])
+  const end = parseYmd(range[0] <= range[1] ? range[1] : range[0])
+  return end <= addYearsClamped(start, 1)
+}
+
+/** The window of the same length immediately before an inclusive range. */
+export function previousPeriodRange(range) {
+  const [startIso, endIso] = range[0] <= range[1] ? range : [range[1], range[0]]
+  const start = parseYmd(startIso)
+  const end = parseYmd(endIso)
+  const days = Math.round((end - start) / 86400000) + 1
+  const previousEnd = addDays(start, -1)
+  const previousStart = addDays(previousEnd, -(days - 1))
+  return [toYmd(previousStart), toYmd(previousEnd)]
+}
+
+/** The same calendar dates one year earlier. */
+export function samePeriodLastYear(range) {
+  const [startIso, endIso] = range[0] <= range[1] ? range : [range[1], range[0]]
+  return [
+    toYmd(addYearsClamped(parseYmd(startIso), -1)),
+    toYmd(addYearsClamped(parseYmd(endIso), -1))
+  ]
 }

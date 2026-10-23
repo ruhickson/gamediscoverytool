@@ -1,7 +1,13 @@
 import axios from 'axios'
 import { searchGames, getSearchSuggestions, preloadIndex } from './searchEngine.js'
 import { searchTags, getTagSuggestions, preloadIndex as preloadTagsIndex } from './tagsSearchEngine.js'
-import { resolveTimeMachinePeriod, toYmd as formatYmd } from '../utils/timeMachine.js'
+import {
+  resolveTimeMachinePeriod,
+  toYmd as formatYmd,
+  previousPeriodRange,
+  samePeriodLastYear,
+  rangeWithinOneYear
+} from '../utils/timeMachine.js'
 
 // Cube.js API configuration
 const CUBEJS_API_URL = import.meta.env.VITE_CUBEJS_API_URL || ''
@@ -273,7 +279,7 @@ function mapOrderByToCube(orderBy) {
 
 // Helper function to make Cube.js API calls with retry logic.
 // Uses POST so large exclusion filters are not limited by GET URL length.
-async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = false, signal = null } = {}) {
+async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = false, signal = null, continueWaitDelayMs = null } = {}) {
   console.log('Cube.js Query:', query)
   const client = analytics ? cubeAnalyticsApi : cubeApi
 
@@ -293,7 +299,9 @@ async function queryCube(query, maxRetries = 3, baseDelay = 1, { analytics = fal
         if (errorMsg.toLowerCase().includes('timeout') ||
             errorMsg.toLowerCase().includes('continue wait')) {
           if (attempt <= maxRetries) {
-            const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random()
+            const delay = continueWaitDelayMs != null
+              ? continueWaitDelayMs / 1000
+              : baseDelay * Math.pow(2, attempt - 1) + Math.random()
             console.log(`Cube.js timeout error. Retrying in ${delay.toFixed(2)} seconds... (Attempt ${attempt} of ${maxRetries})`)
             await new Promise((resolve, reject) => {
               const timer = setTimeout(resolve, delay * 1000)
@@ -526,6 +534,7 @@ export async function findGames({
   limit = 100,
   reviewScoreOrBetter = true,
   hours = null, // { comparator: 'at_least' | 'at_most', value: number } | null
+  aiDeclaration = 'any', // 'any' | 'declared' | 'not_declared'
   excludeTags = null,
   includeAdultGames = true,
   orderBy = 'total_reviews_desc'
@@ -562,6 +571,7 @@ export async function findGames({
           limit: null, // Don't limit individual tag queries
           reviewScoreOrBetter,
           hours,
+          aiDeclaration,
           excludedAppIds,
           orderBy
         })
@@ -603,6 +613,8 @@ export async function findGames({
       const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
       filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
     }
+
+    appendAiDeclarationFilter(filters, aiDeclaration)
 
     // Handle date range
     const timeDimensions = []
@@ -749,6 +761,7 @@ async function findGamesWithMultipleTags({
   limit, // This parameter is ignored - limit should be applied after intersection
   reviewScoreOrBetter,
   hours,
+  aiDeclaration = 'any',
   excludedAppIds = [],
   orderBy = 'total_reviews_desc'
 }) {
@@ -774,6 +787,7 @@ async function findGamesWithMultipleTags({
       limit: null, // Explicitly set to null to get all matching games
       reviewScoreOrBetter,
       hours,
+      aiDeclaration,
       excludedAppIds,
       orderBy
     })
@@ -825,6 +839,7 @@ async function findGamesSingleTag({
   limit,
   reviewScoreOrBetter,
   hours,
+  aiDeclaration = 'any',
   excludedAppIds = [],
   orderBy = 'total_reviews_desc'
 }) {
@@ -866,6 +881,8 @@ async function findGamesSingleTag({
     const op = hours.comparator === 'at_most' ? 'lte' : 'gte'
     filters.push({ member: 'Games.hours', operator: op, values: [hours.value] })
   }
+
+  appendAiDeclarationFilter(filters, aiDeclaration)
 
   // Handle date range
   const timeDimensions = []
@@ -1188,7 +1205,7 @@ export async function searchGamesByName(searchTerm, limit = 100) {
 }
 
 // Find similar games using custom SimilarGames cube (single optimized query)
-export async function findSimilarGames(appId, minCommonTags = 15) {
+export async function findSimilarGames(appId, minCommonTags = 11) {
   try {
     console.log('Starting similarity search for appId:', appId)
     
@@ -1216,8 +1233,11 @@ export async function findSimilarGames(appId, minCommonTags = 15) {
       ],
       limit: 100 // Get more results to filter client-side
     }
-    
-    const result = await queryCube(query)
+
+    // Cold SimilarGames queries often answer "Continue wait" for a while.
+    // Keep polling on the longer client so the page can stay on "still searching"
+    // instead of treating a timeout as an empty result set.
+    const result = await queryCube(query, 12, 1, { analytics: true, continueWaitDelayMs: 1000 })
     console.log('SimilarGames cube result:', result.length, 'rows')
     
     if (!Array.isArray(result) || result.length === 0) {
@@ -1338,7 +1358,7 @@ function fillDailySeries(rows, datePrefixes, countPrefixes, dayList) {
   }))
 }
 
-async function queryCount(cube, measure, dateRange = null, signal = null) {
+async function queryCount(cube, measure, dateRange = null, signal = null, maxRetries = 2) {
   const query = {
     measures: [`${cube}.${measure}`]
   }
@@ -1348,7 +1368,11 @@ async function queryCount(cube, measure, dateRange = null, signal = null) {
       dateRange
     }]
   }
-  const rows = await queryCube(query, 2, 1, { analytics: true, signal })
+  const rows = await queryCube(query, maxRetries, 1, {
+    analytics: true,
+    signal,
+    continueWaitDelayMs: maxRetries > 2 ? 1000 : null
+  })
   return extractCount(rows, `${cube}.${measure}`)
 }
 
@@ -1365,10 +1389,109 @@ async function queryDailyCounts(cube, measure, dateRange, signal = null) {
   return queryCube(query, 2, 1, { analytics: true, signal })
 }
 
+function appendAiDeclarationFilter(filters, aiDeclaration) {
+  if (aiDeclaration === 'declared') {
+    filters.push({ member: 'Games.madeWithAi', operator: 'equals', values: [true] })
+  } else if (aiDeclaration === 'not_declared') {
+    filters.push({ member: 'Games.madeWithAi', operator: 'equals', values: [false] })
+  }
+}
+
+function isMadeWithAi(value) {
+  return value === true || value === 'true' || value === 1 || value === '1'
+}
+
+function fillAiDailySeries(rows, dayList) {
+  const byDay = new Map()
+  for (const row of rows || []) {
+    const dateKey = pickRowKey(row, ['Games.releaseDate'])
+    const countKey = pickRowKey(row, ['Games.count'])
+    const aiKey = pickRowKey(row, ['Games.madeWithAi'])
+    if (!dateKey || !countKey) continue
+    const day = String(row[dateKey]).slice(0, 10)
+    const entry = byDay.get(day) || { withAi: 0, withoutAi: 0 }
+    const count = Number(row[countKey]) || 0
+    if (isMadeWithAi(aiKey ? row[aiKey] : false)) entry.withAi += count
+    else entry.withoutAi += count
+    byDay.set(day, entry)
+  }
+  return dayList.map((date) => ({
+    date,
+    withAi: byDay.get(date)?.withAi || 0,
+    withoutAi: byDay.get(date)?.withoutAi || 0
+  }))
+}
+
+const AI_COUNT_RETRIES = 12
+
+async function queryAiDailyCounts(dateRange, signal = null) {
+  return queryCube({
+    measures: ['Games.count'],
+    dimensions: ['Games.madeWithAi'],
+    timeDimensions: [{
+      dimension: 'Games.releaseDate',
+      granularity: 'day',
+      dateRange
+    }],
+    order: [['Games.releaseDate', 'asc']]
+  }, AI_COUNT_RETRIES, 1, { analytics: true, signal, continueWaitDelayMs: 1000 })
+}
+
+async function loadAiReleaseMetrics(period, signal = null) {
+  const monthDays = eachDayInclusive(period.monthStart, period.monthEnd)
+  const compareRange = period.prevMonthToDateRange || period.prevMonthRange
+  const jobs = [
+    queryCount('Games', 'madeWithAiCount', period.range, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'madeWithAiCount', compareRange, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'madeWithAiCount', period.toDateRange, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'count', period.range, signal, AI_COUNT_RETRIES),
+    queryCount('Games', 'count', compareRange, signal, AI_COUNT_RETRIES),
+    queryAiDailyCounts(period.range, signal)
+  ]
+  const settled = await Promise.allSettled(jobs)
+  const abort = settled.find((result) => result.status === 'rejected' && isAbortError(result.reason))
+  if (abort) throw abort.reason
+  const valueOf = (result) => (result.status === 'fulfilled' ? result.value : null)
+  const [monthCount, previousMonthCount, allTimeCount, monthTotal, previousMonthTotal, dailyRows] = settled.map(valueOf)
+  const monthReady = monthCount != null && previousMonthCount != null && monthTotal != null && previousMonthTotal != null
+  if (!monthReady && allTimeCount == null && !dailyRows) {
+    console.warn('AI release metrics failed:', settled.filter((result) => result.status === 'rejected').map((result) => result.reason))
+    return {
+      aiMonthCount: null,
+      aiPreviousMonthCount: null,
+      aiAllTimeCount: null,
+      aiMonthTotal: null,
+      aiPreviousMonthTotal: null,
+      aiDaily: null,
+      aiError: 'AI declaration figures are not available from the analytics API yet.'
+    }
+  }
+  return {
+    aiMonthCount: monthCount,
+    aiPreviousMonthCount: previousMonthCount,
+    aiAllTimeCount: allTimeCount,
+    aiMonthTotal: monthTotal,
+    aiPreviousMonthTotal: previousMonthTotal,
+    aiDaily: dailyRows ? fillAiDailySeries(dailyRows, monthDays) : null,
+    aiError: null
+  }
+}
+
+function aiMetricsReady(payload) {
+  if (payload?.aiError) return false
+  return payload?.aiMonthCount != null
+    && payload?.aiPreviousMonthCount != null
+    && payload?.aiAllTimeCount != null
+    && payload?.aiMonthTotal != null
+    && payload?.aiPreviousMonthTotal != null
+    && Array.isArray(payload?.aiDaily)
+}
+
 const COUNT_CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 const MONTH_PAYLOAD_TTL_MS = 60 * 60 * 1000
 const MONTH_PAYLOAD_CURRENT_TTL_MS = 15 * 60 * 1000
-const SOS_CONCURRENCY = 3
+const MONTH_PAYLOAD_STALE_MS = 24 * 60 * 60 * 1000
+const SOS_CONCURRENCY = 6
 const countQueryCache = new Map() // rangeKey -> { ts, value }
 const monthPayloadCache = new Map() // monthKey -> { ts, value }
 let monthlyReleaseSeriesCache = null // { ts, rows: [{ month: 'YYYY-MM', count }] }
@@ -1405,32 +1528,53 @@ function writeCountCache(dateRange, value) {
 }
 
 function monthPayloadCacheKey(monthKey) {
-  return `gd_sos_month_v4_${monthKey}`
+  return `gd_sos_month_v7_${monthKey}`
+}
+
+function readStoredMonthEntry(monthKey) {
+  const mem = monthPayloadCache.get(monthKey)
+  if (mem?.value) return mem
+  const stores = [sessionStorage, localStorage]
+  for (const store of stores) {
+    try {
+      const raw = store.getItem(monthPayloadCacheKey(monthKey))
+      if (!raw) continue
+      const parsed = JSON.parse(raw)
+      if (!parsed?.value || !parsed.ts) continue
+      monthPayloadCache.set(monthKey, parsed)
+      return parsed
+    } catch (_) {
+      // ignore quota / private mode
+    }
+  }
+  return null
 }
 
 function readMonthPayloadCache(monthKey, isCurrent) {
   const ttl = isCurrent ? MONTH_PAYLOAD_CURRENT_TTL_MS : MONTH_PAYLOAD_TTL_MS
-  const mem = monthPayloadCache.get(monthKey)
-  if (mem && Date.now() - mem.ts < ttl) return mem.value
-  try {
-    const raw = sessionStorage.getItem(monthPayloadCacheKey(monthKey))
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    if (!parsed || Date.now() - (parsed.ts || 0) >= ttl) return null
-    monthPayloadCache.set(monthKey, { ts: parsed.ts, value: parsed.value })
-    return parsed.value
-  } catch (_) {
-    return null
-  }
+  const entry = readStoredMonthEntry(monthKey)
+  if (!entry || Date.now() - entry.ts >= ttl) return null
+  return entry.value
+}
+
+function readStaleMonthPayload(monthKey) {
+  const entry = readStoredMonthEntry(monthKey)
+  if (!entry) return null
+  const age = Date.now() - entry.ts
+  if (age >= MONTH_PAYLOAD_STALE_MS) return null
+  return entry.value
 }
 
 function writeMonthPayloadCache(monthKey, value) {
   const entry = { ts: Date.now(), value }
   monthPayloadCache.set(monthKey, entry)
-  try {
-    sessionStorage.setItem(monthPayloadCacheKey(monthKey), JSON.stringify(entry))
-  } catch (_) {
-    // ignore quota
+  const raw = JSON.stringify(entry)
+  for (const store of [sessionStorage, localStorage]) {
+    try {
+      store.setItem(monthPayloadCacheKey(monthKey), raw)
+    } catch (_) {
+      // ignore quota
+    }
   }
 }
 
@@ -1812,8 +1956,39 @@ async function fetchStateOfSteamSnapshot(monthKey, signal = null) {
   }
 }
 
-async function loadStateOfSteamLivePanel(period, signal = null) {
-  const { range, isCurrent, today } = period
+function livePatchFromTask(key, value) {
+  if (key === 'releasedDaily') {
+    const rows = value || []
+    return {
+      releasedInMonthDaily: rows,
+      selectedMonthReleases: rows.reduce((sum, row) => sum + (row.count || 0), 0)
+    }
+  }
+  if (key === 'genresInMonth') return { genresInMonth: value || [] }
+  if (key === 'tagsInMonth') return { tagsInMonth: value || [] }
+  if (key === 'reviewTotals') return { reviewTotals: value || emptyReviewTotals() }
+  if (key === 'reviewScoreMix') return { reviewScoreMix: value || [] }
+  if (key === 'freeVsPaid') return { freeVsPaid: value || emptyFreeVsPaid() }
+  if (key === 'sentimentRows') return rankSentimentGames(value)
+  if (key === 'publisherStudios') {
+    const publishers = rankStudios(value || [])
+    return {
+      prolificPublishers: publishers.prolific,
+      reveredPublishers: publishers.revered
+    }
+  }
+  if (key === 'developerStudios') {
+    const developers = rankStudios(value || [])
+    return {
+      prolificDevelopers: developers.prolific,
+      reveredDevelopers: developers.revered
+    }
+  }
+  return null
+}
+
+async function loadStateOfSteamLivePanel(period, signal = null, onProgress = null) {
+  const { range } = period
   const monthDays = eachDayInclusive(period.monthStart, period.monthEnd)
 
   const tasks = [
@@ -1823,17 +1998,6 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
         fillDailySeries(rows, ['Games.releaseDate'], ['Games.count'], monthDays)
       ),
       fallback: monthDays.map((date) => ({ date, count: 0 }))
-    },
-    {
-      key: 'dueNext7Days',
-      run: async () => {
-        if (!isCurrent) return []
-        const next7End = addDays(new Date(), 6)
-        const next7Days = eachDayInclusive(new Date(), next7End)
-        const rows = await queryDailyCounts('Games', 'count', [today, formatYmd(next7End)], signal)
-        return fillDailySeries(rows, ['Games.releaseDate'], ['Games.count'], next7Days)
-      },
-      fallback: []
     },
     {
       key: 'genresInMonth',
@@ -1877,10 +2041,22 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
     }
   ]
 
-  const settled = await mapPool(tasks, SOS_CONCURRENCY, async (task) => ({
-    key: task.key,
-    value: await softQuery(task.key, task.fallback, task.run)
-  }))
+  const settled = await mapPool(tasks, SOS_CONCURRENCY, async (task) => {
+    let value = task.fallback
+    let ok = false
+    try {
+      value = await task.run()
+      ok = true
+    } catch (error) {
+      if (isAbortError(error)) throw error
+      console.warn(`State of Steam soft-fail (${task.key}):`, error)
+    }
+    if (ok && onProgress) {
+      const patch = livePatchFromTask(task.key, value)
+      if (patch) onProgress(patch)
+    }
+    return { key: task.key, value }
+  })
 
   const byKey = Object.fromEntries(settled.map((row) => [row.key, row.value]))
   const { mostLoved, mostHated, mostMixed } = rankSentimentGames(byKey.sentimentRows)
@@ -1891,7 +2067,6 @@ async function loadStateOfSteamLivePanel(period, signal = null) {
 
   return {
     releasedInMonthDaily: releasedDailyRows,
-    dueNext7Days: byKey.dueNext7Days || [],
     genresInMonth: byKey.genresInMonth || [],
     tagsInMonth: byKey.tagsInMonth || [],
     reviewTotals: byKey.reviewTotals || emptyReviewTotals(),
@@ -1954,53 +2129,127 @@ async function loadStateOfSteamHistorical(period, signal = null) {
   }
 }
 
+function metricsFromSnapshot(period, snapshot) {
+  return {
+    period,
+    ...snapshot,
+    previousMonthReleases: snapshot.previousMonthReleases ?? null,
+    selectedYearReleases: snapshot.selectedYearReleases ?? null,
+    previousYearReleases: snapshot.previousYearReleases ?? null,
+    releasedToDate: snapshot.releasedToDate ?? null,
+    historicalStatus: snapshot.releasedToDate != null ? 'ready' : 'loading',
+    historicalError: null,
+    source: 'snapshot'
+  }
+}
+
 /**
  * State of Steam dashboard metrics for a Time Machine month selection.
  *
  * Load strategy:
- *  1) Session cache
- *  2) Precomputed monthly snapshot (Cube StateOfSteamMonthly) for historical months
- *  3) Live month panel with concurrency + soft-fail per chart
- *  4) Historical rollups via monthly series (soft-fail; optional onHistorical callback)
+ *  1) Fresh session/local cache
+ *  2) Stale cache painted immediately, then refreshed
+ *  3) Precomputed monthly snapshot painted as soon as it arrives
+ *  4) Live panel queries (higher concurrency), each section published as it finishes
+ *  5) Historical rollups in parallel with the live panel
  *
  * @param {string} monthKey 'this-month' or 'YYYY-MM'
- * @param {{ signal?: AbortSignal, onHistorical?: (hist: object) => void }} [opts]
+ * @param {{ signal?: AbortSignal, onUpdate?: (metrics: object) => void, onHistorical?: (hist: object) => void }} [opts]
  */
 export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {}) {
-  const { signal = null, onHistorical = null } = opts
+  const { signal = null, onHistorical = null, onUpdate = null } = opts
   const period = resolveTimeMachinePeriod(monthKey)
   const cacheKey = period.key
 
   const cached = readMonthPayloadCache(cacheKey, period.isCurrent)
   if (cached?.period) {
-    const restored = { ...cached, period }
-    if (onHistorical && restored.historicalStatus === 'ready') {
-      // already complete
-    } else if (onHistorical) {
-      queueHistorical(period, restored, signal, onHistorical)
+    let current = { ...cached, period }
+    onUpdate?.(current)
+    if (current.historicalStatus !== 'ready' && onHistorical) {
+      queueHistorical(period, current, signal, onHistorical)
+    } else if (onHistorical && current.historicalStatus === 'ready') {
+      onHistorical({
+        previousMonthReleases: current.previousMonthReleases,
+        selectedYearReleases: current.selectedYearReleases,
+        previousYearReleases: current.previousYearReleases,
+        releasedToDate: current.releasedToDate,
+        historicalStatus: 'ready',
+        historicalError: null
+      })
     }
-    return restored
+    if (!aiMetricsReady(current)) {
+      loadAiReleaseMetrics(period, signal).then((patch) => {
+        if (signal?.aborted) return
+        current = { ...current, ...patch, period }
+        onUpdate?.(current)
+        writeMonthPayloadCache(cacheKey, current)
+      }).catch((error) => {
+        if (isAbortError(error) || signal?.aborted) return
+        console.warn('AI release metrics failed:', error)
+      })
+    }
+    return current
   }
 
-  // Snapshots are ideal for historical months; current month still prefers live freshness
+  let latest = {
+    period,
+    previousMonthReleases: null,
+    selectedYearReleases: null,
+    previousYearReleases: null,
+    releasedToDate: null,
+    aiMonthCount: null,
+    aiPreviousMonthCount: null,
+    aiAllTimeCount: null,
+    aiMonthTotal: null,
+    aiPreviousMonthTotal: null,
+    aiDaily: null,
+    historicalStatus: 'loading',
+    historicalError: null
+  }
+  let livePieces = 0
+  let panelSettled = false
+
+  const publish = (patch) => {
+    if (signal?.aborted) return latest
+    latest = { ...latest, ...patch, period }
+    onUpdate?.(latest)
+    return latest
+  }
+
+  loadAiReleaseMetrics(period, signal).then((patch) => {
+    if (signal?.aborted) return
+    const next = publish(patch)
+    writeMonthPayloadCache(cacheKey, next)
+  }).catch((error) => {
+    if (isAbortError(error) || signal?.aborted) return
+    console.warn('AI release metrics failed:', error)
+  })
+
+  const stale = readStaleMonthPayload(cacheKey)
+  let blockSnapshot = Boolean(stale)
+  if (stale && typeof stale === 'object') {
+    publish({ ...stale, period })
+  }
+
+  let snapshotPromise = null
+  const loadSnapshot = () => {
+    if (!snapshotPromise) {
+      snapshotPromise = softQuery('snapshot', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+    }
+    return snapshotPromise
+  }
+
   if (!period.isCurrent) {
-    const snapshot = await softQuery('snapshot', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+    const snapshot = await loadSnapshot()
     if (snapshot) {
-      const metrics = {
-        period,
-        ...snapshot,
-        dueNext7Days: [],
-        previousMonthReleases: snapshot.previousMonthReleases ?? null,
-        selectedYearReleases: snapshot.selectedYearReleases ?? null,
-        previousYearReleases: snapshot.previousYearReleases ?? null,
-        releasedToDate: snapshot.releasedToDate ?? null,
-        historicalStatus: snapshot.releasedToDate != null ? 'ready' : 'loading',
-        historicalError: null,
-        source: 'snapshot'
-      }
+      const metrics = publish(metricsFromSnapshot(period, snapshot))
       writeMonthPayloadCache(cacheKey, metrics)
       if (metrics.historicalStatus !== 'ready' && onHistorical) {
-        queueHistorical(period, metrics, signal, onHistorical)
+        queueHistorical(period, metrics, signal, (hist) => {
+          const merged = publish(hist)
+          writeMonthPayloadCache(cacheKey, merged)
+          onHistorical(hist)
+        })
       } else if (onHistorical && metrics.historicalStatus === 'ready') {
         onHistorical({
           previousMonthReleases: metrics.previousMonthReleases,
@@ -2013,36 +2262,56 @@ export async function getStateOfSteamMetrics(monthKey = 'this-month', opts = {})
       }
       return metrics
     }
+  } else if (!stale) {
+    // One precomputed row paints the current month while the live fan-out is still running.
+    loadSnapshot().then((snapshot) => {
+      if (!snapshot || signal?.aborted || livePieces > 0 || blockSnapshot) return
+      publish(metricsFromSnapshot(period, snapshot))
+    }).catch(() => {})
   }
 
-  const panel = await loadStateOfSteamLivePanel(period, signal)
-  const metrics = {
-    period,
-    ...panel,
-    previousMonthReleases: null,
-    selectedYearReleases: null,
-    previousYearReleases: null,
-    releasedToDate: null,
-    historicalStatus: 'loading',
-    historicalError: null
-  }
+  loadStateOfSteamHistorical(period, signal)
+    .then((hist) => {
+      if (signal?.aborted) return
+      blockSnapshot = true
+      publish(hist)
+      if (panelSettled) writeMonthPayloadCache(cacheKey, latest)
+      if (onHistorical) onHistorical(hist)
+    })
+    .catch((error) => {
+      if (isAbortError(error) || signal?.aborted) return
+      console.warn('Historical State of Steam load failed:', error)
+      const hist = {
+        previousMonthReleases: latest.previousMonthReleases ?? 0,
+        selectedYearReleases: latest.selectedYearReleases ?? 0,
+        previousYearReleases: latest.previousYearReleases ?? 0,
+        releasedToDate: latest.releasedToDate ?? 0,
+        historicalStatus: 'error',
+        historicalError: 'Could not load historical release totals.'
+      }
+      publish(hist)
+      if (onHistorical) onHistorical(hist)
+    })
 
-  // Current month: try snapshot only as soft fallback if live panel is empty
-  if (period.isCurrent && (metrics.selectedMonthReleases || 0) === 0) {
-    const snapshot = await softQuery('snapshot-current', null, () => fetchStateOfSteamSnapshot(cacheKey, signal))
+  const panel = await loadStateOfSteamLivePanel(period, signal, (patch) => {
+    livePieces += 1
+    publish({ ...patch, source: 'live' })
+  })
+
+  if (livePieces > 0) {
+    publish({ ...panel, source: 'live' })
+  } else if ((latest.selectedMonthReleases || 0) === 0) {
+    const snapshot = await loadSnapshot()
     if (snapshot && (snapshot.selectedMonthReleases || 0) > 0) {
-      Object.assign(metrics, snapshot, { period, source: 'snapshot', dueNext7Days: metrics.dueNext7Days })
+      publish(metricsFromSnapshot(period, snapshot))
+    } else {
+      publish({ ...panel, source: 'live' })
     }
   }
 
-  writeMonthPayloadCache(cacheKey, metrics)
-  queueHistorical(period, metrics, signal, (hist) => {
-    const merged = { ...metrics, ...hist }
-    writeMonthPayloadCache(cacheKey, merged)
-    if (onHistorical) onHistorical(hist)
-  })
-
-  return metrics
+  panelSettled = true
+  writeMonthPayloadCache(cacheKey, latest)
+  return latest
 }
 
 function queueHistorical(period, metrics, signal, onHistorical) {
@@ -2066,6 +2335,292 @@ function queueHistorical(period, metrics, signal, onHistorical) {
     })
 }
 
+const TREND_GENRE_LIMIT = 100
+const TREND_TAG_LIMIT = 200
+
+async function queryDimensionReleaseCounts(dimension, dateRange, limit, signal = null) {
+  const rows = await queryCube({
+    measures: ['Games.count'],
+    dimensions: [dimension],
+    timeDimensions: [{
+      dimension: 'Games.releaseDate',
+      dateRange
+    }],
+    order: [['Games.count', 'desc']],
+    filters: [
+      { member: dimension, operator: 'set' }
+    ],
+    limit
+  }, 2, 1, { analytics: true, signal })
+
+  return (rows || [])
+    .map((row) => ({
+      name: row[dimension] || '',
+      count: Number(row['Games.count']) || 0
+    }))
+    .filter((row) => row.name && row.count > 0)
+}
+
+async function queryDimensionCountsForNames(dimension, dateRange, names, signal = null) {
+  const counts = new Map()
+  if (!names.length) return counts
+
+  const chunkSize = 80
+  const chunks = []
+  for (let i = 0; i < names.length; i += chunkSize) {
+    chunks.push(names.slice(i, i + chunkSize))
+  }
+
+  await mapPool(chunks, 3, async (chunk) => {
+    const rows = await queryCube({
+      measures: ['Games.count'],
+      dimensions: [dimension],
+      timeDimensions: [{
+        dimension: 'Games.releaseDate',
+        dateRange
+      }],
+      filters: [
+        { member: dimension, operator: 'equals', values: chunk }
+      ],
+      limit: chunk.length
+    }, 2, 1, { analytics: true, signal })
+
+    for (const row of rows || []) {
+      const name = row[dimension]
+      if (name) counts.set(name, Number(row['Games.count']) || 0)
+    }
+  })
+
+  return counts
+}
+
+async function buildTrendSeries(dimension, currentRange, previousRange, limit, signal = null) {
+  const [currentRows, previousRows] = await Promise.all([
+    queryDimensionReleaseCounts(dimension, currentRange, limit, signal),
+    queryDimensionReleaseCounts(dimension, previousRange, limit, signal)
+  ])
+
+  const currentMap = new Map(currentRows.map((row) => [row.name, row.count]))
+  const previousMap = new Map(previousRows.map((row) => [row.name, row.count]))
+  const names = [...new Set([...currentMap.keys(), ...previousMap.keys()])]
+
+  const [filledCurrent, filledPrevious] = await Promise.all([
+    queryDimensionCountsForNames(
+      dimension,
+      currentRange,
+      names.filter((name) => !currentMap.has(name)),
+      signal
+    ),
+    queryDimensionCountsForNames(
+      dimension,
+      previousRange,
+      names.filter((name) => !previousMap.has(name)),
+      signal
+    )
+  ])
+
+  for (const [name, count] of filledCurrent) currentMap.set(name, count)
+  for (const [name, count] of filledPrevious) previousMap.set(name, count)
+
+  return names
+    .map((name) => ({
+      name,
+      current: currentMap.get(name) || 0,
+      previous: previousMap.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+    .sort((a, b) => b.current - a.current || b.previous - a.previous || a.name.localeCompare(b.name))
+}
+
+function trendRowValue(row, suffixes) {
+  const key = pickRowKey(row, suffixes)
+  return key ? row[key] : undefined
+}
+
+function mapsFromTrendRows(rows) {
+  const genres = new Map()
+  const tags = new Map()
+  let total = 0
+  for (const row of rows || []) {
+    const kind = trendRowValue(row, ['TrendReleaseCounts.kind'])
+    const name = trendRowValue(row, ['TrendReleaseCounts.name']) || ''
+    const count = Number(trendRowValue(row, ['TrendReleaseCounts.gameCount'])) || 0
+    if (kind === 'total') total += count
+    else if (kind === 'genre' && name) genres.set(name, count)
+    else if (kind === 'tag' && name) tags.set(name, count)
+  }
+  return { genres, tags, total, rowCount: (rows || []).length }
+}
+
+async function queryPrecomputedTrendRows(dateRange, signal) {
+  return queryCube({
+    measures: ['TrendReleaseCounts.gameCount'],
+    dimensions: ['TrendReleaseCounts.kind', 'TrendReleaseCounts.name'],
+    timeDimensions: [{
+      dimension: 'TrendReleaseCounts.releaseDate',
+      dateRange
+    }],
+    order: [['TrendReleaseCounts.gameCount', 'desc']],
+    limit: 10000
+  }, 1, 1, { analytics: true, signal })
+}
+
+function topCountedNames(counts, limit) {
+  return [...counts.entries()]
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name]) => name)
+}
+
+function seriesFromCountMaps(currentCounts, previousCounts, limit) {
+  const names = [...new Set([
+    ...topCountedNames(currentCounts, limit),
+    ...topCountedNames(previousCounts, limit)
+  ])]
+  return names
+    .map((name) => ({
+      name,
+      current: currentCounts.get(name) || 0,
+      previous: previousCounts.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+    .sort((a, b) => b.current - a.current || b.previous - a.previous || a.name.localeCompare(b.name))
+}
+
+function withTagChange(row) {
+  const current = row.current || 0
+  const previous = row.previous || 0
+  const delta = current - previous
+  return {
+    name: row.name,
+    current,
+    previous,
+    delta,
+    percent: previous > 0 ? (delta / previous) * 100 : null
+  }
+}
+
+function tagChangeRows(currentCounts, previousCounts) {
+  const names = new Set([...currentCounts.keys(), ...previousCounts.keys()])
+  return [...names]
+    .map((name) => withTagChange({
+      name,
+      current: currentCounts.get(name) || 0,
+      previous: previousCounts.get(name) || 0
+    }))
+    .filter((row) => row.current > 0 || row.previous > 0)
+}
+
+function trendPayload(period, currentRange, previousRange, genres, tags, currentTotal, previousTotal, tagChanges = null) {
+  const withShare = (rows) => rows.map((row) => ({
+    ...row,
+    currentShare: currentTotal > 0 ? (row.current / currentTotal) * 100 : 0,
+    previousShare: previousTotal > 0 ? (row.previous / previousTotal) * 100 : 0
+  }))
+  const sharedTags = withShare(tags)
+  return {
+    period: {
+      key: period.key,
+      label: period.label,
+      isCurrent: period.isCurrent,
+      previousLabel: period.previousLabel || period.prevMonthLabel,
+      range: currentRange,
+      previousRange,
+      compare: period.compare || 'previous',
+      yearCompareAvailable: period.yearCompareAvailable !== false,
+      compareToDate: Boolean(period.compareToDate),
+      currentTotal,
+      previousTotal
+    },
+    genres: withShare(genres),
+    tags: sharedTags,
+    tagChanges: tagChanges || sharedTags.map(withTagChange)
+  }
+}
+
+function resolveTrendRanges(monthKey, range, compare) {
+  if (Array.isArray(range) && range[0] && range[1]) {
+    const ordered = range[0] <= range[1] ? [range[0], range[1]] : [range[1], range[0]]
+    const yearCompareAvailable = rangeWithinOneYear(ordered)
+    const compareMode = compare === 'year' && yearCompareAvailable ? 'year' : 'previous'
+    return {
+      period: {
+        key: 'custom',
+        label: 'Custom range',
+        isCurrent: false,
+        previousLabel: compareMode === 'year' ? 'Previous year' : 'Previous period',
+        compare: compareMode,
+        yearCompareAvailable,
+        compareToDate: false
+      },
+      currentRange: ordered,
+      previousRange: compareMode === 'year' ? samePeriodLastYear(ordered) : previousPeriodRange(ordered)
+    }
+  }
+
+  const period = resolveTimeMachinePeriod(monthKey)
+  const currentRange = period.range
+  const compareMode = compare === 'year' ? 'year' : 'previous'
+  const previousRange = compareMode === 'year'
+    ? samePeriodLastYear(currentRange)
+    : (period.isCurrent ? period.prevMonthToDateRange : period.prevMonthRange)
+  return {
+    period: {
+      ...period,
+      compare: compareMode,
+      yearCompareAvailable: true,
+      compareToDate: Boolean(period.isCurrent && compareMode === 'previous')
+    },
+    currentRange,
+    previousRange
+  }
+}
+
+/**
+ * Genre and tag release counts for the selected month and the month before it.
+ * The current calendar month is compared with the same elapsed days last month.
+ * Counts come from trend_release_counts when that table is available.
+ * @param {string} monthKey
+ * @param {{ signal?: AbortSignal }} [opts]
+ */
+export async function getTrendAnalysis(monthKey = 'this-month', { signal = null, range = null, compare = 'previous' } = {}) {
+  const { period, currentRange, previousRange } = resolveTrendRanges(monthKey, range, compare)
+
+  try {
+    const [currentRows, previousRows] = await Promise.all([
+      queryPrecomputedTrendRows(currentRange, signal),
+      queryPrecomputedTrendRows(previousRange, signal)
+    ])
+    const current = mapsFromTrendRows(currentRows)
+    const previous = mapsFromTrendRows(previousRows)
+    if (current.rowCount + previous.rowCount > 0) {
+      return trendPayload(
+        period,
+        currentRange,
+        previousRange,
+        seriesFromCountMaps(current.genres, previous.genres, TREND_GENRE_LIMIT),
+        seriesFromCountMaps(current.tags, previous.tags, TREND_TAG_LIMIT),
+        current.total,
+        previous.total,
+        tagChangeRows(current.tags, previous.tags)
+      )
+    }
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    console.warn('Precomputed trend counts unavailable, querying games directly:', error)
+  }
+
+  const [genres, tags, currentTotal, previousTotal] = await Promise.all([
+    buildTrendSeries('Genres.name', currentRange, previousRange, TREND_GENRE_LIMIT, signal),
+    buildTrendSeries('GameTags.tag', currentRange, previousRange, TREND_TAG_LIMIT, signal),
+    queryCount('Games', 'count', currentRange, signal),
+    queryCount('Games', 'count', previousRange, signal)
+  ])
+
+  return trendPayload(period, currentRange, previousRange, genres, tags, currentTotal, previousTotal)
+}
+
 /**
  * Search genres or tags that had releases in a date range.
  * @param {{ kind: 'genre' | 'tag', dateRange: [string, string], query: string, limit?: number, signal?: AbortSignal }} opts
@@ -2080,6 +2635,33 @@ export async function searchStateOfSteamCategories({
   const dimension = kind === 'tag' ? 'GameTags.tag' : 'Genres.name'
   const q = String(query || '').trim()
   if (!dateRange || dateRange.length !== 2 || !q) return []
+
+  try {
+    const rows = await queryCube({
+      measures: ['TrendReleaseCounts.gameCount'],
+      dimensions: ['TrendReleaseCounts.name'],
+      timeDimensions: [{
+        dimension: 'TrendReleaseCounts.releaseDate',
+        dateRange
+      }],
+      order: [['TrendReleaseCounts.gameCount', 'desc']],
+      filters: [
+        { member: 'TrendReleaseCounts.kind', operator: 'equals', values: [kind === 'tag' ? 'tag' : 'genre'] },
+        { member: 'TrendReleaseCounts.name', operator: 'contains', values: [q] }
+      ],
+      limit
+    }, 1, 1, { analytics: true, signal })
+
+    return (rows || [])
+      .map((row) => ({
+        name: trendRowValue(row, ['TrendReleaseCounts.name']) || '',
+        count: Number(trendRowValue(row, ['TrendReleaseCounts.gameCount'])) || 0
+      }))
+      .filter((row) => row.name && row.count > 0)
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    console.warn('Precomputed category search unavailable, querying games directly:', error)
+  }
 
   const rows = await queryCube({
     measures: ['Games.count'],
@@ -2185,5 +2767,6 @@ export default {
   resolveExcludedAppIds,
   getStateOfSteamMetrics,
   getStateOfSteamDrilldownGames,
-  searchStateOfSteamCategories
+  searchStateOfSteamCategories,
+  getTrendAnalysis
 }

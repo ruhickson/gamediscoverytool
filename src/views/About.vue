@@ -18,8 +18,7 @@
 
         <h4>Contact</h4>
         <p>
-          Inquiries: topohaihai[at]gmail.com or find me on Reddit as
-          <a href="https://www.reddit.com/user/topohaihai/" target="_blank" rel="noopener noreferrer">topohaihai</a>.
+          Inquiries: woof[at]hotbottledog.com
         </p>
       </div>
     </div>
