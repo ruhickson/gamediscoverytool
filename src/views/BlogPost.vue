@@ -1,6 +1,17 @@
 <template>
   <div class="blog-post">
-    <div class="container-fluid">
+    <div v-if="isImportedEssay" class="imported-essay">
+      <router-link to="/blog" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left me-2"></i>
+        Back to Media
+      </router-link>
+      <iframe
+        class="essay-frame"
+        :title="essayTitle"
+        src="/blog/2026-10-22-four-years-after-vampire-survivors.html"
+      ></iframe>
+    </div>
+    <div v-else class="container-fluid">
       <div class="row">
         <div class="col-12">
           <!-- Back to Blog -->
@@ -137,93 +148,25 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { loadBlogSummaries } from '../utils/blogPosts.js'
 
 export default {
   name: 'BlogPost',
   setup() {
     const route = useRoute()
+    const isImportedEssay = computed(() => route.params.slug === '2026-10-22-four-years-after-vampire-survivors')
+    const essayTitle = ref('Blog post')
     const post = ref(null)
     const isLoading = ref(false)
     const error = ref('')
     const isBookmarked = ref(false)
 
-    // Mock data - replace with actual API calls
-    const mockPosts = [
-      {
-        id: 1,
-        title: "How to Discover Hidden Gems in Steam",
-        slug: "discover-hidden-gems-steam",
-        content: `# How to Discover Hidden Gems in Steam
-
-Steam has thousands of games, and while the top charts are great, some of the best gaming experiences are hidden gems that don't get the attention they deserve. Here's how to find them:
-
-## 1. Use Advanced Search Filters
-
-Steam's search functionality is more powerful than most people realize:
-
-- **Filter by user reviews**: Look for games with "Very Positive" or "Overwhelmingly Positive" reviews
-- **Sort by release date**: Find recent indie releases
-- **Use tags creatively**: Combine specific tags like "atmospheric" + "indie" + "singleplayer"
-
-## 2. Check Curator Recommendations
-
-Steam Curators are a great way to discover games:
-
-- Follow curators with similar taste to yours
-- Look for niche curators focusing on specific genres
-- Check curator reviews for detailed insights
-
-## 3. Explore the Discovery Queue
-
-Steam's Discovery Queue algorithm learns from your preferences:
-
-- Rate games you've played
-- Add games to your wishlist
-- The algorithm will suggest similar games
-
-## 4. Use External Tools
-
-Tools like our Game Discovery Tool can help you find games based on:
-
-- Similar gameplay mechanics
-- Shared tags and themes
-- User review patterns
-- Developer portfolios
-
-## Conclusion
-
-Finding hidden gems takes time and effort, but the reward is discovering amazing games that most people never hear about. Start with these techniques and you'll soon have a library full of unique gaming experiences.`,
-        author: "Game Discovery Team",
-        publishedAt: "2024-10-03T10:00:00Z",
-        readTime: 5,
-        category: "Tips & Guides",
-        tags: ["Steam", "Discovery", "Indie Games", "Tips"],
-        featuredImage: "/api/placeholder/800/400"
-      }
-    ]
-
     const loadPost = async () => {
       isLoading.value = true
       error.value = ''
-      
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        const slug = route.params.slug
-        const foundPost = mockPosts.find(p => p.slug === slug)
-        
-        if (foundPost) {
-          post.value = foundPost
-        } else {
-          error.value = 'Post not found'
-        }
-      } catch (err) {
-        error.value = 'Failed to load blog post'
-        console.error('Error loading post:', err)
-      } finally {
-        isLoading.value = false
-      }
+      post.value = null
+      error.value = 'Post not found'
+      isLoading.value = false
     }
 
     const formatDate = (dateString) => {
@@ -289,11 +232,23 @@ Finding hidden gems takes time and effort, but the reward is discovering amazing
       // In production, save to localStorage or user account
     }
 
-    onMounted(() => {
+    onMounted(async () => {
+      if (isImportedEssay.value) {
+        try {
+          const posts = await loadBlogSummaries()
+          const match = posts.find((item) => item.slug === route.params.slug)
+          if (match?.title) essayTitle.value = match.title
+        } catch (err) {
+          console.error('Error loading essay title:', err)
+        }
+        return
+      }
       loadPost()
     })
 
     return {
+      isImportedEssay,
+      essayTitle,
       post,
       isLoading,
       error,
@@ -312,6 +267,22 @@ Finding hidden gems takes time and effort, but the reward is discovering amazing
 </script>
 
 <style scoped>
+.imported-essay {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem 1.25rem 0;
+}
+
+.essay-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 70vh;
+  border: 0;
+  border-radius: var(--radius);
+  background: #0f172a;
+}
+
 .blog-post-title {
   font-size: 2.5rem;
   font-weight: bold;

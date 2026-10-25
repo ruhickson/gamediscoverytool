@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Shadow of Vampire Survivors: a trailblazing genre-lifting masterpiece</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      /* Game Discovery tool tokens */
+      --ink: #e8eef7;
+      --muted: #94a3b8;
+      --paper: #0f172a;
+      --panel: #1a2438;
+      --panel-alt: #1e293b;
+      --line: #3d4a5c;
+      --signal: #d4af37;
+      --signal-soft: rgba(212, 175, 55, 0.16);
+      --pos: #34d399;
+      --neg: #f87171;
+      --accent: #d4af37;
+      --accent-hover: #e6c45a;
+      --shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.35);
+      --radius: 0.5rem;
+      --max: none;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "Figtree", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(165deg, #111827 0%, #0f172a 45%, #1a2336 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath fill='none' stroke='%23d4af37' stroke-opacity='0.11' stroke-width='1' d='M28 2 L52 16 L52 44 L28 58 L4 44 L4 16 Z M28 58 L52 72 L52 100 M28 58 L4 72 L4 100 M52 44 L76 58 M4 44 L-20 58'/%3E%3C/svg%3E");
+      background-size: auto, 56px 100px;
+      background-attachment: fixed;
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      animation: hex-drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes hex-drift {
+      from { background-position: 0 0, 0 0; }
+      to { background-position: 0 0, 28px 20px; }
+    }
+    .site {
+      max-width: var(--max);
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+    .kicker {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 28px 0 8px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .kicker span:last-child { color: var(--accent); font-weight: 600; }
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(2.2rem, 6vw, 3.25rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin: 12px 0 16px;
+      color: var(--ink);
+    }
+    .lede {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: clamp(38em, 50%, 100%);
+      margin: 0 0 28px;
+    }
+    .hero {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 4px 0 22px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 0 0 36px;
+    }
+    @media (max-width: 700px) {
+      .lede { max-width: none; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 14px 12px;
+      box-shadow: var(--shadow);
+    }
+    .stat .n {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.55rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--accent);
+    }
+    .stat .l {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .hint {
+      background: var(--signal-soft);
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      border-left: 3px solid var(--signal);
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      margin: 0 0 40px;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+    .hint strong { color: var(--accent-hover); }
+    article p { margin: 0 0 1.1em; }
+    .figures { display: flex; flex-direction: column; gap: 28px; }
+    .figure {
+      background: rgba(26, 36, 56, 0.92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 18px 14px;
+      box-shadow: var(--shadow);
+    }
+    .figure:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    }
+    .figure-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .figure-meta { flex: 1; min-width: 0; }
+    .figure-meta .eyebrow {
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 2px;
+      font-weight: 600;
+    }
+    .figure-meta h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+      color: var(--ink);
+    }
+    .figure-meta .cap {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .chart {
+      width: 100%;
+      height: 340px;
+      margin-top: 10px;
+    }
+    .chart.tall { height: 420px; }
+    .chart.heatmap { height: 320px; }
+    .commentary {
+      margin-top: 16px;
+      padding: 14px 16px 12px;
+      background: var(--panel-alt);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .commentary .label {
+      margin: 0 0 6px;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .commentary p { margin: 0 0 0.35em; color: var(--ink); }
+    .commentary ul { margin: 0; padding-left: 1.15em; }
+    .commentary li { margin: 0.2em 0; }
+    footer.note {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    footer.note a {
+      color: var(--accent);
+    }
+    footer.note code {
+      font-size: 0.85em;
+      background: var(--panel-alt);
+      color: var(--accent);
+      border: 1px solid var(--line);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    em { color: var(--accent-hover); font-style: italic; }
+    strong { color: var(--ink); }
+    .fade-up { animation: fadeUp 520ms ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <div class="kicker">
+      <span>Game Discovery · Data note</span>
+    </div>
+
+    <img class="hero" src="/vampire-survivors-video-e7tax.avif" alt="Vampire Survivors key art" />
+    <h1 class="fade-up">The Shadow of Vampire Survivors: a trailblazing genre-lifting masterpiece</h1>
+    <p class="lede fade-up">Four years ago, Italian developer poncle release a game that took the industry by storm, the single-input Bullet Hell/Heaven game spawned not just a genre, but clone after clone, at a pace that seems to be accelerating. With the advent of AI imitations of "new" games mopping up the Steam store being the meta of the moment, let's take a look at the impact Vampire Survivors had.</p>
+    <p class="lede fade-up" style="animation-delay:80ms">
+      On the 20th of October 2022, <em>Vampire Survivors</em> launched after 10 months of Early Access and began to drug us all into a state of glorious addiction. I remember the first time I heard of the game was when my mate Colm said he was never installing it on his Steam Deck, lest it become a "Vampire Survivors" machine. How right he was. To understand just what a phenomenon was unfolding, we used our games database to track every game tagged with
+      <strong>Action Roguelike</strong>, <strong>Pixel Graphics</strong>, and <strong>Bullet Hell</strong>
+      from January 2020 through today.
+    </p>
+
+    <div class="stats fade-up" style="animation-delay:140ms">
+      <div class="stat"><div class="n" id="stat-games">—</div><div class="l">Games similar to Vampire Survivors</div></div>
+      <div class="stat"><div class="n" id="stat-reviews">—</div><div class="l">Steam reviews</div></div>
+      <div class="stat"><div class="n" id="stat-survivors">—</div><div class="l">Games with “Survivors” in the title</div></div>
+      <div class="stat"><div class="n" id="stat-peak">—</div><div class="l">Peak month for similar games</div></div>
+    </div>
+
+    <div class="figures" id="figures">
+
+      <section class="figure" data-id="releases-column">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Monthly releases</p>
+            <h2>Games Released on Steam with the "Action Roguelike"-"Pixel Graphics"-"Bullet Hell" tag combination</h2>
+            <p class="cap"></p>
+          </div>
+        </div>
+        <div class="chart" id="chart-col"></div>
+        <div class="commentary">
+          <p class="label">Trend-setting</p>
+          <p>While the "Action Roguelike"-"Pixel Graphics"-"Bullet Hell" combination isn't unique to Vampire Survivors, or the genre in general, it's a pretty decent on-point description of the game, and likely the first game anyone would think if you asked them to name any game described by that.</p>
+          <p>The games industry loves following a trend, and it's clear that after the release of Vampire Survivors in October 2022, a new one had been set. Starting in January 2023, only three months after release, there have never been fewer than 12 Survivors-likes released in a calendar month, whereas before October 2022, there had never been more than 12.</p>
+          <p>This trend is still arguably growing, with the peak month of releases being March 2026. Click on one of the bars to get a view of all the games released during that period!</p>
+          <ul>
+            <li>106 similar games were releasd in the 33 months before launch, roughly 3 a month.</li>
+            <li>947 similar games were releasd in the 49 months since, closer to 19 a month.</li>
+            <li>There has been an increase in the games released per month across Steam in that time, but by the same window, there were approximately 866 games released per month before October 2022. After, the average from then to October 2026 is 1,640 per month.</li>
+            <li>So the rate of Steam releases have essentially 2x'd over that period, but amount of games matching the three tags has 6x'd over the same time. The gap between the expected growth and the reality is very clear in the dark red dashboard line here. </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="figure" data-id="heatmap">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Survivors-likes are HOT</p>
+            <h2>Heatmap of releases by year × month</h2>
+            <p class="cap">Cell numbers are release counts</p>
+          </div>
+        </div>
+        <div class="chart heatmap" id="chart-heat"></div>
+        <div class="commentary">
+          <p class="label">He's heating up!</p>
+          <p>Here's another way of looking at the same data. Each row is a year, each column a calendar month, and the intensity of gold shows how many similar games were released during that period. Vampire Survivors' early access and launch are indicated with the cyan and gold square boxes, respectively.</p>
+          <p>It's clear to see Steam "caught fire" with this sort of game type since release. While the tag combo is still just an approximation of the Survivors-like genre, inspection of most of these games prove they are generally the same type of game: a top-down, slow-moving, levelling-up roguelike shooter.</p>
+          <ul>
+            <li>2020 and 2021 stayed under 30 releases a year. 2024 and 2025 each cleared 250, and 2026 is already over 200.</li>
+            <li>Though the second impact following the October 2022 launch is clearly bigger, it's worth noticing the first impact and uptick started within 3 months of the Early Access launch in December 2021.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="figure" data-id="survivors-title">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">What's in a name?</p>
+            <h2>Games with “Survivors” in the title</h2>
+            <p class="cap">Not limited to the three-tag cohort — any Steam title whose name contains “Survivors”. The naming fad tracks the genre boom.</p>
+          </div>
+        </div>
+        <div class="chart" id="chart-survivors"></div>
+        <div class="commentary">
+          <p class="label">Hi, my name is...</p>
+          <p>Of course, if you're less subtle about the copycat nature of your work, you might as well just stick Survivors in the title and let the audience figure the rest out. This chart covers all games on Steam since January 2020 with “Survivors” in the title. There were 13 titles in the nearly-three years before Vampire Survivors' release, and 354 since.</p>
+          <p>Again, this is more of a general categorisation, but there clearly was a shift here since October 2022 from a naming perspective.</p>
+          <ul>
+            <li>We've literally gone from 0 games per month with “Survivors” in the name to an average of 10 per month in under 6 years.</li>
+            <li>The title and tag charts are remarkably similar, despite measuring different groups, though both are led by the same thing.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="figure" data-id="reviews-stacked">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Standing in the Shadows of Giants</p>
+            <h2>Review volume by release month</h2>
+            <p class="cap"></p>
+          </div>
+        </div>
+        <div class="chart tall" id="chart-stacked"></div>
+        <div class="commentary">
+          <p class="label">Sticking out like a healthy thumb</p>
+          <p>The sum total of reviews for this tag combo could fall over and crush most of the rest of this graph. It's almost unbelievable the level of dominance on display here. Even the negative review count for October 2022 eclipses most months combined totals</p>
+          <p>Also worth mentioning is that there are a number of games that would be considered extremely popular and positively-received games in this chart and yet absolutely none of them compare in terms of impact.</p>
+        </div>
+      </section>
+
+      <section class="figure" data-id="treemap">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Sharing that Vampire Pie</p>
+            <h2>Treemap of the Survivors-like games by review count</h2>
+            <p class="cap">Top titles dominance by Steam review count</p>
+          </div>
+        </div>
+        <div class="chart tall" id="chart-tree"></div>
+        <div class="commentary">
+          <p class="label">Hail to the King</p>
+          <p>Presented as a share of all reviews of this type of game, it's clear to see Vampire Survivors is far beyond its peers in terms of popularity, with as many reviews as the next 20 most-reviewed games combined.</p>
+          <p>When a game achieves this level of virality and interest, it's natural that there will be a huge amount of homages, copycats, clones, cashgrabs, and genuine successors coming along, and the data backs that up.</p>
+          <ul>
+            <li>Vampire Survivors has over a quarter of a million reviews reviews, 43% of the cohort total.</li>
+            <li>There are four other named games in this treemap alone with Survivor/s or Survival in their title</li>
+            <li>The other 1,018 games share 56,421 reviews: under 10% of the total review count for these tags, and almost all of the titles. It should be noted that the vast, vast majority of Steam titles get fewer than 10 reviews, so this isn't unexpected.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="figure" data-id="final-thoughts">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <h2>Final thoughts</h2>
+          </div>
+        </div>
+        <div class="commentary">
+          <p>There are a number of stakes (hwehwehweh) in the ground here. The three-tag grouping is not infallible. As mentioned earlier, games like Neon Abyss are clearly not inspired by Vampire Survivors, and they are mostly two different styles of game, and this may be considered an inappropriate data point. Conversely, Brotato, a massively-popular game that came out in June 2023 and is undeniably a Survivors-like, is not included here because it is missing the "Pixel Graphics" tag. Considering the scale of games we're dealing with here, these data points do smooth out.</p>
+          <p>There is no definite answer on whether this imitative action is a good or bad thing, though I suspect it is on the whole a good thing. poncle's game is simple, lightweight, beautiful to look at, fun to play ("just one more turn... I can cheat Death this time!"). This is exactly the sort of thing that makes game devs believe they can make a game too, even if it's just copying what went before to learn how to do it.</p>
+          <p>Another thing the data shows is how incredibly rare a repeat success is when one game captures the zeitgeist. Personally, I had never heard of HoloCure or Halls of Torment (the next most popular games in this category) before this analysis, but BALL x PIT and Megabonk definitely had their moments on the sun. The former on Twitch, and the latter on YouTube shorts.</p>
+          <p>Vampire Survivors created one hell of a storm when it launched, and there's no denying the impact it has had when we lay out all the games that followed and aped its style.</p>
+          <p>I think the really interesting part of all this analysis is looking to see if the same pattern happens elsewhere, and if it scales similarly. Survivors-likes grew 3 times faster than the expected level of other types of games on Steam over the same date range. If you have any suggestions as to what should be looked at next, please give us a follow on socials or drop an email at woof[at]hotbottledog.com</p>
+          <p>Thanks for reading!</p>
+        </div>
+      </section>
+
+      <section class="figure" data-id="ai-share">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Developed with AI</p>
+            <h2>Share of these games developed with AI</h2>
+            <p class="cap">Each column sums to 100% of that month’s games with all three tags. Playtests are left out.</p>
+          </div>
+        </div>
+        <div class="chart" id="chart-ai"></div>
+      </section>
+
+    </div>
+
+    <footer class="note">
+      <p>
+        Thanks for reading. Please bookmark this site whenever you get bored and want to find new games. We try to keep it updated daily and plan to have a blog post once every two weeks.
+      </p>
+      <p>
+        Data for this analysis was collected from Steam's API, and complementary data that may or may not have been used comes from other publically-available sources including Is There Any Deal and How Long To Beat. 
+      </p>
+      <p>
+        Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    const DATA = {"as_of": "2026-10-22", "definition": "Games tagged with ALL of: Action Roguelike, Pixel Graphics, Bullet Hell", "months": ["2020-01", "2020-02", "2020-03", "2020-04", "2020-05", "2020-06", "2020-07", "2020-08", "2020-09", "2020-10", "2020-11", "2020-12", "2021-01", "2021-02", "2021-03", "2021-04", "2021-05", "2021-06", "2021-07", "2021-08", "2021-09", "2021-10", "2021-11", "2021-12", "2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06", "2022-07", "2022-08", "2022-09", "2022-10", "2022-11", "2022-12", "2023-01", "2023-02", "2023-03", "2023-04", "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "releases": [2, 2, 3, 0, 0, 1, 3, 3, 3, 4, 1, 3, 1, 3, 0, 2, 1, 2, 4, 4, 4, 4, 0, 4, 1, 2, 6, 2, 9, 3, 6, 11, 12, 12, 10, 6, 12, 21, 13, 16, 19, 13, 19, 12, 16, 13, 17, 16, 13, 23, 23, 19, 24, 23, 16, 17, 21, 17, 30, 27, 22, 16, 21, 29, 27, 20, 16, 16, 18, 28, 24, 19, 19, 18, 35, 23, 15, 24, 24, 24, 29, 12], "positive": [62, 63, 6962, 0, 0, 7, 20000, 108, 5368, 2720, 109, 77, 7, 988, 0, 43, 267, 79, 307, 2797, 20, 160, 0, 2015, 13, 32, 4241, 171, 382, 503, 6452, 1071, 9683, 249154, 378, 545, 2049, 5819, 7477, 511, 1602, 30134, 6623, 38144, 2395, 579, 20005, 4638, 528, 1599, 5292, 1360, 825, 1247, 707, 3409, 28275, 4981, 2178, 1446, 501, 668, 8993, 1376, 2152, 105, 2607, 465, 28026, 10972, 1005, 223, 6, 18, 308, 149, 280, 411, 2313, 822, 1432, 98], "negative": [21, 28, 502, 0, 0, 0, 3190, 96, 479, 403, 65, 8, 0, 75, 0, 11, 32, 10, 54, 181, 0, 36, 0, 251, 0, 2, 308, 10, 63, 88, 806, 149, 369, 4368, 57, 75, 199, 946, 748, 199, 379, 2629, 432, 455, 558, 115, 2090, 444, 139, 190, 764, 302, 111, 167, 55, 144, 1274, 890, 405, 85, 89, 144, 1078, 194, 224, 5, 675, 56, 1807, 620, 147, 44, 2, 2, 47, 43, 35, 24, 319, 147, 71, 10], "survivors": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 8, 5, 5, 3, 10, 4, 4, 5, 6, 5, 6, 6, 7, 10, 5, 7, 7, 6, 10, 7, 3, 6, 12, 5, 11, 8, 9, 7, 0, 9, 17, 9, 10, 3, 12, 2, 11, 6, 10, 2, 5, 11, 6, 7, 14, 12, 4, 12, 5], "years": ["2020", "2021", "2022", "2023", "2024", "2025", "2026"], "monthNames": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "heatmap": [[2, 2, 3, 0, 0, 1, 3, 3, 3, 4, 1, 3], [1, 3, 0, 2, 1, 2, 4, 4, 4, 4, 0, 4], [1, 2, 6, 2, 9, 3, 6, 11, 12, 12, 10, 6], [12, 21, 13, 16, 19, 13, 19, 12, 16, 13, 17, 16], [13, 23, 23, 19, 24, 23, 16, 17, 21, 17, 30, 27], [22, 16, 21, 29, 27, 20, 16, 16, 18, 28, 24, 19], [19, 18, 35, 23, 15, 24, 24, 24, 29, 12, null, null]], "treemap": [{"name": "Vampire Survivors", "reviews": 250650, "app_id": 1794680}, {"name": "HoloCure - Save the Fans!", "reviews": 38084, "app_id": 2420510}, {"name": "Halls of Torment", "reviews": 29083, "app_id": 2218750}, {"name": "Megabonk", "reviews": 29080, "app_id": 3405340}, {"name": "20 Minutes Till Dawn", "reviews": 27768, "app_id": 1966900}, {"name": "Neon Abyss", "reviews": 23160, "app_id": 788100}, {"name": "Death Must Die", "reviews": 20397, "app_id": 2334730}, {"name": "BALL x PIT", "reviews": 10790, "app_id": 2062430}, {"name": "Tiny Rogues", "reviews": 9785, "app_id": 2088570}, {"name": "Rogue: Genesia ", "reviews": 7611, "app_id": 2067920}, {"name": "One Step From Eden", "reviews": 7432, "app_id": 960690}, {"name": "Atomicrops", "reviews": 5677, "app_id": 757320}, {"name": "Boneraiser Minions", "reviews": 5133, "app_id": 1944570}, {"name": "Necrosmith", "reviews": 5111, "app_id": 1949190}, {"name": "通神榜 Noobs Want to Live", "reviews": 4872, "app_id": 1737340}, {"name": "Disfigure", "reviews": 4592, "app_id": 2083160}, {"name": "Voidigo", "reviews": 4301, "app_id": 1304680}, {"name": "Seraph's Last Stand", "reviews": 4131, "app_id": 1919460}, {"name": "Picayune Dreams", "reviews": 3265, "app_id": 2088840}, {"name": "ScourgeBringer", "reviews": 3019, "app_id": 1037020}, {"name": " Marfusha", "reviews": 2893, "app_id": 1456820}, {"name": "Karate Survivor", "reviews": 2630, "app_id": 3027930}, {"name": "Kagura Survivors: Endless Night", "reviews": 2599, "app_id": 2348120}, {"name": "Archvale", "reviews": 2242, "app_id": 1296360}, {"name": "Scarlet Tower", "reviews": 2241, "app_id": 2181720}, {"name": "COMPOUND", "reviews": 2079, "app_id": 615120}, {"name": "Nomad Survival", "reviews": 2066, "app_id": 1929870}, {"name": "Hell Maiden", "reviews": 2036, "app_id": 3372060}, {"name": "Snezhinka", "reviews": 2029, "app_id": 2608350}, {"name": "Cultivation Story: Reincarnation", "reviews": 1934, "app_id": 1866880}, {"name": "I Am Legion: Stand Survivors", "reviews": 1624, "app_id": 3109580}, {"name": "Astro Prospector", "reviews": 1618, "app_id": 3503440}, {"name": "Neon Abyss 2", "reviews": 1556, "app_id": 2235200}, {"name": "Slime 3K: Rise Against Despot", "reviews": 1480, "app_id": 2348610}, {"name": "Rabbit Hole", "reviews": 1388, "app_id": 2831340}, {"name": "Other (1018 games)", "reviews": 56421, "app_id": null}], "totals": {"games": 1053, "releases": 1053, "reviews": 580777, "survivors_title": 367, "peak": ["2026-03", 35]}};
+
+    const VS = "2022-10";
+    const EA = "2021-12";
+    const EA_COLOR = "#8da4ff";
+
+    document.getElementById("stat-games").textContent = DATA.totals.games.toLocaleString();
+    document.getElementById("stat-reviews").textContent = DATA.totals.reviews.toLocaleString();
+    document.getElementById("stat-survivors").textContent = DATA.totals.survivors_title.toLocaleString();
+    document.getElementById("stat-peak").textContent = DATA.totals.peak[0];
+    const asOf = document.getElementById("as-of");
+    if (asOf) asOf.textContent = DATA.as_of;
+
+    const markLine = {
+      silent: true,
+      symbol: "none",
+      label: {
+        position: "insideEndTop",
+        fontFamily: "Figtree, sans-serif",
+        fontSize: 11,
+        fontWeight: 600,
+      },
+      lineStyle: { type: "dashed", width: 1.5 },
+      data: [
+        {
+          xAxis: EA,
+          label: { formatter: "Early access", color: EA_COLOR },
+          lineStyle: { color: EA_COLOR },
+        },
+        {
+          xAxis: VS,
+          label: { formatter: "VS launch", color: "#d4af37" },
+          lineStyle: { color: "#d4af37" },
+        },
+      ],
+    };
+
+    const axisCommon = {
+      axisLabel: { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+      axisLine: { lineStyle: { color: "#3d4a5c" } },
+      splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+    };
+
+    function baseGrid() {
+      return { left: 52, right: 64, top: 40, bottom: 42, containLabel: false };
+    }
+
+    function sparseLabels(months) {
+      return months.map((m, i) => (m === VS || i % 6 === 0 ? m : ""));
+    }
+
+    function monthBounds(ym) {
+      const [year, month] = String(ym || "").split("-").map(Number);
+      if (!year || !month) return null;
+      const last = new Date(year, month, 0).getDate();
+      const mm = String(month).padStart(2, "0");
+      return [`${year}-${mm}-01`, `${year}-${mm}-${String(last).padStart(2, "0")}`];
+    }
+
+    function finderHref(ym) {
+      const bounds = monthBounds(ym);
+      if (!bounds) return "";
+      const params = new URLSearchParams({
+        tags: "Action Roguelike,Pixel Graphics,Bullet Hell",
+        dateMode: "custom",
+        minDate: bounds[0],
+        maxDate: bounds[1],
+        reviewScore: "Any",
+        maxReviews: "10000000",
+      });
+      return `/find?${params.toString()}`;
+    }
+
+    function clickHint(label) {
+      return `<div style="margin-top:8px;color:#e6c45a;font-weight:600">${label}</div>`;
+    }
+
+    function openFinder(ym) {
+      const href = finderHref(ym);
+      if (href) window.open(href, "_blank", "noopener");
+    }
+
+    function axisTooltipFormatter(params, showClickHint = true) {
+      const rows = (Array.isArray(params) ? params : [params]).filter(
+        (row) => row && row.componentType !== "markLine" && row.seriesName
+      );
+      if (!rows.length) return "";
+      const month = rows[0].axisValue || rows[0].name;
+      const lines = rows
+        .map((row) => {
+          const value = Array.isArray(row.value) ? row.value[row.value.length - 1] : row.value;
+          if (value == null || value === "-") return "";
+          const shown = Number(value);
+          const label = Number.isFinite(shown) ? shown.toLocaleString() : value;
+          return `${row.marker || ""}${row.seriesName}: <b>${label}</b>`;
+        })
+        .filter(Boolean)
+        .join("<br/>");
+      return `<div style="margin-bottom:4px"><b>${month}</b></div>${lines}${showClickHint ? clickHint("click bar to see data") : ""}`;
+    }
+
+    const charts = {};
+
+    function makeTimeSeriesOption({ type, series, stacked, yAxes, grid, showClickHint = true }) {
+      const cats = DATA.months.slice();
+      const defaultY = {
+        type: "value",
+        name: "Releases / month",
+        nameTextStyle: { color: "#94a3b8", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+        axisLabel: axisCommon.axisLabel,
+        axisLine: axisCommon.axisLine,
+        splitLine: axisCommon.splitLine,
+      };
+      return {
+        animationDuration: 650,
+        tooltip: {
+          trigger: "axis",
+          confine: true,
+          backgroundColor: "#1a2438",
+          borderColor: "#3d4a5c",
+          borderWidth: 1,
+          textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+          formatter: (params) => axisTooltipFormatter(params, showClickHint),
+        },
+        legend: {
+          top: 0,
+          textStyle: { color: "#94a3b8", fontFamily: "Figtree, sans-serif" },
+          show: stacked || series.length > 1,
+        },
+        grid: grid || baseGrid(),
+        xAxis: {
+          type: "category",
+          data: cats,
+          boundaryGap: type === "bar",
+          axisLabel: {
+            ...axisCommon.axisLabel,
+            interval: 0,
+            formatter: (v, i) => sparseLabels(cats)[i] || "",
+            rotate: 40,
+          },
+          axisLine: axisCommon.axisLine,
+          axisTick: { alignWithLabel: true },
+        },
+        yAxis: yAxes || defaultY,
+        series: series.map((s) => ({
+          ...s,
+          type: s.type || type,
+          cursor: showClickHint && (s.type || type) === "bar" ? "pointer" : "default",
+          stack: stacked ? "total" : undefined,
+          markLine: s.markLine === false ? undefined : { ...markLine },
+          emphasis: { focus: "series" },
+        })),
+      };
+    }
+
+    function cumulative(arr) {
+      let sum = 0;
+      return arr.map((v) => (sum += v));
+    }
+
+    function steamDoubling(months) {
+      const start = months.indexOf(VS);
+      const end = months.length - 1;
+      const from = 118;
+      const to = 236;
+      return months.map((_, i) => {
+        if (i < start || end <= start) return null;
+        return Math.round(from + ((to - from) * (i - start)) / (end - start));
+      });
+    }
+
+    const cumulativeTotals = cumulative(DATA.releases.slice());
+    const sharedCumulativeMax = Math.ceil(Math.max(...cumulativeTotals) / 200) * 200;
+
+    charts.col = echarts.init(document.getElementById("chart-col"));
+    charts.col.setOption(
+      makeTimeSeriesOption({
+        type: "bar",
+        grid: { left: 52, right: 128, top: 48, bottom: 42, containLabel: false },
+        yAxes: [
+          {
+            type: "value",
+            name: "Releases / month",
+            nameTextStyle: { color: "#d4af37", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+            axisLabel: { color: "#d4af37", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+            axisLine: { show: true, lineStyle: { color: "#d4af37" } },
+            splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+          },
+          {
+            type: "value",
+            name: "Cumulative games",
+            min: 0,
+            max: sharedCumulativeMax,
+            nameTextStyle: { color: "#7dd3fc", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+            axisLabel: { color: "#7dd3fc", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+            axisLine: { show: true, lineStyle: { color: "#7dd3fc" } },
+            splitLine: { show: false },
+          },
+          {
+            type: "value",
+            name: "eSG",
+            position: "right",
+            offset: 62,
+            min: 0,
+            max: sharedCumulativeMax,
+            nameTextStyle: { color: "#e0518a", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+            axisLabel: { color: "#e0518a", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+            axisLine: { show: true, lineStyle: { color: "#e0518a" } },
+            splitLine: { show: false },
+          },
+        ],
+        series: [
+          {
+            name: "Releases",
+            data: DATA.releases.slice(),
+            yAxisIndex: 0,
+            itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 14,
+          },
+          {
+            name: "Cumulative total",
+            type: "line",
+            data: cumulative(DATA.releases.slice()),
+            yAxisIndex: 1,
+            smooth: 0.2,
+            symbol: "none",
+            lineStyle: { width: 2.25, color: "#7dd3fc" },
+            itemStyle: { color: "#7dd3fc" },
+            markLine: false,
+          },
+          {
+            name: "Expected Steam Growth (eSG)",
+            type: "line",
+            data: steamDoubling(DATA.months),
+            yAxisIndex: 2,
+            symbol: "none",
+            lineStyle: { width: 2, color: "#e0518a", type: "dashed" },
+            itemStyle: { color: "#e0518a" },
+            markLine: false,
+          },
+        ],
+      })
+    );
+
+    function linearTrend(values) {
+      const n = values.length;
+      let sumX = 0;
+      let sumY = 0;
+      let sumXY = 0;
+      let sumXX = 0;
+      values.forEach((y, x) => {
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumXX += x * x;
+      });
+      const denom = n * sumXX - sumX * sumX;
+      const slope = denom ? (n * sumXY - sumX * sumY) / denom : 0;
+      const intercept = n ? (sumY - slope * sumX) / n : 0;
+      return values.map((_, x) => Math.round((intercept + slope * x) * 10) / 10);
+    }
+
+    charts.survivors = echarts.init(document.getElementById("chart-survivors"));
+    charts.survivors.setOption(
+      makeTimeSeriesOption({
+        type: "bar",
+        showClickHint: false,
+        yAxes: {
+          type: "value",
+          min: 0,
+          name: "Titles / month",
+          nameTextStyle: { color: "#94a3b8", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+          axisLabel: axisCommon.axisLabel,
+          axisLine: axisCommon.axisLine,
+          splitLine: axisCommon.splitLine,
+        },
+        series: [
+          {
+            name: "Survivors titles",
+            data: DATA.survivors.slice(),
+            itemStyle: { color: "#94a3b8", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 14,
+          },
+          {
+            name: "Trend p/m",
+            type: "line",
+            data: linearTrend(DATA.survivors),
+            symbol: "none",
+            lineStyle: { width: 2.25, color: "#d4af37" },
+            itemStyle: { color: "#d4af37" },
+            markLine: false,
+          },
+        ],
+      })
+    );
+
+    charts.stacked = echarts.init(document.getElementById("chart-stacked"));
+    charts.stacked.setOption(
+      makeTimeSeriesOption({
+        type: "bar",
+        stacked: true,
+        series: [
+          {
+            name: "Positive",
+            data: DATA.positive.slice(),
+            itemStyle: { color: "#34d399" },
+            barMaxWidth: 16,
+          },
+          {
+            name: "Negative",
+            data: DATA.negative.slice(),
+            itemStyle: { color: "#f87171" },
+            barMaxWidth: 16,
+            markLine: false,
+          },
+        ],
+      })
+    );
+
+    const heatData = [];
+    DATA.years.forEach((year, yi) => {
+      DATA.heatmap[yi].forEach((v, mi) => {
+        if (v != null) heatData.push([mi, yi, v]);
+      });
+    });
+    const heatMax = Math.max(...heatData.map((d) => d[2]), 1);
+
+    charts.heat = echarts.init(document.getElementById("chart-heat"));
+    charts.heat.setOption({
+      animationDuration: 650,
+      tooltip: {
+        trigger: "item",
+        position: "top",
+        formatter: (p) => {
+          if (!Array.isArray(p.value)) return "";
+          const month = `${DATA.monthNames[p.value[0]]} ${DATA.years[p.value[1]]}`;
+          return `${month}: <b>${p.value[2]}</b> releases${clickHint("click cell to see data")}`;
+        },
+        backgroundColor: "#1a2438",
+        borderColor: "#3d4a5c",
+        borderWidth: 1,
+        textStyle: { color: "#e8eef7" },
+      },
+      grid: { left: 56, right: 24, top: 28, bottom: 40 },
+      xAxis: {
+        type: "category",
+        data: DATA.monthNames,
+        splitArea: { show: true, areaStyle: { color: ["rgba(15,23,42,0.35)", "rgba(30,41,59,0.35)"] } },
+        axisLabel: { color: "#94a3b8" },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: "category",
+        data: DATA.years,
+        inverse: true,
+        axisLabel: { color: "#94a3b8" },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      visualMap: {
+        min: 0,
+        max: heatMax,
+        calculable: true,
+        orient: "horizontal",
+        left: "center",
+        bottom: 0,
+        inRange: { color: ["#1e293b", "#3d4a5c", "#b8962e", "#d4af37", "#e6c45a"] },
+        textStyle: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "heatmap",
+          cursor: "pointer",
+          data: heatData,
+          label: { show: true, color: "#e8eef7", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+          itemStyle: { borderColor: "#0f172a", borderWidth: 2 },
+          emphasis: { itemStyle: { shadowBlur: 8, shadowColor: "rgba(212,175,55,0.35)" } },
+          markPoint: {
+            silent: true,
+            symbol: "rect",
+            symbolSize: [28, 22],
+            itemStyle: { color: "transparent", borderWidth: 2 },
+            label: { show: false },
+            data: [
+              { coord: [11, 1], itemStyle: { borderColor: EA_COLOR } },
+              { coord: [9, 2], itemStyle: { borderColor: "#e6c45a" } },
+            ],
+          },
+        },
+      ],
+    });
+
+    const treeChildren = DATA.treemap.map((g) => ({
+      name: g.name.trim(),
+      value: g.reviews,
+      app_id: g.app_id,
+    }));
+    charts.tree = echarts.init(document.getElementById("chart-tree"));
+    charts.tree.setOption({
+      animationDuration: 650,
+      tooltip: {
+        formatter: (p) => {
+          const raw = p.value;
+          const count = Number(raw);
+          const shown = Number.isFinite(count) ? count.toLocaleString() : raw;
+          const total = DATA.totals.reviews;
+          const share = Number.isFinite(count) && total > 0
+            ? (() => {
+                const pct = (count / total) * 100;
+                return `${pct >= 0.1 ? pct.toFixed(1) : pct.toFixed(2)}% of reviews on these tags`;
+              })()
+            : "";
+          return `<b>${p.name}</b><br/>${shown} reviews${share ? `<br/>${share}` : ""}`;
+        },
+        backgroundColor: "#1a2438",
+        borderColor: "#3d4a5c",
+        borderWidth: 1,
+        textStyle: { color: "#e8eef7" },
+      },
+      series: [
+        {
+          type: "treemap",
+          width: "100%",
+          height: "100%",
+          roam: false,
+          nodeClick: false,
+          breadcrumb: { show: false },
+          label: {
+            show: true,
+            formatter: "{b}",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 12,
+            color: "#0f172a",
+          },
+          upperLabel: { show: false },
+          itemStyle: { borderColor: "#0f172a", borderWidth: 2, gapWidth: 2 },
+          levels: [
+            {
+              itemStyle: { borderWidth: 0, gapWidth: 2 },
+              color: ["#d4af37", "#e6c45a", "#b8962e", "#34d399", "#94a3b8", "#64748b", "#f87171"],
+              colorMappingBy: "index",
+            },
+          ],
+          data: treeChildren,
+        },
+      ],
+    });
+
+    const AI_WITH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 2, 5, 1, 1, 1, 4, 3, 5, 1, 4, 0, 2, 7, 1, 3, 1, 2, 14, 11, 2, 8, 8, 11, 11, 4];
+    const AI_WITHOUT = [2, 2, 3, 0, 0, 1, 3, 3, 3, 4, 1, 3, 1, 3, 0, 2, 1, 2, 4, 4, 3, 4, 0, 4, 1, 2, 5, 2, 7, 3, 5, 10, 10, 12, 8, 5, 10, 18, 11, 14, 17, 11, 17, 11, 15, 10, 15, 14, 10, 18, 19, 15, 20, 22, 12, 14, 12, 11, 21, 23, 20, 12, 14, 18, 18, 16, 10, 13, 13, 19, 21, 14, 12, 10, 18, 11, 12, 16, 16, 13, 18, 8];
+    const aiShares = DATA.months.map((_, i) => {
+      const aiCount = AI_WITH[i] || 0;
+      const restCount = AI_WITHOUT[i] || 0;
+      const total = aiCount + restCount;
+      if (!total) return { ai: null, rest: null, aiCount: 0, restCount: 0, total: 0 };
+      const ai = Math.round((aiCount / total) * 1000) / 10;
+      const rest = Math.round((100 - ai) * 10) / 10;
+      return { ai, rest, aiCount, restCount, total };
+    });
+    charts.ai = echarts.init(document.getElementById("chart-ai"));
+    charts.ai.setOption({
+      animationDuration: 650,
+      tooltip: {
+        trigger: "axis",
+        confine: true,
+        backgroundColor: "#1a2438",
+        borderColor: "#3d4a5c",
+        borderWidth: 1,
+        textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+        formatter: (params) => {
+          const rows = (Array.isArray(params) ? params : [params]).filter(
+            (row) => row && row.seriesName && row.data && row.data.total
+          );
+          if (!rows.length) return "";
+          const total = rows[0].data.total;
+          const lines = rows
+            .map((row) => {
+              const pct = Number(row.value);
+              const shown = Number.isFinite(pct) ? `${pct.toFixed(1)}%` : row.value;
+              return `${row.marker || ""}${row.seriesName}: <b>${shown}</b> (${row.data.count.toLocaleString()} of ${total.toLocaleString()})`;
+            })
+            .join("<br/>");
+          return `<div style="margin-bottom:4px"><b>${rows[0].axisValue}</b></div>${lines}`;
+        },
+      },
+      legend: {
+        top: 0,
+        textStyle: { color: "#94a3b8", fontFamily: "Figtree, sans-serif" },
+      },
+      grid: baseGrid(),
+      xAxis: {
+        type: "category",
+        data: DATA.months,
+        boundaryGap: true,
+        axisLabel: {
+          ...axisCommon.axisLabel,
+          interval: 0,
+          formatter: (v, i) => sparseLabels(DATA.months)[i] || "",
+          rotate: 40,
+        },
+        axisLine: axisCommon.axisLine,
+        axisTick: { alignWithLabel: true },
+      },
+      yAxis: {
+        type: "value",
+        min: 0,
+        max: 100,
+        name: "Share of releases",
+        nameTextStyle: { color: "#94a3b8", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+        axisLabel: { ...axisCommon.axisLabel, formatter: (v) => `${v}%` },
+        axisLine: axisCommon.axisLine,
+        splitLine: axisCommon.splitLine,
+      },
+      series: [
+        {
+          name: "Not developed with AI",
+          type: "bar",
+          stack: "ai",
+          cursor: "default",
+          data: aiShares.map((row) => ({ value: row.rest, count: row.restCount, total: row.total })),
+          itemStyle: { color: "#64748b" },
+          barMaxWidth: 16,
+          markLine,
+        },
+        {
+          name: "Developed with AI",
+          type: "bar",
+          stack: "ai",
+          cursor: "default",
+          data: aiShares.map((row) => ({ value: row.ai, count: row.aiCount, total: row.total })),
+          itemStyle: { color: "#c084fc", borderRadius: [3, 3, 0, 0] },
+          barMaxWidth: 16,
+          markLine: { silent: true, data: [] },
+        },
+      ],
+    });
+
+    ["col", "stacked"].forEach((key) => {
+      charts[key].on("click", (params) => {
+        if (params.componentType !== "series" || params.seriesType !== "bar") return;
+        openFinder(params.name || params.axisValue);
+      });
+    });
+    charts.heat.on("click", (params) => {
+      if (params.componentType !== "series" || params.seriesType !== "heatmap" || !Array.isArray(params.value)) return;
+      const month = `${DATA.years[params.value[1]]}-${String(params.value[0] + 1).padStart(2, "0")}`;
+      openFinder(month);
+    });
+
+    window.addEventListener("resize", () => {
+      Object.values(charts).forEach((c) => c.resize());
+    });
+  </script>
+</body>
+</html>

@@ -2,16 +2,15 @@
   <div id="app" :class="{ 'hc-contrast': isHighContrast }">
     <nav class="navbar navbar-expand-lg">
       <div class="container-fluid">
-        <a class="navbar-brand" href="https://gamediscoverytool.com">
+        <router-link class="navbar-brand" to="/">
           <i class="fas fa-gamepad"></i>
           <span class="d-none d-sm-inline">Game Discovery Tool</span>
           <span class="d-sm-none">Game Discovery</span>
-        </a>
-        
-        <!-- Mobile menu toggle button -->
-        <button 
-          class="navbar-toggler d-lg-none" 
-          type="button" 
+        </router-link>
+
+        <button
+          class="navbar-toggler d-lg-none"
+          type="button"
           @click="toggleMobileMenu"
           aria-controls="mobileNavbar"
           aria-expanded="showMobileMenu"
@@ -20,7 +19,7 @@
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <div class="d-flex ms-auto">
           <button
             class="btn btn-outline-light btn-sm accessibility-btn"
@@ -34,19 +33,18 @@
         </div>
       </div>
     </nav>
-    
-    <!-- Mobile Navigation Menu -->
+
     <div v-if="showMobileMenu" class="d-lg-none mobile-nav">
       <div class="container-fluid">
         <ul class="nav flex-column">
           <li v-for="section in navSections" :key="section.title" class="nav-section">
             <p class="nav-section-title">{{ section.title }}</p>
             <ul class="nav flex-column">
-              <li v-for="item in section.items" :key="item.name" class="nav-item">
+              <li v-for="item in section.items" :key="item.to" class="nav-item">
                 <router-link
                   :to="item.to"
                   class="nav-link"
-                  :class="{ active: $route.name === item.name }"
+                  :class="{ active: isActive(item) }"
                   @click="closeMobileMenu"
                 >
                   <i :class="item.icon"></i>
@@ -69,21 +67,20 @@
         </ul>
       </div>
     </div>
-    
+
     <div class="container-fluid">
       <div class="row">
-        <!-- Desktop Sidebar -->
         <nav class="col-md-3 col-lg-2 d-none d-md-block sidebar collapse">
           <div class="position-sticky pt-3">
             <ul class="nav flex-column">
               <li v-for="section in navSections" :key="section.title" class="nav-section">
                 <p class="nav-section-title">{{ section.title }}</p>
                 <ul class="nav flex-column">
-                  <li v-for="item in section.items" :key="item.name" class="nav-item">
+                  <li v-for="item in section.items" :key="'desk-' + item.to" class="nav-item">
                     <router-link
                       :to="item.to"
                       class="nav-link"
-                      :class="{ active: $route.name === item.name }"
+                      :class="{ active: isActive(item) }"
                     >
                       <i :class="item.icon"></i>
                       {{ item.label }}
@@ -102,8 +99,7 @@
                 </router-link>
               </li>
             </ul>
-            
-            <!-- Support Section -->
+
             <div class="support-section">
               <h6 class="support-title">Game Discovery Tool loves and supports</h6>
               <div class="support-links">
@@ -130,16 +126,17 @@
                 </a>
               </div>
             </div>
-            
-            <!-- Conrad Mascot Container - Hidden in minimalist design -->
+
             <div class="conrad-container" style="display: none;">
               <ConradMascot />
             </div>
           </div>
         </nav>
 
-        <!-- Main content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+        <main
+          class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content"
+          :class="{ 'essay-bleed': isEssayPage }"
+        >
           <router-view />
         </main>
       </div>
@@ -162,17 +159,23 @@ export default {
       showMobileMenu: false,
       navSections: [
         {
+          title: 'Media',
+          items: [
+            { to: '/blog', label: 'Media', icon: 'fas fa-newspaper', names: ['Blog', 'BlogPost'] }
+          ]
+        },
+        {
           title: 'Game Discovery',
           items: [
-            { to: '/find', name: 'GameFinder', label: 'Find a Game for Me', icon: 'fas fa-search' },
-            { to: '/recommender', name: 'Recommender', label: 'Recommender', icon: 'fas fa-magic' }
+            { to: '/find', label: 'Find a Game for Me', icon: 'fas fa-search', names: ['GameFinder'] },
+            { to: '/recommender', label: 'Recommender', icon: 'fas fa-magic', names: ['Recommender'] }
           ]
         },
         {
           title: 'Industry',
           items: [
-            { to: '/', name: 'StateOfSteam', label: 'State of Steam', icon: 'fas fa-chart-area' },
-            { to: '/trends', name: 'TrendAnalysis', label: 'Trend Analysis', icon: 'fas fa-chart-line' }
+            { to: '/trends', label: 'Trends', icon: 'fas fa-chart-area', names: ['StateOfSteam'] },
+            { to: '/trend-analysis', label: 'Trend Analysis', icon: 'fas fa-chart-line', names: ['TrendAnalysis'] }
           ]
         }
       ]
@@ -192,13 +195,20 @@ export default {
     },
     closeMobileMenu() {
       this.showMobileMenu = false
+    },
+    isActive(item) {
+      return item.names.includes(this.$route.name)
+    }
+  },
+  computed: {
+    isEssayPage() {
+      return this.$route.params.slug === '2026-10-22-four-years-after-vampire-survivors'
     }
   }
 }
 </script>
 
 <style>
-/* Responsive Navbar Brand */
 .navbar-brand {
   font-size: 1.125rem;
   font-weight: 600;
@@ -208,7 +218,6 @@ export default {
   max-width: calc(100vw - 200px);
 }
 
-/* Mobile-specific navbar brand adjustments */
 @media (max-width: 991.98px) {
   .navbar-brand {
     font-size: 1rem;
@@ -221,35 +230,33 @@ export default {
     font-size: 0.9rem;
     max-width: calc(100vw - 100px);
   }
-  
+
   .navbar-brand i {
     font-size: 0.9rem;
   }
-  
+
   .accessibility-btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
   }
 }
 
-/* Extra small screens */
 @media (max-width: 400px) {
   .navbar-brand {
     font-size: 0.85rem;
     max-width: calc(100vw - 80px);
   }
-  
+
   .navbar-brand i {
     font-size: 0.85rem;
   }
-  
+
   .accessibility-btn {
     padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
   }
 }
 
-/* Ensure mobile menu is visible on small screens */
 @media (max-width: 991.98px) {
   .mobile-nav {
     display: block !important;

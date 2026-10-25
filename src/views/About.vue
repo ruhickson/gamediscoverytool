@@ -20,6 +20,9 @@
         <p>
           Inquiries: woof[at]hotbottledog.com
         </p>
+        <p>
+          Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a>
+        </p>
       </div>
     </div>
   </div>

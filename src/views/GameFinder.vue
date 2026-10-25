@@ -506,10 +506,10 @@ export default {
     // Reactive data
     const selectedTags = ref([])
     const excludeTags = ref([])
-    const reviewScore = ref('Positive')
+    const reviewScore = ref('Any')
     const reviewScoreOrBetter = ref(true)
-    const minReviews = ref(11)
-    const maxReviews = ref(10000)
+    const minReviews = ref(0)
+    const maxReviews = ref(10000000)
     // Ordering: separate field and direction, compute orderBy string when needed
     const orderField = ref('total_reviews')
     const orderDirection = ref('desc')
@@ -984,10 +984,10 @@ export default {
     const resetFilters = () => {
       selectedTags.value = []
       excludeTags.value = []
-      reviewScore.value = 'Positive'
+      reviewScore.value = 'Any'
       reviewScoreOrBetter.value = true
-      minReviews.value = 11
-      maxReviews.value = 10000
+      minReviews.value = 0
+      maxReviews.value = 10000000
       orderBy.value = 'total_reviews_desc'
       dateMode.value = 'quick'
       quickDateRange.value = 'lastmonth'
@@ -1235,7 +1235,10 @@ export default {
           excludeTags.value = parseArrayParam(q.exclude)
           if (q.reviewScore) reviewScore.value = String(q.reviewScore)
           reviewScoreOrBetter.value = q.orBetter === '1' ? true : (q.orBetter === '0' ? false : reviewScoreOrBetter.value)
-          if (q.minReviews) minReviews.value = parseInt(q.minReviews, 10) || minReviews.value
+          if (q.minReviews != null && q.minReviews !== '') {
+            const parsedMin = parseInt(q.minReviews, 10)
+            if (!Number.isNaN(parsedMin)) minReviews.value = parsedMin
+          }
           if (q.maxReviews) maxReviews.value = parseInt(q.maxReviews, 10) || maxReviews.value
           if (q.dateMode) dateMode.value = String(q.dateMode)
           if (q.quickDateRange) quickDateRange.value = String(q.quickDateRange)
