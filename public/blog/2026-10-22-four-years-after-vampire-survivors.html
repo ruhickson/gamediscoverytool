@@ -203,6 +203,13 @@
       font-weight: 700;
     }
     .commentary p { margin: 0 0 0.35em; color: var(--ink); }
+    .commentary a,
+    .commentary a:visited {
+      color: #5efc82;
+    }
+    .commentary a:hover {
+      color: #c8ffd9;
+    }
     .commentary ul { margin: 0; padding-left: 1.15em; }
     .commentary li { margin: 0.2em 0; }
     footer.note {
@@ -361,11 +368,13 @@
           <div class="figure-meta">
             <p class="eyebrow">The Elephant in the Machine</p>
             <h2>Share of these games developed with AI</h2>
-            <p class="commentary">At the top, we did mention the "meta" around AI clones becoming more and more of a *thing* on Steam, the most obvious recent example being when Studio Bitdot brought attention to <a href="https://kotaku.com/devs-behind-needle-in-a-haystack-clone-complain-their-clone-has-been-cloned-by-vibe-coder-2000747284">how their viral game <i>Needle in a Haystack Simulator</i> was cloned</a>, likely using AI. And not just the concept, but the exact code itself has been identified in one of the now numerous knock-offs.</p>
-            <p>The debate over the use of ethical AI will not be explored in this article, however we're at the point where almost 40-50% of games on Steam are now developed using the technology in some capacity. The Survivors-likes are no exception, and we can see from the chart that more and more of them are being generated with AI, hovering in or around the 40% mark over the last 6 months.</p>
+            <div class="chart" id="chart-ai"></div>
+            <div class="commentary">
+              <p>At the top, we did mention the "meta" around AI clones becoming more and more of a *thing* on Steam, the most obvious recent example being when Studio Bitdot brought attention to <a href="https://kotaku.com/devs-behind-needle-in-a-haystack-clone-complain-their-clone-has-been-cloned-by-vibe-coder-2000747284">how their viral game <i>Needle in a Haystack Simulator</i> was cloned</a>, likely using AI. And not just the concept, but the exact code itself has been identified in one of the now numerous knock-offs.</p>
+              <p>The debate over the use of ethical AI will not be explored in this article, however we're at the point where almost 40-50% of games on Steam are now developed using the technology in some capacity. The Survivors-likes are no exception, and we can see from the chart that more and more of them are being generated with AI, hovering in or around the 40% mark over the last 6 months.</p>
+            </div>
           </div>
         </div>
-        <div class="chart" id="chart-ai"></div>
       </section>
 
       <section class="figure" data-id="final-thoughts">
