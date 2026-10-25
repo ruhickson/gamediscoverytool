@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Home from '../views/Home.vue'
 import StateOfSteam from '../views/StateOfSteam.vue'
 import TrendAnalysis from '../views/TrendAnalysis.vue'
 import GameFinder from '../views/GameFinder.vue'
@@ -13,11 +14,16 @@ import Podcast from '../views/Podcast.vue'
 const routes = [
   {
     path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/trends',
     name: 'StateOfSteam',
     component: StateOfSteam
   },
   {
-    path: '/trends',
+    path: '/trend-analysis',
     name: 'TrendAnalysis',
     component: TrendAnalysis
   },
@@ -33,7 +39,7 @@ const routes = [
   },
   {
     path: '/how-to-use',
-    redirect: '/'
+    redirect: '/trends'
   },
   {
     path: '/about',
@@ -74,7 +80,7 @@ const router = createRouter({
 
 // Preserve old shared Game Finder links that used query params on /
 router.beforeEach((to) => {
-  if (to.name !== 'StateOfSteam') return true
+  if (to.path !== '/') return true
   const q = to.query || {}
   const looksLikeFinderShare = [
     'tags', 'exclude', 'reviewScore', 'minReviews', 'maxReviews',

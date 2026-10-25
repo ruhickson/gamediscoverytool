@@ -30,7 +30,7 @@
               <div v-else class="blog-posts">
                 <div 
                   v-for="post in posts" 
-                  :key="post.id" 
+                  :key="post.slug" 
                   class="blog-post-card card mb-4"
                 >
                   <div class="card-body">
@@ -48,14 +48,6 @@
                           <span class="text-muted">
                             <i class="fas fa-calendar me-1"></i>
                             {{ formatDate(post.publishedAt) }}
-                          </span>
-                          <span class="text-muted ms-3">
-                            <i class="fas fa-user me-1"></i>
-                            {{ post.author }}
-                          </span>
-                          <span class="text-muted ms-3">
-                            <i class="fas fa-clock me-1"></i>
-                            {{ post.readTime }} min read
                           </span>
                         </div>
                       </div>
@@ -109,6 +101,7 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
+import { loadBlogSummaries } from '../utils/blogPosts.js'
 
 export default {
   name: 'Blog',
@@ -119,57 +112,20 @@ export default {
     const currentPage = ref(1)
     const totalPages = ref(1)
     const postsPerPage = 6
-
-    // Mock data - replace with actual API calls
-    const mockPosts = [
-      {
-        id: 1,
-        title: "How to Discover Hidden Gems in Steam",
-        slug: "discover-hidden-gems-steam",
-        excerpt: "Learn advanced techniques for finding amazing games that aren't in the top charts.",
-        content: "# How to Discover Hidden Gems in Steam\n\nSteam has thousands of games...",
-        author: "Game Discovery Team",
-        publishedAt: "2024-10-03T10:00:00Z",
-        readTime: 5,
-        featuredImage: "/api/placeholder/400/200"
-      },
-      {
-        id: 2,
-        title: "The Science Behind Game Recommendations",
-        slug: "science-game-recommendations",
-        excerpt: "Understanding how our recommendation algorithm works to find your perfect games.",
-        content: "# The Science Behind Game Recommendations\n\nOur algorithm considers...",
-        author: "Game Discovery Team",
-        publishedAt: "2024-10-01T14:30:00Z",
-        readTime: 8,
-        featuredImage: "/api/placeholder/400/200"
-      },
-      {
-        id: 3,
-        title: "Top 10 Indie Games You Might Have Missed",
-        slug: "top-10-indie-games-missed",
-        excerpt: "A curated list of incredible indie games that deserve more attention.",
-        content: "# Top 10 Indie Games You Might Have Missed\n\nIndie games often...",
-        author: "Game Discovery Team",
-        publishedAt: "2024-09-28T09:15:00Z",
-        readTime: 12,
-        featuredImage: "/api/placeholder/400/200"
-      }
-    ]
+    const allPosts = ref([])
 
     const loadPosts = async () => {
       isLoading.value = true
       error.value = ''
-      
+
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // Mock pagination
+        if (!allPosts.value.length) {
+          allPosts.value = await loadBlogSummaries()
+        }
         const startIndex = (currentPage.value - 1) * postsPerPage
         const endIndex = startIndex + postsPerPage
-        posts.value = mockPosts.slice(startIndex, endIndex)
-        totalPages.value = Math.ceil(mockPosts.length / postsPerPage)
+        posts.value = allPosts.value.slice(startIndex, endIndex)
+        totalPages.value = Math.ceil(allPosts.value.length / postsPerPage)
       } catch (err) {
         error.value = 'Failed to load blog posts'
         console.error('Error loading posts:', err)
