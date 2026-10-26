@@ -139,7 +139,7 @@ const reviewDescOrder = [
 const EXCLUDE_CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 const LS_EXCLUDE_TAG_PREFIX = 'gd_exclude_tag_v1:'
 const LS_CONTENT_DESC_KEY = 'gd_exclude_content_desc_v1'
-const ADULT_CONTENT_TAGS = ['Sexual Content', 'Hentai']
+export const ADULT_CONTENT_TAGS = ['Sexual Content', 'Hentai']
 const tagAppIdCache = new Map() // tag -> { ts, appIds }
 let contentDescriptorMemoryCache = null // { ts, appIds }
 
@@ -523,10 +523,43 @@ export async function getRecentTopGames(limit = 100, includeAdultGames = false) 
   }
 }
 
+/**
+ * Review-label filter. `reviewScores` is an explicit IN list (dig game "at least").
+ * Otherwise the finder "or better" prefix of reviewDescOrder is used.
+ */
+function appendReviewScoreFilter(filters, { reviewScore, reviewScoreOrBetter, reviewScores }) {
+  if (Array.isArray(reviewScores) && reviewScores.length > 0) {
+    filters.push({
+      member: 'Games.reviewScoreDesc',
+      operator: 'in',
+      values: reviewScores
+    })
+    return
+  }
+
+  if (reviewScore && reviewScore !== 'Any') {
+    if (reviewScoreOrBetter) {
+      const idx = reviewDescOrder.indexOf(reviewScore)
+      if (idx !== -1) {
+        filters.push({
+          member: 'Games.reviewScoreDesc',
+          operator: 'in',
+          values: reviewDescOrder.slice(0, idx + 1)
+        })
+      } else {
+        filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+      }
+    } else {
+      filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
+    }
+  }
+}
+
 // Find games with filters
 export async function findGames({
   tags = null,
   reviewScore = 'Any',
+  reviewScores = null,
   minReviews = 0,
   maxReviews = 1000000,
   minDate = null,
@@ -537,7 +570,8 @@ export async function findGames({
   aiDeclaration = 'any', // 'any' | 'declared' | 'not_declared'
   excludeTags = null,
   includeAdultGames = true,
-  orderBy = 'total_reviews_desc'
+  orderBy = 'total_reviews_desc',
+  strict = false
 }) {
   try {
     const excludedAppIds = await resolveExcludedAppIds({
@@ -564,6 +598,7 @@ export async function findGames({
         const intersectionResult = await findGamesWithMultipleTags({
           tags,
           reviewScore,
+          reviewScores,
           minReviews,
           maxReviews,
           minDate,
@@ -585,20 +620,7 @@ export async function findGames({
       }
     }
 
-    // Review score filter
-    if (reviewScore !== 'Any') {
-      if (reviewScoreOrBetter) {
-        const idx = reviewDescOrder.indexOf(reviewScore)
-        if (idx !== -1) {
-          const betterScores = reviewDescOrder.slice(0, idx + 1)
-          filters.push({ member: 'Games.reviewScoreDesc', operator: 'in', values: betterScores })
-        } else {
-          filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
-        }
-      } else {
-        filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
-      }
-    }
+    appendReviewScoreFilter(filters, { reviewScore, reviewScoreOrBetter, reviewScores })
 
     // Review count filters
     if (minReviews > 0) {
@@ -664,6 +686,7 @@ export async function findGames({
     try {
       result = await queryCube(query)
     } catch (error) {
+      if (strict) throw error
       console.log('Initial query failed:', error.message)
       
       // Try a simplified version without the new measures
@@ -754,6 +777,7 @@ export async function findGames({
 async function findGamesWithMultipleTags({
   tags,
   reviewScore,
+  reviewScores = null,
   minReviews,
   maxReviews,
   minDate,
@@ -780,6 +804,7 @@ async function findGamesWithMultipleTags({
     const tagResult = await findGamesSingleTag({
       tag: tags[i],
       reviewScore,
+      reviewScores,
       minReviews,
       maxReviews,
       minDate,
@@ -832,6 +857,7 @@ async function findGamesWithMultipleTags({
 async function findGamesSingleTag({
   tag,
   reviewScore,
+  reviewScores = null,
   minReviews,
   maxReviews,
   minDate,
@@ -853,20 +879,7 @@ async function findGamesSingleTag({
     filters.push(excludeFilter)
   }
 
-  // Add review score filter
-  if (reviewScore !== 'Any') {
-    if (reviewScoreOrBetter) {
-      const idx = reviewDescOrder.indexOf(reviewScore)
-      if (idx !== -1) {
-        const betterScores = reviewDescOrder.slice(0, idx + 1)
-        filters.push({ member: 'Games.reviewScoreDesc', operator: 'in', values: betterScores })
-      } else {
-        filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
-      }
-    } else {
-      filters.push({ member: 'Games.reviewScoreDesc', operator: 'equals', values: [reviewScore] })
-    }
-  }
+  appendReviewScoreFilter(filters, { reviewScore, reviewScoreOrBetter, reviewScores })
 
   // Add review count filters
   if (minReviews > 0) {

@@ -10,6 +10,7 @@ import BlogPost from '../views/BlogPost.vue'
 import Newsletter from '../views/Newsletter.vue'
 import YouTube from '../views/YouTube.vue'
 import Podcast from '../views/Podcast.vue'
+import DigGame from '../views/DigGame.vue'
 
 const routes = [
   {
@@ -70,6 +71,11 @@ const routes = [
     path: '/podcast',
     name: 'Podcast',
     component: Podcast
+  },
+  {
+    path: '/dig',
+    name: 'DigGame',
+    component: DigGame
   }
 ]
 
