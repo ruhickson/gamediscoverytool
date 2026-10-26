@@ -1,0 +1,117 @@
+import { findGames, ADULT_CONTENT_TAGS, resolveExcludedAppIds } from '../services/cubeService.js'
+import { getTopTagsByCount } from '../services/tagsSearchEngine.js'
+import { constraintsOf, queryFromConstraints } from './digRules.js'
+
+export async function loadTagGroups() {
+  const tags = await getTopTagsByCount(18, ADULT_CONTENT_TAGS)
+  if (tags.length < 18) {
+    throw new Error(`Expected 18 tags after dropping adult tags, found ${tags.length}.`)
+  }
+  const groups = []
+  for (let index = 0; index < tags.length; index += 3) {
+    groups.push(tags.slice(index, index + 3))
+  }
+  return groups
+}
+
+export function warmAdultExclusion() {
+  return resolveExcludedAppIds({ includeAdultGames: false }).catch(() => [])
+}
+
+function ymdFromCube(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
+    return match ? match[1] : ''
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear()
+    const month = String(value.getMonth() + 1).padStart(2, '0')
+    const day = String(value.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  return ''
+}
+
+export async function fetchEarliestReleaseDate() {
+  const rows = await findGames({
+    tags: null,
+    reviewScore: 'Any',
+    reviewScores: null,
+    minReviews: 0,
+    maxReviews: 10000000,
+    minDate: '1900-01-01',
+    maxDate: '2019-12-31',
+    limit: 1,
+    reviewScoreOrBetter: false,
+    hours: null,
+    aiDeclaration: 'any',
+    excludeTags: null,
+    includeAdultGames: false,
+    orderBy: 'release_date_asc',
+    strict: true
+  })
+  return ymdFromCube(rows[0]?.['Games.releaseDate'])
+}
+
+export async function runDigSearch(picks) {
+  const tags = (picks.tags || []).filter(Boolean)
+  return findGames({
+    tags: tags.length ? tags : null,
+    reviewScore: 'Any',
+    reviewScores: picks.reviewScores?.length ? picks.reviewScores : null,
+    minReviews: picks.minReviews || 0,
+    maxReviews: picks.maxReviews == null ? 10000000 : picks.maxReviews,
+    minDate: picks.minDate || null,
+    maxDate: picks.maxDate || null,
+    limit: 3,
+    reviewScoreOrBetter: false,
+    hours: null,
+    aiDeclaration: 'any',
+    excludeTags: null,
+    includeAdultGames: false,
+    orderBy: 'total_reviews_desc',
+    strict: true
+  })
+}
+
+export function mapDigGames(rows) {
+  return (rows || []).slice(0, 3).map((row) => {
+    const positive = Number(row['Games.totalPositiveReviews']) || 0
+    const negative = Number(row['Games.totalNegativeReviews']) || 0
+    const total = Number(row['Games.totalReviewsValue'])
+    const appId = Math.round(Number(row['Games.appId']))
+    return {
+      appId,
+      name: row['Games.name'] || 'Untitled',
+      reviewScoreDesc: row['Games.reviewScoreDesc'] || '',
+      releaseDate: ymdFromCube(row['Games.releaseDate']),
+      totalReviews: Number.isFinite(total) ? Math.round(total) : Math.round(positive + negative),
+      positive: Math.round(positive),
+      negative: Math.round(negative),
+      url: Number.isFinite(appId) ? `https://store.steampowered.com/app/${appId}` : ''
+    }
+  })
+}
+
+/**
+ * Name the constraint that emptied the list.
+ * Walks from the last pick backward. The latest pick whose removal
+ * restores results (any game, when the list is empty; three games otherwise)
+ * is that constraint. If no single pick restores them, the first pick in
+ * order that drops the running search under that bar is used.
+ */
+export async function nameEmptiedConstraint(picks, fullCount) {
+  const constraints = constraintsOf(picks)
+  const target = fullCount === 0 ? 1 : 3
+  for (let index = constraints.length - 1; index >= 0; index -= 1) {
+    const relaxed = queryFromConstraints(constraints.filter((_, other) => other !== index))
+    const rows = await runDigSearch(relaxed)
+    if (rows.length >= target) return constraints[index].name
+  }
+  for (let index = 0; index < constraints.length; index += 1) {
+    const rows = await runDigSearch(queryFromConstraints(constraints.slice(0, index + 1)))
+    if (rows.length < target) return constraints[index].name
+  }
+  return constraints[constraints.length - 1]?.name || 'the combined filters'
+}

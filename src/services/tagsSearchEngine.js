@@ -220,5 +220,19 @@ export async function preloadIndex() {
   return loadSearchIndex()
 }
 
+/**
+ * Tags with the most games, using the popularity counts stored in tags-index.json.
+ * `excludeNames` drops tags before the ranking (adult tags the finder already excludes).
+ */
+export async function getTopTagsByCount(limit = 18, excludeNames = []) {
+  const index = await loadSearchIndex()
+  const exclude = new Set(excludeNames)
+  return [...(index?.tags || [])]
+    .filter((tag) => tag && tag.name && !exclude.has(tag.name))
+    .sort((a, b) => (Number(b.popularity) || 0) - (Number(a.popularity) || 0) || a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map((tag) => ({ name: tag.name, count: Number(tag.popularity) || 0 }))
+}
+
 // Export configuration for external use
 export { TAGS_SEARCH_CONFIG }
