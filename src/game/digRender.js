@@ -8,8 +8,6 @@ import {
   cameraTop
 } from './digWorld.js'
 
-const CHOICE_COLORS = ['#d4533a', '#3d7ea6', '#d4af37', '#6f9a45', '#8d62b8']
-
 function hash(x, y) {
   let n = (x * 374761393 + y * 668265263) | 0
   n = Math.imul(n ^ (n >>> 13), 1274126177)
@@ -47,64 +45,106 @@ function wrapLines(ctx, text, maxWidth) {
   return lines
 }
 
-function drawDirt(ctx, x, y, sand, hc) {
+function drawDirt(ctx, x, y, _sand, hc) {
   const px = x * TILE_SIZE
   const py = y * TILE_SIZE
   const pad = 1
-  ctx.fillStyle = hc ? '#111' : (sand ? '#1a140c' : '#140e0a')
+  ctx.fillStyle = hc ? '#111' : '#141b22'
   ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE)
-  const base = hc
-    ? (sand ? '#c8b48a' : '#8a5a32')
-    : (sand ? (hash(x, y) > 0.5 ? '#e6c98a' : '#d7b56a') : (hash(x, y) > 0.5 ? '#7a4b2a' : '#6b4124'))
+  const base = hc ? '#d0d7de' : (hash(x, y) > 0.5 ? '#c5d0da' : '#aebbc8')
   ctx.fillStyle = base
   roundRect(ctx, px + pad, py + pad, TILE_SIZE - pad * 2, TILE_SIZE - pad * 2, 3)
   ctx.fill()
-  ctx.fillStyle = hc ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.18)'
+  ctx.fillStyle = hc ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.12)'
   ctx.fillRect(px + 4, py + TILE_SIZE - 7, TILE_SIZE - 8, 3)
-  ctx.fillStyle = sand ? 'rgba(255,255,255,0.28)' : 'rgba(255,220,170,0.18)'
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'
   for (let i = 0; i < 4; i += 1) {
     const sx = px + 4 + hash(x + i * 3, y) * (TILE_SIZE - 10)
     const sy = py + 4 + hash(x, y + i * 5) * (TILE_SIZE - 12)
-    ctx.fillRect(sx, sy, sand ? 2 : 3, sand ? 2 : 2)
+    ctx.fillRect(sx, sy, 2, 2)
   }
 }
 
 function drawOpen(ctx, x, y, hc) {
   const px = x * TILE_SIZE
   const py = y * TILE_SIZE
-  ctx.fillStyle = hc ? '#000' : '#120e0b'
+  ctx.fillStyle = hc ? '#000' : '#12181e'
   ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE)
-  ctx.fillStyle = hc ? '#222' : '#1c1510'
+  ctx.fillStyle = hc ? '#222' : '#1c2630'
   ctx.fillRect(px, py + TILE_SIZE - 3, TILE_SIZE, 3)
 }
 
 function drawRock(ctx, x, y, hc) {
   const px = x * TILE_SIZE
   const py = y * TILE_SIZE
-  ctx.fillStyle = hc ? '#000' : '#241810'
+  ctx.fillStyle = hc ? '#000' : '#2a343e'
   ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE)
-  ctx.strokeStyle = hc ? '#fff' : '#3a2a1e'
+  ctx.strokeStyle = hc ? '#fff' : '#3d4c5a'
   ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE - 1, TILE_SIZE - 1)
 }
 
-function drawChoice(ctx, x, y, index, selected, active, time, hc) {
-  const px = x * TILE_SIZE
-  const py = y * TILE_SIZE
-  const pulse = active ? 1 + Math.sin(time / 180) * 0.06 : 1
-  const size = (TILE_SIZE - 4) * pulse
-  const ox = px + (TILE_SIZE - size) / 2
-  const oy = py + (TILE_SIZE - size) / 2
-  ctx.fillStyle = hc ? '#000' : CHOICE_COLORS[index % CHOICE_COLORS.length]
-  roundRect(ctx, ox, oy, size, size, 5)
+function drawChoiceTile(ctx, x, y, hc) {
+  drawDirt(ctx, x, y, true, hc)
+}
+
+function drawGreyTile(ctx, x, y, hc) {
+  drawDirt(ctx, x, y, true, hc)
+  ctx.fillStyle = hc ? 'rgba(255,255,255,0.35)' : 'rgba(10, 14, 18, 0.62)'
+  ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+}
+
+function paintSlotLabel(ctx, slot, hc, tone) {
+  ctx.font = '600 12px Figtree, sans-serif'
+  const x = slot.x0 * TILE_SIZE + 6
+  const y = slot.y0 * TILE_SIZE + 4
+  const w = (slot.x1 - slot.x0 + 1) * TILE_SIZE - 12
+  const h = (slot.y1 - slot.y0 + 1) * TILE_SIZE - 8
+  const label = `${slot.optionIndex + 1}. ${slot.label}`
+  let fontSize = 12
+  let lines = wrapLines(ctx, label, w - 8).slice(0, 3)
+  while (fontSize > 9 && lines.some((line) => ctx.measureText(line).width > w - 4)) {
+    fontSize -= 1
+    ctx.font = `600 ${fontSize}px Figtree, sans-serif`
+    lines = wrapLines(ctx, label, w - 8).slice(0, 3)
+  }
+  const lineH = fontSize + 2
+  const blockH = lines.length * lineH
+  const blockW = Math.min(w - 4, Math.max(...lines.map((line) => ctx.measureText(line).width), 0) + 16)
+  const cx = x + w / 2
+  const cy = y + h / 2
+  ctx.fillStyle = hc ? '#000' : 'rgba(16, 24, 32, 0.82)'
+  roundRect(ctx, cx - blockW / 2, cy - blockH / 2 - 3, blockW, blockH + 6, 4)
   ctx.fill()
-  ctx.lineWidth = selected ? 3 : 2
-  ctx.strokeStyle = hc ? '#fff' : 'rgba(255,255,255,0.85)'
-  ctx.stroke()
-  ctx.fillStyle = hc ? '#fff' : '#1a120c'
-  ctx.font = 'bold 16px Figtree, sans-serif'
+  let cursor = cy - ((lines.length - 1) * lineH) / 2
+  ctx.fillStyle = hc ? '#fff' : tone
+  for (const line of lines) {
+    ctx.fillText(line, cx, cursor)
+    cursor += lineH
+  }
+}
+
+function drawChoiceLabels(ctx, world, hc) {
+  ctx.save()
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(String(index + 1), px + TILE_SIZE / 2, py + TILE_SIZE / 2 + 1)
+  for (const chamber of world.settled || []) {
+    for (const slot of chamber.slots) {
+      const chosen = slot.optionIndex === chamber.selected
+      ctx.strokeStyle = hc ? '#fff' : (chosen ? 'rgba(126, 214, 154, 0.95)' : 'rgba(120, 132, 144, 0.45)')
+      ctx.lineWidth = chosen ? 3 : 1
+      ctx.strokeRect(slot.x0 * TILE_SIZE + 1.5, slot.y0 * TILE_SIZE + 1.5, (slot.x1 - slot.x0 + 1) * TILE_SIZE - 3, (slot.y1 - slot.y0 + 1) * TILE_SIZE - 3)
+      paintSlotLabel(ctx, slot, hc, chosen ? '#8ee0a8' : '#8b98a4')
+    }
+  }
+  if (world.choice && !world.choice.resolved) {
+    for (const slot of world.choice.slots) {
+      ctx.strokeStyle = hc ? '#fff' : 'rgba(180, 214, 232, 0.95)'
+      ctx.lineWidth = world.choice.selected === slot.optionIndex ? 3 : 2
+      ctx.strokeRect(slot.x0 * TILE_SIZE + 1.5, slot.y0 * TILE_SIZE + 1.5, (slot.x1 - slot.x0 + 1) * TILE_SIZE - 3, (slot.y1 - slot.y0 + 1) * TILE_SIZE - 3)
+      paintSlotLabel(ctx, slot, hc, '#e7f2f8')
+    }
+  }
+  ctx.restore()
 }
 
 function drawPlayer(ctx, world, time, hc) {
@@ -122,19 +162,19 @@ function drawPlayer(ctx, world, time, hc) {
   ctx.beginPath()
   ctx.arc(cx, cy + 2, 8, 0, Math.PI * 2)
   ctx.fill()
-  ctx.fillStyle = hc ? '#fff' : '#e2b340'
+  ctx.fillStyle = hc ? '#fff' : '#9eb4c6'
   ctx.beginPath()
   ctx.arc(cx, cy - 1, 8, Math.PI, 0)
   ctx.fill()
   ctx.fillRect(cx - 8, cy - 2, 16, 3)
-  ctx.fillStyle = hc ? '#000' : '#2b2418'
+  ctx.fillStyle = hc ? '#000' : '#1c2630'
   ctx.fillRect(cx - 5, cy - 1, 10, 3)
   const angle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[facing] || Math.PI / 2
   const swing = lunging ? Math.sin(time / 30) * 0.45 : 0
   ctx.save()
   ctx.translate(cx, cy + 2)
   ctx.rotate(angle + swing)
-  ctx.fillStyle = hc ? '#fff' : '#8d6a43'
+  ctx.fillStyle = hc ? '#fff' : '#6d7c8a'
   ctx.fillRect(7, -1.5, 9, 3)
   ctx.fillStyle = hc ? '#fff' : '#d5dbe3'
   ctx.beginPath()
@@ -156,50 +196,84 @@ function discoverBox(world) {
   }
 }
 
-function drawSealedDiscover(ctx, world, time, hc) {
+function drawSealedDiscover(ctx, world, time, hc, loading) {
   const box = discoverBox(world)
-  ctx.fillStyle = hc ? '#000' : '#1f6f54'
+  ctx.fillStyle = hc ? '#000' : 'rgba(20, 28, 36, 0.55)'
   roundRect(ctx, box.x, box.y, box.w, box.h, 10)
   ctx.fill()
+  if (loading && !hc) {
+    const span = box.w + 80
+    const sheen = ((time / 8) % span) - 40
+    ctx.save()
+    ctx.beginPath()
+    roundRect(ctx, box.x, box.y, box.w, box.h, 10)
+    ctx.clip()
+    const gradient = ctx.createLinearGradient(box.x + sheen, box.y, box.x + sheen + 70, box.y + box.h)
+    gradient.addColorStop(0, 'rgba(142, 195, 222, 0)')
+    gradient.addColorStop(0.5, 'rgba(142, 195, 222, 0.38)')
+    gradient.addColorStop(1, 'rgba(142, 195, 222, 0)')
+    ctx.fillStyle = gradient
+    ctx.fillRect(box.x, box.y, box.w, box.h)
+    ctx.restore()
+  }
   ctx.lineWidth = 3
-  ctx.strokeStyle = hc ? '#fff' : '#e6c45a'
+  ctx.strokeStyle = hc ? '#fff' : '#8ec3de'
   ctx.stroke()
+  drawCracks(ctx, box, world.cracks || 0, hc)
   const cx = box.x + box.w / 2
-  const cy = box.y + 36 + Math.sin(time / 280) * 2
-  ctx.fillStyle = hc ? '#fff' : '#b8f3d8'
-  ctx.beginPath()
-  ctx.moveTo(cx, cy - 16)
-  ctx.lineTo(cx + 14, cy - 4)
-  ctx.lineTo(cx + 9, cy + 16)
-  ctx.lineTo(cx - 9, cy + 16)
-  ctx.lineTo(cx - 14, cy - 4)
-  ctx.closePath()
-  ctx.fill()
-  ctx.fillStyle = hc ? '#fff' : '#f6f1e4'
+  ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.font = '600 18px Fraunces, Georgia, serif'
   const lines = wrapLines(ctx, 'discover your next games', box.w - 28)
   lines.forEach((line, index) => {
-    ctx.fillText(line, cx, box.y + box.h / 2 + 16 + index * 22)
+    ctx.fillText(line, cx, box.y + box.h / 2 - 16 + index * 22)
   })
   ctx.font = '12px Figtree, sans-serif'
-  ctx.fillStyle = hc ? '#fff' : '#d7f5e8'
-  ctx.fillText('click to break open', cx, box.y + box.h - 22)
+  ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
+  const taps = `${world.cracks || 0} / 5 taps`
+  ctx.fillText(loading ? `searching…  ${taps}` : taps, cx, box.y + box.h - 22)
+}
+
+function drawCracks(ctx, box, cracks, hc) {
+  if (!cracks) return
+  const paths = [
+    [[0.18, 0.12], [0.34, 0.38], [0.28, 0.62]],
+    [[0.72, 0.1], [0.58, 0.32], [0.66, 0.55]],
+    [[0.42, 0.08], [0.48, 0.4], [0.4, 0.78]],
+    [[0.12, 0.7], [0.36, 0.62], [0.3, 0.9]],
+    [[0.8, 0.48], [0.62, 0.7], [0.74, 0.92]]
+  ]
+  ctx.save()
+  ctx.strokeStyle = hc ? '#fff' : 'rgba(214, 228, 236, 0.9)'
+  ctx.lineWidth = 2
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  paths.slice(0, cracks).forEach((path) => {
+    ctx.beginPath()
+    path.forEach(([px, py], index) => {
+      const x = box.x + px * box.w
+      const y = box.y + py * box.h
+      if (index === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    })
+    ctx.stroke()
+  })
+  ctx.restore()
 }
 
 function drawOpenedDiscover(ctx, world, view, time) {
   const box = discoverBox(world)
   const hc = view.highContrast
   const age = Math.max(0, time - (world.brokenAt || time))
-  ctx.fillStyle = hc ? '#000' : '#10241c'
+  ctx.fillStyle = hc ? '#000' : '#1a242e'
   roundRect(ctx, box.x, box.y, box.w, box.h, 10)
   ctx.fill()
-  ctx.strokeStyle = hc ? '#fff' : '#e6c45a'
+  ctx.strokeStyle = hc ? '#fff' : '#8ec3de'
   ctx.lineWidth = 3
   ctx.stroke()
   if (age < 280) {
-    ctx.strokeStyle = hc ? '#fff' : 'rgba(230,196,90,0.8)'
+    ctx.strokeStyle = hc ? '#fff' : 'rgba(183, 201, 214, 0.8)'
     ctx.beginPath()
     ctx.moveTo(box.x + 20, box.y + 10)
     ctx.lineTo(box.x + box.w * 0.45, box.y + box.h * 0.55)
@@ -213,10 +287,11 @@ function drawOpenedDiscover(ctx, world, view, time) {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   if (view.phase === 'searching' || (world.broken && !view.games.length && !view.error && !view.shortfall)) {
-    ctx.fillStyle = hc ? '#fff' : '#f6f1e4'
+    const dots = '.'.repeat(1 + Math.floor(time / 280) % 3)
+    ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
     ctx.font = '600 16px Fraunces, Georgia, serif'
     ctx.textAlign = 'center'
-    ctx.fillText('Breaking open…', box.x + box.w / 2, box.y + box.h / 2 - 8)
+    ctx.fillText(`Searching${dots}`, box.x + box.w / 2, box.y + box.h / 2 - 8)
     return hits
   }
   if (view.error) {
@@ -232,35 +307,46 @@ function drawOpenedDiscover(ctx, world, view, time) {
   const games = view.games || []
   ctx.font = '600 13px Figtree, sans-serif'
   games.forEach((game) => {
-    const cardH = 48
-    ctx.fillStyle = hc ? '#000' : '#17382c'
+    const cardH = 58
+    ctx.fillStyle = hc ? '#000' : '#24323e'
     roundRect(ctx, innerX, cursorY, innerW, cardH, 6)
     ctx.fill()
-    ctx.strokeStyle = hc ? '#fff' : 'rgba(230,196,90,0.45)'
+    ctx.strokeStyle = hc ? '#fff' : 'rgba(142, 195, 222, 0.55)'
     ctx.lineWidth = 1
     ctx.stroke()
-    ctx.fillStyle = hc ? '#fff' : '#f6f1e4'
+    ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
     ctx.font = '600 13px Figtree, sans-serif'
     const name = game.name.length > 42 ? `${game.name.slice(0, 40)}…` : game.name
-    ctx.fillText(name, innerX + 8, cursorY + 6)
+    ctx.fillText(name, innerX + 8, cursorY + 5)
     ctx.font = '11px Figtree, sans-serif'
-    ctx.fillStyle = hc ? '#fff' : '#d7f5e8'
+    ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
     const meta = [game.reviewScoreDesc, game.releaseDate, `${game.totalReviews.toLocaleString('en-US')} reviews`]
       .filter(Boolean)
       .join(' · ')
-    ctx.fillText(meta, innerX + 8, cursorY + 26)
+    ctx.fillText(meta, innerX + 8, cursorY + 22)
+    ctx.fillStyle = hc ? '#fff' : '#8ec3de'
+    ctx.font = '600 11px Figtree, sans-serif'
+    ctx.fillText('Steam', innerX + 8, cursorY + 40)
+    ctx.fillText('ITAD', innerX + 58, cursorY + 40)
     const cam = cameraTop(world)
     hits.push({
       x: innerX,
-      y: cursorY - cam * TILE_SIZE,
-      w: innerW,
-      h: cardH,
+      y: cursorY + 36 - cam * TILE_SIZE,
+      w: 46,
+      h: 18,
       url: game.url
+    })
+    hits.push({
+      x: innerX + 50,
+      y: cursorY + 36 - cam * TILE_SIZE,
+      w: 42,
+      h: 18,
+      url: game.itadUrl
     })
     cursorY += cardH + 6
   })
   if (view.shortfall) {
-    ctx.fillStyle = hc ? '#fff' : '#f6d98a'
+    ctx.fillStyle = hc ? '#fff' : '#c5d4e0'
     ctx.font = '12px Figtree, sans-serif'
     const lead = view.shortfall.pending
       ? `${view.shortfall.count} game${view.shortfall.count === 1 ? '' : 's'} matched, fewer than 3. Finding which constraint emptied the list…`
@@ -280,7 +366,7 @@ export function drawFrame(ctx, view) {
   const cam = cameraTop(world)
   const shake = Math.max(0, 1 - (time - world.player.dugAt) / 120)
   ctx.clearRect(0, 0, VIEW_W, VIEW_H)
-  ctx.fillStyle = hc ? '#000' : '#1a120c'
+  ctx.fillStyle = hc ? '#000' : '#1b242c'
   ctx.fillRect(0, 0, VIEW_W, VIEW_H)
   ctx.save()
   ctx.translate(Math.sin(time / 20) * 1.5 * shake, 0)
@@ -293,17 +379,10 @@ export function drawFrame(ctx, view) {
       if (tile === TILE.ROCK) drawRock(ctx, x, y, hc)
       else if (tile === TILE.DIRT) drawDirt(ctx, x, y, false, hc)
       else if (tile === TILE.SAND) drawDirt(ctx, x, y, true, hc)
-      else if (tile === TILE.CHOICE) {
-        drawOpen(ctx, x, y, hc)
-        const slot = world.choice?.slots.find((entry) => entry.x === x && world.choice.y === y)
-        const index = slot ? slot.optionIndex : 0
-        const active = world.choice && !world.choice.resolved && world.choice.y === y
-        drawChoice(ctx, x, y, index, world.choice?.selected === index, active, time, hc)
-      } else if (tile === TILE.DISCOVER) {
-        drawOpen(ctx, x, y, hc)
-      } else {
-        drawOpen(ctx, x, y, hc)
-      }
+      else if (tile === TILE.CHOICE) drawChoiceTile(ctx, x, y, hc)
+      else if (tile === TILE.GREY) drawGreyTile(ctx, x, y, hc)
+      else if (tile === TILE.DISCOVER) drawDirt(ctx, x, y, true, hc)
+      else drawOpen(ctx, x, y, hc)
     }
   }
   for (const particle of world.particles) {
@@ -312,9 +391,10 @@ export function drawFrame(ctx, view) {
     ctx.fillRect(particle.x, particle.y, particle.size, particle.size)
   }
   ctx.globalAlpha = 1
+  drawChoiceLabels(ctx, world, hc)
   drawPlayer(ctx, world, time, hc)
   let hits = []
-  if (world.discover && !world.broken) drawSealedDiscover(ctx, world, time, hc)
+  if (world.discover && !world.broken) drawSealedDiscover(ctx, world, time, hc, !!view.loading)
   if (world.discover && world.broken) hits = drawOpenedDiscover(ctx, world, view, time)
   ctx.restore()
   return { gameHits: hits }

@@ -167,9 +167,14 @@ export default {
         {
           title: 'Game Discovery',
           items: [
-            { to: '/find', label: 'Find a Game for Me', icon: 'fas fa-search', names: ['GameFinder'] },
-            { to: '/dig', label: 'Dig', icon: 'fas fa-person-digging', names: ['DigGame'] },
-            { to: '/recommender', label: 'Recommender', icon: 'fas fa-magic', names: ['Recommender'] }
+            { to: '/find', label: 'Find a Game for Me', icon: 'fas fa-search', names: ['GameFinder'] }
+          ]
+        },
+        {
+          title: 'Recommender',
+          items: [
+            { to: '/recommender', label: 'Recommender', icon: 'fas fa-magic', names: ['Recommender'] },
+            { to: '/diiig', label: 'DIIIG', icon: 'fas fa-person-digging', names: ['DigGame'] }
           ]
         },
         {

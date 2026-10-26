@@ -73,9 +73,13 @@ const routes = [
     component: Podcast
   },
   {
-    path: '/dig',
+    path: '/diiig',
     name: 'DigGame',
     component: DigGame
+  },
+  {
+    path: '/dig',
+    redirect: '/diiig'
   }
 ]
 

@@ -1,4 +1,4 @@
-export const COLS = 13
+export const COLS = 21
 export const TILE_SIZE = 32
 export const VIEW_ROWS = 12
 export const VIEW_W = COLS * TILE_SIZE
@@ -10,13 +10,26 @@ export const TILE = {
   SAND: 'sand',
   OPEN: 'open',
   CHOICE: 'choice',
+  GREY: 'grey',
   DISCOVER: 'discover'
 }
 
-const CHOICE_X = {
-  3: [3, 6, 9],
-  4: [2, 5, 8, 11],
-  5: [2, 4, 6, 8, 10]
+const CHOICE_ROWS = 3
+
+function chamberSpans(count) {
+  const inner = COLS - 2
+  const safe = Math.max(1, count)
+  const base = Math.floor(inner / safe)
+  let extra = inner - base * safe
+  const spans = []
+  let x = 1
+  for (let i = 0; i < safe; i += 1) {
+    const width = Math.max(1, base + (extra > 0 ? 1 : 0))
+    if (extra > 0) extra -= 1
+    spans.push([x, x + width - 1])
+    x += width
+  }
+  return spans
 }
 
 function walled(fill) {
@@ -32,9 +45,13 @@ export function makeWorld() {
   rows.push(walled(TILE.OPEN))
   return {
     rows,
-    player: { x: 6, y: 2, facing: 'down', dugAt: 0 },
+    player: { x: 10, y: 2, facing: 'down', dugAt: 0 },
     choice: null,
     discover: null,
+    settled: [],
+    cracks: 0,
+    crackAt: 0,
+    discoverHeld: false,
     reachedDiscover: false,
     broken: false,
     brokenAt: 0,
@@ -47,24 +64,38 @@ export function appendGround(world, depth = 4) {
     const y = world.rows.length
     const row = Array.from({ length: COLS }, (_, x) => {
       if (x === 0 || x === COLS - 1) return TILE.ROCK
-      return (x + y) % 2 === 0 ? TILE.DIRT : TILE.SAND
+      return TILE.SAND
     })
     world.rows.push(row)
   }
 }
 
-export function appendEncounter(world, optionCount) {
+export function appendEncounter(world, options) {
+  const list = Array.isArray(options)
+    ? options
+    : Array.from({ length: Number(options) || 0 }, (_, index) => ({ label: String(index + 1) }))
   world.rows.push(walled(TILE.OPEN))
   const approachY = world.rows.length - 1
-  const xs = CHOICE_X[optionCount] || CHOICE_X[3]
-  const row = walled(TILE.OPEN)
-  const slots = xs.map((x, optionIndex) => {
-    row[x] = TILE.CHOICE
-    return { x, optionIndex }
+  const y0 = world.rows.length
+  for (let i = 0; i < CHOICE_ROWS; i += 1) world.rows.push(walled(TILE.OPEN))
+  const y1 = y0 + CHOICE_ROWS - 1
+  const slots = chamberSpans(list.length).map(([x0, x1], optionIndex) => {
+    for (let y = y0; y <= y1; y += 1) {
+      for (let x = x0; x <= x1; x += 1) world.rows[y][x] = TILE.CHOICE
+    }
+    return {
+      x0,
+      x1,
+      y0,
+      y1,
+      optionIndex,
+      label: list[optionIndex]?.label || String(optionIndex + 1)
+    }
   })
-  world.rows.push(row)
   world.choice = {
-    y: world.rows.length - 1,
+    y: y0,
+    y0,
+    y1,
     approachY,
     slots,
     resolved: false,
@@ -76,7 +107,7 @@ export function appendDiscover(world) {
   world.rows.push(walled(TILE.OPEN))
   const lipY = world.rows.length - 1
   const y0 = world.rows.length
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 8; i += 1) {
     const row = walled(TILE.DISCOVER)
     row[1] = TILE.OPEN
     row[COLS - 2] = TILE.OPEN
@@ -88,18 +119,51 @@ export function appendDiscover(world) {
 }
 
 export function resolveChoice(world) {
-  if (!world.choice) return
+  if (!world.choice || world.choice.resolved) return
+  const selected = world.choice.selected
   for (const slot of world.choice.slots) {
-    world.rows[world.choice.y][slot.x] = TILE.OPEN
+    const chosen = slot.optionIndex === selected
+    for (let y = slot.y0; y <= slot.y1; y += 1) {
+      for (let x = slot.x0; x <= slot.x1; x += 1) {
+        if (!world.rows[y]) continue
+        const tile = world.rows[y][x]
+        if (tile !== TILE.CHOICE && tile !== TILE.OPEN) continue
+        world.rows[y][x] = chosen ? TILE.OPEN : TILE.GREY
+      }
+    }
   }
+  world.settled.push({
+    slots: world.choice.slots.map((slot) => ({ ...slot })),
+    selected
+  })
   world.choice.resolved = true
-  world.choice.selected = -1
 }
 
 export function choiceIndexAt(world, x, y) {
-  if (!world.choice || world.choice.resolved || y !== world.choice.y) return -1
-  const slot = world.choice.slots.find((entry) => entry.x === x)
+  if (!world.choice || world.choice.resolved) return -1
+  const slot = world.choice.slots.find((entry) => (
+    x >= entry.x0 && x <= entry.x1 && y >= entry.y0 && y <= entry.y1
+  ))
   return slot ? slot.optionIndex : -1
+}
+
+export const DISCOVER_TAPS = 5
+
+export function tapDiscover(world) {
+  if (!world?.discover || world.broken) return { open: false }
+  const now = performance.now()
+  if (now - (world.crackAt || 0) < 160) return { open: false }
+  world.cracks = Math.min(DISCOVER_TAPS, (world.cracks || 0) + 1)
+  world.crackAt = now
+  world.player.dugAt = now
+  const { x0, x1, y0, y1 } = world.discover
+  spawnBurst(world, Math.floor((x0 + x1) / 2), Math.floor((y0 + y1) / 2))
+  if (world.cracks >= DISCOVER_TAPS) {
+    world.broken = true
+    world.brokenAt = now
+    return { open: true, cracks: world.cracks }
+  }
+  return { open: false, cracks: world.cracks }
 }
 
 export function isDiscoverTile(world, x, y) {
@@ -117,10 +181,8 @@ export function cameraTop(world) {
   return Math.max(0, Math.min(max, desired))
 }
 
-function spawnBurst(world, x, y, tile) {
-  const colors = tile === TILE.SAND
-    ? ['#f3ddb0', '#e6c98a', '#c4a15a']
-    : ['#a8683c', '#6e4224', '#d7b56a']
+function spawnBurst(world, x, y) {
+  const colors = ['#d5dee6', '#b7c3ce', '#8ec3de']
   for (let i = 0; i < 8; i += 1) {
     const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.4
     const speed = 30 + Math.random() * 70
@@ -157,27 +219,41 @@ export function updateParticles(world, dt) {
 export function tryMove(world, dir) {
   const delta = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir]
   if (!delta || world.broken) return { moved: false }
-  if (world.choice && !world.choice.resolved && world.player.y === world.choice.approachY) {
-    return { moved: false, paused: true }
-  }
   const nx = world.player.x + delta[0]
   const ny = world.player.y + delta[1]
   const row = world.rows[ny]
   if (!row || nx < 0 || nx >= COLS) return { moved: false }
   const tile = row[nx]
-  if (tile === TILE.ROCK || tile === TILE.CHOICE || tile === TILE.DISCOVER) {
+  if (tile === TILE.CHOICE) {
+    const index = choiceIndexAt(world, nx, ny)
+    if (index < 0 || world.choice.pending) return { moved: false, blocked: tile }
+    world.choice.pending = true
+    world.choice.selected = index
+    spawnBurst(world, nx, ny)
+    world.player.dugAt = performance.now()
+    world.player.facing = dir
+    return { moved: false, dug: true, chose: index }
+  }
+  if (tile === TILE.DISCOVER) {
+    if (world.broken || world.discoverHeld) return { moved: false, blocked: tile }
+    world.discoverHeld = true
+    world.reachedDiscover = true
+    world.player.facing = dir
+    const tapped = tapDiscover(world)
+    return { moved: false, dug: true, discover: tapped.open }
+  }
+  if (tile === TILE.ROCK || tile === TILE.GREY) {
     return { moved: false, blocked: tile }
   }
   const dug = tile === TILE.DIRT || tile === TILE.SAND
   if (dug) {
     row[nx] = TILE.OPEN
-    spawnBurst(world, nx, ny, tile)
+    spawnBurst(world, nx, ny)
     world.player.dugAt = performance.now()
   }
   world.player.x = nx
   world.player.y = ny
   world.player.facing = dir
-  const paused = !!(world.choice && !world.choice.resolved && ny === world.choice.approachY)
   if (world.discover && ny === world.discover.lipY) world.reachedDiscover = true
-  return { moved: true, dug, paused }
+  return { moved: true, dug }
 }

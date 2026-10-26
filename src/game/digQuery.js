@@ -1,15 +1,32 @@
-import { findGames, ADULT_CONTENT_TAGS, resolveExcludedAppIds } from '../services/cubeService.js'
+import { findGames, findDigMatches, ADULT_CONTENT_TAGS, resolveExcludedAppIds } from '../services/cubeService.js'
 import { getTopTagsByCount } from '../services/tagsSearchEngine.js'
+import { getItadUrl } from '../services/itadService.js'
 import { constraintsOf, queryFromConstraints } from './digRules.js'
 
-export async function loadTagGroups() {
-  const tags = await getTopTagsByCount(18, ADULT_CONTENT_TAGS)
-  if (tags.length < 18) {
-    throw new Error(`Expected 18 tags after dropping adult tags, found ${tags.length}.`)
+export const TAG_ROUND_COUNT = 4
+export const TAGS_PER_ROUND = 6
+
+export async function loadTagPool() {
+  const needed = TAG_ROUND_COUNT * TAGS_PER_ROUND
+  const tags = await getTopTagsByCount(needed, ADULT_CONTENT_TAGS)
+  if (tags.length < needed) {
+    throw new Error(`Expected ${needed} tags after dropping adult tags, found ${tags.length}.`)
+  }
+  return tags
+}
+
+export function dealTagGroups(tags) {
+  const pool = tags.slice()
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1))
+    const current = pool[index]
+    pool[index] = pool[swap]
+    pool[swap] = current
   }
   const groups = []
-  for (let index = 0; index < tags.length; index += 3) {
-    groups.push(tags.slice(index, index + 3))
+  for (let round = 0; round < TAG_ROUND_COUNT; round += 1) {
+    const start = round * TAGS_PER_ROUND
+    groups.push(pool.slice(start, start + TAGS_PER_ROUND))
   }
   return groups
 }
@@ -56,22 +73,14 @@ export async function fetchEarliestReleaseDate() {
 
 export async function runDigSearch(picks) {
   const tags = (picks.tags || []).filter(Boolean)
-  return findGames({
-    tags: tags.length ? tags : null,
-    reviewScore: 'Any',
+  return findDigMatches({
+    tags,
     reviewScores: picks.reviewScores?.length ? picks.reviewScores : null,
     minReviews: picks.minReviews || 0,
     maxReviews: picks.maxReviews == null ? 10000000 : picks.maxReviews,
     minDate: picks.minDate || null,
     maxDate: picks.maxDate || null,
-    limit: 3,
-    reviewScoreOrBetter: false,
-    hours: null,
-    aiDeclaration: 'any',
-    excludeTags: null,
-    includeAdultGames: false,
-    orderBy: 'total_reviews_desc',
-    strict: true
+    limit: 3
   })
 }
 
@@ -89,7 +98,8 @@ export function mapDigGames(rows) {
       totalReviews: Number.isFinite(total) ? Math.round(total) : Math.round(positive + negative),
       positive: Math.round(positive),
       negative: Math.round(negative),
-      url: Number.isFinite(appId) ? `https://store.steampowered.com/app/${appId}` : ''
+      url: Number.isFinite(appId) ? `https://store.steampowered.com/app/${appId}` : '',
+      itadUrl: getItadUrl(row['Games.name'] || '')
     }
   })
 }

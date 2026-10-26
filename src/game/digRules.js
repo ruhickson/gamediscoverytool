@@ -52,7 +52,7 @@ export function resetPicks(picks) {
 export function tagEncounter(group, index) {
   return {
     kind: 'tags',
-    prompt: `Which tag should this include? (${index + 1} of 6)`,
+    prompt: `Which tag should this include? (${index + 1} of 4)`,
     detail: 'The search requires every tag you pick.',
     options: group.map((tag) => ({
       id: tag.name,
@@ -120,20 +120,27 @@ export function recencyEncounter(today = todayYmd(), earliest = '') {
 }
 
 export function dateSplitEncounter(minDate, maxDate) {
+  const options = splitWindow(minDate, maxDate).map((range, index) => ({
+    id: `split-${index + 1}`,
+    label: `${formatDay(range.minDate)} – ${formatDay(range.maxDate)}`,
+    detail: 'Replaces the wider release window',
+    effect: {
+      type: 'datesplit',
+      minDate: range.minDate,
+      maxDate: range.maxDate
+    }
+  }))
+  options.push({
+    id: 'any',
+    label: "Doesn't matter",
+    detail: 'Keep the wider release window',
+    effect: { type: 'datesplit', id: 'any' }
+  })
   return {
     kind: 'datesplit',
     prompt: 'Which part of that period?',
-    detail: 'This replaces the wider range. The search keeps one date clause.',
-    options: splitWindow(minDate, maxDate).map((range, index) => ({
-      id: `split-${index + 1}`,
-      label: `${formatDay(range.minDate)} – ${formatDay(range.maxDate)}`,
-      detail: 'Replaces the wider release window',
-      effect: {
-        type: 'datesplit',
-        minDate: range.minDate,
-        maxDate: range.maxDate
-      }
-    }))
+    detail: 'Narrow the release window, or keep the whole period.',
+    options
   }
 }
 
@@ -202,6 +209,12 @@ export function reviewsEncounter() {
           label: 'Under 1,000',
           constraintName: 'under 1,000 reviews'
         }
+      },
+      {
+        id: 'any',
+        label: "Doesn't matter",
+        detail: 'No review-count clause',
+        effect: { type: 'reviews', id: 'any' }
       }
     ]
   }
@@ -234,6 +247,10 @@ export function applyEffect(picks, effect) {
     return
   }
   if (effect.type === 'datesplit') {
+    if (effect.id === 'any') {
+      picks.history.push("Doesn't matter (keep the wider dates)")
+      return
+    }
     picks.minDate = effect.minDate
     picks.maxDate = effect.maxDate
     picks.dateLabel = `${formatDay(effect.minDate)} – ${formatDay(effect.maxDate)}`
@@ -253,6 +270,13 @@ export function applyEffect(picks, effect) {
     return
   }
   if (effect.type === 'reviews') {
+    if (effect.id === 'any') {
+      picks.minReviews = 0
+      picks.maxReviews = 10000000
+      picks.reviewCountLabel = ''
+      picks.history.push("Doesn't matter (any number of reviews)")
+      return
+    }
     picks.minReviews = effect.minReviews
     picks.maxReviews = effect.maxReviews
     picks.reviewCountLabel = effect.constraintName

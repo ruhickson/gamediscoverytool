@@ -1,10 +1,10 @@
 <template>
   <div class="dig-page">
     <header class="dig-intro">
-      <h1>Dig</h1>
+      <h1>DIIIG</h1>
       <p>
-        Knock away dirt and sand. Each stop adds one choice to a Find a Game search.
-        Break open the last tile to reveal three games.
+        Knock away the metal and stone. Dig into a named block to add that choice to a Find a Game search.
+        The search starts as soon as the last choice is in. Tap the last box five times to crack it open.
       </p>
     </header>
 
@@ -19,7 +19,7 @@
           data-testid="dig-canvas"
           :width="viewW"
           :height="viewH"
-          aria-label="Dig. Arrow keys or WASD knock away dirt and sand."
+          aria-label="DIIIG. Arrow keys or WASD knock away the ground."
           tabindex="0"
           @click="onCanvasClick"
           @mousemove="onCanvasMove"
@@ -35,21 +35,22 @@
       <section class="dig-choices" :class="{ 'is-waiting': phase === 'choice' }" aria-live="polite">
         <p class="dig-kicker">{{ stopLabel }}</p>
         <h2 v-if="active">{{ active.prompt }}</h2>
-        <h2 v-else-if="phase === 'searching'">Breaking open the tile…</h2>
-        <h2 v-else-if="phase === 'revealed' || phase === 'error'">The tile broke open.</h2>
+        <h2 v-else-if="phase === 'searching'">Cracking the box…</h2>
+        <h2 v-else-if="phase === 'revealed' || phase === 'error'">The box cracked open.</h2>
         <h2 v-else>discover your next games</h2>
         <p v-if="active" class="dig-detail">{{ active.detail }}</p>
-        <p v-else-if="!broken" class="dig-detail">Dig until you reach the tile, then click it.</p>
+        <p v-else-if="!broken" class="dig-detail">Dig down to the box, then tap it five times.</p>
         <p v-if="status" class="dig-status">{{ status }}</p>
         <p v-if="error && phase === 'error'" class="dig-error">{{ error }}</p>
 
-        <div v-if="phase === 'choice' && active" data-testid="dig-choices">
+        <div v-if="active && phase !== 'searching'" data-testid="dig-choices">
           <button
             v-for="(option, index) in active.options"
             :key="option.id"
             type="button"
             class="dig-option"
             data-testid="dig-choice"
+            :disabled="phase === 'resolving'"
             @click="choose(index)"
           >
             <span class="dig-option-label">{{ index + 1 }}. {{ option.label }}</span>
@@ -58,69 +59,32 @@
         </div>
 
         <button
-          v-if="reached && !broken"
+          v-if="!active && !broken"
           type="button"
           class="btn btn-primary dig-break"
           data-testid="dig-discover"
-          @click="breakOpen"
+          @click="tapBox"
         >
-          Break open the tile
+          Tap the box ({{ cracks }} / 5)
         </button>
 
         <p v-if="phase === 'play' && active" class="dig-help">
-          Arrow keys or WASD knock away dirt and sand. Movement pauses at each stop. Press 1–{{ active.options.length }} or click a number.
+          Dig left or right, then dig down into a named block. Press 1–{{ active.options.length }} to pick one.
         </p>
       </section>
 
-      <aside class="card dig-panel">
-        <div class="card-header">
-          <h5>This search</h5>
-        </div>
-        <div class="card-body">
-          <ul class="dig-query">
-            <li v-if="picks.tags.length"><strong>Tags</strong> {{ picks.tags.join(' AND ') }}</li>
-            <li v-if="picks.minDate && picks.maxDate"><strong>Release</strong> {{ picks.minDate }} through {{ picks.maxDate }}</li>
-            <li v-if="picks.reviewScores && picks.reviewScores.length">
-              <strong>Review score at least</strong> {{ picks.scoreLabel }}
-              ({{ picks.reviewScores.join(', ') }})
-            </li>
-            <li v-if="picks.reviewCountLabel"><strong>Reviews</strong> {{ picks.reviewCountLabel }}</li>
-            <li v-if="!picks.history.length" class="dig-muted">Nothing picked yet. Adult games stay out, the same way Find a Game starts.</li>
-          </ul>
-
-          <h3 v-if="picks.history.length">Stops</h3>
-          <ol class="dig-history">
-            <li v-for="(item, index) in picks.history" :key="index">{{ item }}</li>
-          </ol>
-
-          <div v-if="games.length" class="dig-results">
-            <h3>{{ games.length >= 3 ? 'Three games from the query' : 'Games from the query' }}</h3>
-            <article v-for="(game, index) in games" :key="game.appId + '-' + index" class="dig-game" data-testid="dig-game">
-              <a v-if="game.url" :href="game.url" target="_blank" rel="noopener noreferrer">{{ index + 1 }}. {{ game.name }}</a>
-              <p v-else>{{ index + 1 }}. {{ game.name }}</p>
-              <p>{{ game.reviewScoreDesc }}</p>
-              <p>Released {{ game.releaseDate }}</p>
-              <p>
-                {{ game.totalReviews.toLocaleString('en-US') }} reviews
-                ({{ game.positive.toLocaleString('en-US') }} positive, {{ game.negative.toLocaleString('en-US') }} negative)
-              </p>
-              <p>App {{ game.appId }}</p>
-            </article>
-          </div>
-
-          <p v-if="shortfall" class="dig-shortfall" data-testid="dig-shortfall">
-            <template v-if="shortfall.pending">
-              This search returned {{ shortfall.count }} {{ shortfall.count === 1 ? 'game' : 'games' }}, fewer than 3.
-              Finding which constraint emptied the list…
-            </template>
-            <template v-else>
-              This search returned {{ shortfall.count }} {{ shortfall.count === 1 ? 'game' : 'games' }}, fewer than 3.
-              The constraint that emptied the list: <strong>{{ shortfall.constraint }}</strong>.
-            </template>
-          </p>
-
-          <button type="button" class="btn btn-secondary dig-restart" @click="restart">Start over</button>
-        </div>
+      <aside class="dig-panel">
+        <button
+          v-if="games.length"
+          type="button"
+          class="dig-share"
+          data-testid="dig-share"
+          @click="shareResults"
+        >
+          Share
+        </button>
+        <p v-if="shareNote" class="dig-muted">{{ shareNote }}</p>
+        <button type="button" class="btn btn-secondary dig-restart" @click="restart">Start over</button>
       </aside>
     </div>
   </div>
@@ -138,6 +102,7 @@ import {
   isDiscoverTile,
   makeWorld,
   resolveChoice,
+  tapDiscover,
   TILE_SIZE,
   tryMove,
   updateParticles,
@@ -146,7 +111,8 @@ import {
 } from '../game/digWorld.js'
 import {
   fetchEarliestReleaseDate,
-  loadTagGroups,
+  dealTagGroups,
+  loadTagPool,
   mapDigGames,
   nameEmptiedConstraint,
   runDigSearch,
@@ -176,20 +142,24 @@ const active = ref(null)
 const completed = ref(0)
 const reached = ref(false)
 const broken = ref(false)
+const cracks = ref(0)
+const searchState = ref('idle')
 const games = ref([])
 const shortfall = ref(null)
 const error = ref('')
 const status = ref('')
+const shareNote = ref('')
 const earliest = ref('')
 const picks = reactive(freshPicks())
 
-const totalStops = computed(() => (picks.skipDateSplit ? 9 : 10))
+const totalStops = computed(() => (picks.skipDateSplit ? 7 : 8))
 const stopLabel = computed(() => {
-  if (!active.value) return broken.value ? 'Tile open' : 'Last tile'
+  if (!active.value) return broken.value ? 'Box open' : 'Last box'
   return `Stop ${completed.value + 1} of ${totalStops.value}`
 })
 
 let world = null
+let tagPool = []
 let script = []
 let stepIndex = 0
 let raf = 0
@@ -254,21 +224,25 @@ function showEncounter(step) {
     return
   }
   appendGround(world, 4)
-  appendEncounter(world, encounter.options.length)
+  appendEncounter(world, encounter.options)
   active.value = encounter
   phase.value = 'play'
 }
 
 function startLevel() {
+  script = buildScript(dealTagGroups(tagPool))
   world = makeWorld()
   stepIndex = 0
   completed.value = 0
   reached.value = false
   broken.value = false
+  cracks.value = 0
+  searchState.value = 'idle'
   games.value = []
   shortfall.value = null
   error.value = ''
   status.value = ''
+  shareNote.value = ''
   showEncounter(script[0])
 }
 
@@ -288,6 +262,7 @@ function advance() {
   appendDiscover(world)
   active.value = null
   phase.value = 'play'
+  beginSearch()
 }
 
 function ensureEarliest() {
@@ -303,7 +278,7 @@ function ensureEarliest() {
 }
 
 async function choose(index) {
-  if (phase.value !== 'choice' || !active.value) return
+  if (!active.value || (phase.value !== 'choice' && phase.value !== 'play')) return
   const option = active.value.options[index]
   if (!option) return
   phase.value = 'resolving'
@@ -326,6 +301,7 @@ async function choose(index) {
       error.value = err.message || 'Could not read the earliest release date.'
       status.value = ''
       phase.value = 'choice'
+      if (world?.choice) world.choice.pending = false
       return
     }
     status.value = ''
@@ -337,43 +313,101 @@ async function choose(index) {
   advance()
 }
 
-async function breakOpen() {
-  if (!world?.reachedDiscover || world.broken || phase.value === 'searching') return
-  world.broken = true
-  world.brokenAt = performance.now()
-  broken.value = true
-  phase.value = 'searching'
-  status.value = 'Searching Find a Game…'
-  const gen = ++searchGen
-  try {
-    const rows = await runDigSearch(picks)
-    if (gen !== searchGen) return
-    games.value = mapDigGames(rows)
-    status.value = ''
-    if (games.value.length < 3) {
-      shortfall.value = { count: games.value.length, constraint: '', pending: true }
+function applySearchRows(rows, gen) {
+  if (gen !== searchGen) return
+  games.value = mapDigGames(rows)
+  searchState.value = 'ready'
+  if (games.value.length < 3) {
+    shortfall.value = { count: games.value.length, constraint: '', pending: true }
+    if (world?.broken) {
       phase.value = 'revealed'
-      try {
-        const name = await nameEmptiedConstraint(picks, games.value.length)
+      status.value = ''
+    } else {
+      status.value = 'Search ready. Tap the box five times.'
+    }
+    nameEmptiedConstraint(picks, games.value.length)
+      .then((name) => {
         if (gen !== searchGen) return
         shortfall.value = { count: games.value.length, constraint: name, pending: false }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (gen !== searchGen) return
         shortfall.value = {
           count: games.value.length,
           constraint: err.message || 'the search failed while checking constraints',
           pending: false
         }
-      }
-    } else {
-      shortfall.value = null
-      phase.value = 'revealed'
-    }
-  } catch (err) {
-    if (gen !== searchGen) return
+      })
+    return
+  }
+  shortfall.value = null
+  if (world?.broken) {
+    phase.value = 'revealed'
     status.value = ''
-    error.value = err.message || 'The Find a Game search failed.'
+  } else {
+    status.value = 'Search ready. Tap the box five times.'
+  }
+}
+
+function beginSearch() {
+  if (searchState.value === 'loading' || searchState.value === 'ready') return
+  searchState.value = 'loading'
+  status.value = 'Searching…'
+  const gen = ++searchGen
+  runDigSearch(picks)
+    .then((rows) => applySearchRows(rows, gen))
+    .catch((err) => {
+      if (gen !== searchGen) return
+      searchState.value = 'error'
+      error.value = err.message || 'The Find a Game search failed.'
+      status.value = ''
+      if (world?.broken) phase.value = 'error'
+      else status.value = error.value
+    })
+}
+
+function revealIfOpen() {
+  if (!world?.broken) return
+  broken.value = true
+  cracks.value = world.cracks || 0
+  if (searchState.value === 'error') {
     phase.value = 'error'
+    return
+  }
+  if (searchState.value === 'ready') {
+    phase.value = 'revealed'
+    status.value = ''
+    return
+  }
+  phase.value = 'searching'
+  status.value = 'Cracked. Still searching…'
+}
+
+function tapBox() {
+  if (!world?.discover || world.broken) return
+  if (phase.value === 'resolving' || phase.value === 'searching') return
+  tapDiscover(world)
+  cracks.value = world.cracks || 0
+  world.reachedDiscover = true
+  reached.value = true
+  if (world.broken) revealIfOpen()
+}
+
+async function shareResults() {
+  const origin = window.location.origin
+  const lines = ['DIIIG found these games:']
+  games.value.forEach((game, index) => {
+    lines.push(`${index + 1}. ${game.name}`)
+    if (game.url) lines.push(game.url)
+  })
+  lines.push('')
+  lines.push(`Try DIIIG yourself: ${origin}/diiig`)
+  const text = lines.join('\n')
+  try {
+    await navigator.clipboard.writeText(text)
+    shareNote.value = 'Copied the list, the Steam links, and a link to DIIIG.'
+  } catch {
+    shareNote.value = 'Clipboard is blocked in this browser. The list is still on this page.'
   }
 }
 
@@ -396,6 +430,7 @@ function holdDir(dir, down) {
     lastDir = dir
   } else if (held.has(dir)) {
     held.delete(dir)
+    if (world) world.discoverHeld = false
   }
 }
 
@@ -426,19 +461,21 @@ function onCanvasClick(event) {
     window.open(hit.url, '_blank', 'noopener')
     return
   }
-  if (phase.value === 'choice') {
+  if (phase.value === 'play' || phase.value === 'choice') {
     const index = choiceIndexAt(world, point.x, point.y)
-    if (index >= 0) choose(index)
-    return
+    if (index >= 0) {
+      choose(index)
+      return
+    }
   }
-  if (isDiscoverTile(world, point.x, point.y)) breakOpen()
+  if (isDiscoverTile(world, point.x, point.y) && !world.broken) tapBox()
 }
 
 function onCanvasMove(event) {
   if (!world || !canvasRef.value) return
   const point = pointer(event)
-  const overChoice = phase.value === 'choice' && choiceIndexAt(world, point.x, point.y) >= 0
-  const overDiscover = isDiscoverTile(world, point.x, point.y) && world.reachedDiscover && !world.broken
+  const overChoice = (phase.value === 'play' || phase.value === 'choice') && choiceIndexAt(world, point.x, point.y) >= 0
+  const overDiscover = isDiscoverTile(world, point.x, point.y) && !world.broken
   const overGame = gameHits.some((entry) => (
     point.localX >= entry.x &&
     point.localX <= entry.x + entry.w &&
@@ -458,7 +495,7 @@ function onKeyDown(event) {
     event.preventDefault()
     return
   }
-  if (phase.value === 'choice' && /^[1-9]$/.test(event.key) && active.value) {
+  if ((phase.value === 'choice' || phase.value === 'play') && /^[1-9]$/.test(event.key) && active.value) {
     const index = Number(event.key) - 1
     if (index < active.value.options.length) {
       event.preventDefault()
@@ -469,7 +506,9 @@ function onKeyDown(event) {
 
 function onKeyUp(event) {
   const dir = DIRS[event.key]
-  if (dir) held.delete(dir)
+  if (!dir) return
+  held.delete(dir)
+  if (world) world.discoverHeld = false
 }
 
 function loop(now) {
@@ -480,12 +519,14 @@ function loop(now) {
     if (dir) {
       const result = tryMove(world, dir)
       nextMoveAt = now + (result.dug ? 125 : 85)
-      if (result.paused) phase.value = 'choice'
+      if (result.chose != null) choose(result.chose)
+      if (result.discover) revealIfOpen()
     }
   }
   if (world) {
     updateParticles(world, dt)
     reached.value = !!world.reachedDiscover
+    cracks.value = world.cracks || 0
     const ctx = canvasRef.value?.getContext('2d')
     if (ctx) {
       try {
@@ -496,7 +537,8 @@ function loop(now) {
           games: games.value,
           shortfall: shortfall.value,
           error: phase.value === 'error' ? error.value : '',
-          phase: phase.value
+          phase: phase.value,
+          loading: searchState.value === 'loading'
         })
         gameHits = drawn.gameHits || []
       } catch (err) {
@@ -510,14 +552,19 @@ function loop(now) {
 watch(earliest, (date) => {
   if (!date || active.value?.kind !== 'recency' || phase.value === 'resolving') return
   active.value = recencyEncounter(todayYmd(), date)
+  if (world?.choice && !world.choice.resolved) {
+    active.value.options.forEach((option, index) => {
+      const slot = world.choice.slots.find((entry) => entry.optionIndex === index)
+      if (slot) slot.label = option.label
+    })
+  }
 })
 
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   try {
-    const groups = await loadTagGroups()
-    script = buildScript(groups)
+    tagPool = await loadTagPool()
     startLevel()
     ready.value = true
     await nextTick()
@@ -558,7 +605,7 @@ onBeforeUnmount(() => {
 
 .dig-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 440px) minmax(240px, 1fr);
+  grid-template-columns: minmax(320px, 720px) minmax(240px, 1fr);
   grid-template-areas:
     "stage panel"
     "choices panel";
@@ -570,13 +617,19 @@ onBeforeUnmount(() => {
 .dig-choices { grid-area: choices; }
 .dig-panel { grid-area: panel; margin-bottom: 0; }
 
+.dig-page {
+  --dig-steel: #8ea0b0;
+  --dig-blue: #7eb6d6;
+  --dig-ink: #d5e2ea;
+}
+
 .dig-canvas {
   width: 100%;
   height: auto;
   display: block;
-  background: #1a120c;
+  background: #1b242c;
   border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.45);
+  border: 1px solid rgba(126, 182, 214, 0.45);
   touch-action: none;
 }
 
@@ -596,23 +649,26 @@ onBeforeUnmount(() => {
   font-size: 1.1rem;
 }
 
+.dig-kicker,
+.dig-status {
+  color: var(--dig-blue);
+}
+
 .dig-kicker {
-  color: var(--color-accent);
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
 
-.dig-choices h2,
-.dig-panel h3 {
+.dig-choices h2 {
   font-size: 1.25rem;
   margin: 0 0 0.35rem;
 }
 
 .dig-choices.is-waiting {
   padding: 0.85rem 1rem;
-  border: 1px solid rgba(212, 175, 55, 0.55);
+  border: 1px solid rgba(126, 182, 214, 0.55);
   border-radius: var(--radius);
-  background: rgba(212, 175, 55, 0.08);
+  background: rgba(126, 182, 214, 0.08);
 }
 
 .dig-option {
@@ -631,8 +687,8 @@ onBeforeUnmount(() => {
 
 .dig-option:hover,
 .dig-option:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
+  border-color: var(--dig-blue);
+  background: rgba(126, 182, 214, 0.12);
 }
 
 .dig-option-label {
@@ -649,43 +705,46 @@ onBeforeUnmount(() => {
   margin-top: 0.5rem;
 }
 
-.dig-query,
-.dig-history {
-  padding-left: 1.1rem;
-  margin-bottom: 1rem;
+.dig-share {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0.95rem 1.15rem;
+  border: none;
+  border-radius: 12px;
+  background: #3ec6ff;
+  color: #041018;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: 0 0 0 1px rgba(190, 240, 255, 0.7), 0 10px 28px rgba(62, 198, 255, 0.4);
 }
 
-.dig-query li,
-.dig-history li,
-.dig-game p {
-  margin-bottom: 0.35rem;
+.dig-share:hover,
+.dig-share:focus-visible {
+  background: #74dcff;
+  color: #041018;
 }
 
-.dig-game {
-  border: 1px solid rgba(212, 175, 55, 0.28);
-  border-radius: var(--radius);
-  padding: 0.75rem 0.9rem;
-  margin-bottom: 0.6rem;
-  background: var(--color-bg);
+.dig-restart {
+  width: 100%;
 }
 
-.dig-game a {
-  font-weight: 700;
-  color: var(--color-accent);
+.dig-page .btn-primary {
+  background: #4f6f88;
+  border-color: #9bb4c6;
+  color: #f2f6f8;
 }
 
-.dig-shortfall {
-  border-left: 3px solid var(--color-accent);
-  padding-left: 0.75rem;
-  margin: 0.5rem 0 1rem;
+.dig-page .btn-primary:hover,
+.dig-page .btn-primary:focus-visible {
+  background: #3f5c72;
+  border-color: #c5d4e0;
+  color: #f2f6f8;
 }
 
 .dig-error {
   color: var(--color-error);
-}
-
-.dig-status {
-  color: var(--color-accent);
 }
 
 @media (max-width: 1099px) {

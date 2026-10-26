@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { searchGames, getSearchSuggestions, preloadIndex } from './searchEngine.js'
-import { searchTags, getTagSuggestions, preloadIndex as preloadTagsIndex } from './tagsSearchEngine.js'
+import { searchTags, getTagSuggestions, getTopTagsByCount, preloadIndex as preloadTagsIndex } from './tagsSearchEngine.js'
 import {
   resolveTimeMachinePeriod,
   toYmd as formatYmd,
@@ -965,6 +965,133 @@ async function findGamesSingleTag({
     console.log('Single tag query returned no results')
     return []
   }
+}
+
+const DIG_WINDOWS = [80, 400, 1600, 6400, null]
+const DIG_ROW_FIELDS = [
+  'Games.totalReviewsValue',
+  'Games.name',
+  'Games.reviewScoreDesc',
+  'Games.releaseDate',
+  'Games.appId',
+  'Games.totalPositiveReviews',
+  'Games.totalNegativeReviews'
+]
+
+function digAppKey(value) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : String(value ?? '')
+}
+
+function shapeDigRows(result) {
+  if (!Array.isArray(result) || result.length === 0) return []
+  const standardized = result.map((row) => standardizeColumnNames(row, DIG_ROW_FIELDS))
+  const numeric = ensureNumeric(standardized, [
+    'Games.totalReviewsValue',
+    'Games.totalPositiveReviews',
+    'Games.totalNegativeReviews'
+  ])
+  return numeric.map((row) => ({
+    ...row,
+    'Games.releaseDate': row['Games.releaseDate'] ? new Date(row['Games.releaseDate']) : null
+  }))
+}
+
+async function queryDigWindow({
+  tag = null,
+  appIds = null,
+  limit = null,
+  reviewScores = null,
+  minReviews = 0,
+  maxReviews = 10000000,
+  minDate = null,
+  maxDate = null
+}) {
+  const filters = [
+    { member: 'Games.type', operator: 'equals', values: ['game'] }
+  ]
+  if (tag) filters.push({ member: 'GameTags.tag', operator: 'equals', values: [tag] })
+  if (appIds?.length) filters.push({ member: 'Games.appId', operator: 'equals', values: appIds })
+  appendReviewScoreFilter(filters, { reviewScore: 'Any', reviewScoreOrBetter: false, reviewScores })
+  if (minReviews > 0) {
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'gte', values: [Number(minReviews)] })
+  }
+  if (maxReviews < 1000000) {
+    filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [Number(maxReviews)] })
+  }
+  const query = {
+    measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
+    dimensions: [
+      'Games.name',
+      'Games.reviewScoreDesc',
+      'Games.releaseDate',
+      'Games.appId',
+      'Games.totalReviewsValue'
+    ],
+    filters,
+    order: [['Games.totalReviewsValue', 'desc']]
+  }
+  if (minDate && maxDate) {
+    query.timeDimensions = [{ dimension: 'Games.releaseDate', dateRange: [minDate, maxDate] }]
+  }
+  if (limit != null) query.limit = limit
+  return shapeDigRows(await queryCube(query))
+}
+
+/**
+ * Top matches for DIIIG. One bounded query on the rarest tag, then the other
+ * tags are checked only against those games. Adult games are dropped locally
+ * so the request does not carry the full exclusion list.
+ */
+export async function findDigMatches({
+  tags = null,
+  reviewScores = null,
+  minReviews = 0,
+  maxReviews = 10000000,
+  minDate = null,
+  maxDate = null,
+  limit = 3
+}) {
+  const wanted = (Array.isArray(tags) ? tags : []).filter(Boolean)
+  const excluded = new Set(
+    (await resolveExcludedAppIds({ includeAdultGames: false })).map(digAppKey)
+  )
+  let anchor = wanted[0] || null
+  let rest = wanted.slice(1)
+  if (wanted.length > 1) {
+    const pool = await getTopTagsByCount(24, ADULT_CONTENT_TAGS)
+    const counts = new Map(pool.map((tag) => [tag.name, tag.count]))
+    const ranked = [...wanted].sort((a, b) => (
+      (counts.get(a) ?? Number.MAX_SAFE_INTEGER) - (counts.get(b) ?? Number.MAX_SAFE_INTEGER)
+    ))
+    anchor = ranked[0]
+    rest = ranked.slice(1)
+  }
+
+  const shared = { reviewScores, minReviews, maxReviews, minDate, maxDate }
+  for (const windowSize of DIG_WINDOWS) {
+    const anchorRows = await queryDigWindow({ tag: anchor, limit: windowSize, ...shared })
+    const eligible = anchorRows.filter((row) => !excluded.has(digAppKey(row['Games.appId'])))
+    let matched = eligible
+    if (rest.length && eligible.length) {
+      const ids = eligible.map((row) => row['Games.appId'])
+      const others = await Promise.all(rest.map((tag) => (
+        queryDigWindow({ tag, appIds: ids, limit: ids.length, ...shared })
+      )))
+      let keep = new Set(eligible.map((row) => digAppKey(row['Games.appId'])))
+      for (const rows of others) {
+        const have = new Set(rows.map((row) => digAppKey(row['Games.appId'])))
+        keep = new Set([...keep].filter((id) => have.has(id)))
+      }
+      matched = eligible.filter((row) => keep.has(digAppKey(row['Games.appId'])))
+    }
+    matched.sort((a, b) => (
+      (Number(b['Games.totalReviewsValue']) || 0) - (Number(a['Games.totalReviewsValue']) || 0)
+    ))
+    const exhausted = windowSize == null || anchorRows.length < windowSize
+    if (matched.length >= limit || exhausted) return matched.slice(0, limit)
+  }
+  return []
 }
 
 // Get app IDs for a given tag (for exclude functionality)
@@ -2768,6 +2895,7 @@ export default {
   searchTagsByName,
   getRecentTopGames,
   findGames,
+  findDigMatches,
   getAppIdsForTag,
   getTagsForAppId,
   getAllGames,

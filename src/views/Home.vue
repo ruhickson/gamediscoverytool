@@ -52,6 +52,12 @@ export default {
           text: 'Search Steam by tags, reviews, and release date.'
         },
         {
+          to: '/diiig',
+          icon: 'fas fa-person-digging',
+          title: 'DIIIG',
+          text: 'Dig through choices and crack open three games.'
+        },
+        {
           to: '/about',
           icon: 'fas fa-info-circle',
           title: 'About',
