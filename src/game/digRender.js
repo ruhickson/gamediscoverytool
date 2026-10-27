@@ -320,60 +320,68 @@ function drawOpenedDiscover(ctx, world, view, time) {
     ctx.strokeStyle = hc ? '#fff' : 'rgba(142, 195, 222, 0.55)'
     ctx.lineWidth = 1
     ctx.stroke()
+    const linkY = cursorY + cardH - 26
     ctx.save()
     ctx.beginPath()
-    ctx.rect(x + 4, cursorY + 4, cardW - 8, cardH - 8)
+    ctx.rect(x + 4, cursorY + 4, cardW - 8, Math.max(24, linkY - cursorY - 10))
     ctx.clip()
     ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
-    ctx.font = '600 12px Figtree, sans-serif'
+    ctx.font = '600 24px Figtree, sans-serif'
     const nameLines = wrapLines(ctx, game.name, cardW - 16).slice(0, 3)
-    let textY = cursorY + 8
+    let textY = cursorY + 10
     nameLines.forEach((line) => {
       ctx.fillText(line, x + 8, textY)
-      textY += 14
+      textY += 28
     })
-    ctx.font = '10px Figtree, sans-serif'
+    const titleBottom = textY
+    ctx.font = '15px Figtree, sans-serif'
     ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
     const meta = [game.reviewScoreDesc, game.releaseDate, `${game.totalReviews.toLocaleString('en-US')} reviews`]
       .filter(Boolean)
     const metaLines = wrapLines(ctx, meta.join(' · '), cardW - 16).slice(0, 3)
-    textY += 2
+    textY += 4
     metaLines.forEach((line) => {
       ctx.fillText(line, x + 8, textY)
-      textY += 12
+      textY += 18
     })
     ctx.restore()
-    const linkY = cursorY + cardH - 18
     ctx.fillStyle = hc ? '#fff' : '#8ec3de'
-    ctx.font = '600 11px Figtree, sans-serif'
+    ctx.font = '600 16px Figtree, sans-serif'
     ctx.fillText('Steam', x + 8, linkY)
-    ctx.fillText('ITAD', x + 52, linkY)
+    ctx.fillText('ITAD', x + 70, linkY)
     hits.push({
       x: x + 4,
-      y: linkY - 2 - cam * TILE_SIZE,
-      w: 42,
-      h: 16,
+      y: linkY - 4 - cam * TILE_SIZE,
+      w: 58,
+      h: 24,
       url: game.url
     })
     hits.push({
-      x: x + 48,
-      y: linkY - 2 - cam * TILE_SIZE,
-      w: 40,
-      h: 16,
+      x: x + 66,
+      y: linkY - 4 - cam * TILE_SIZE,
+      w: 52,
+      h: 24,
       url: game.itadUrl
+    })
+    hits.push({
+      x: x + 4,
+      y: cursorY + 6 - cam * TILE_SIZE,
+      w: cardW - 8,
+      h: Math.max(28, titleBottom - cursorY - 6),
+      url: game.url
     })
   })
   cursorY += cardH + 8
   if (view.shortfall) {
     ctx.fillStyle = hc ? '#fff' : '#c5d4e0'
-    ctx.font = '12px Figtree, sans-serif'
+    ctx.font = '18px Figtree, sans-serif'
     const lead = view.shortfall.pending
       ? `${view.shortfall.count} game${view.shortfall.count === 1 ? '' : 's'} matched, fewer than 3. Finding which constraint emptied the list…`
       : `${view.shortfall.count} game${view.shortfall.count === 1 ? '' : 's'} matched, fewer than 3. The constraint that emptied the list: ${view.shortfall.constraint}.`
     const lines = wrapLines(ctx, lead, innerW)
     lines.slice(0, 5).forEach((line) => {
       ctx.fillText(line, innerX, cursorY)
-      cursorY += 15
+      cursorY += 22
     })
   }
   return hits
@@ -411,10 +419,14 @@ export function drawFrame(ctx, view) {
   }
   ctx.globalAlpha = 1
   drawChoiceLabels(ctx, world, hc)
-  drawPlayer(ctx, world, time, hc)
   let hits = []
-  if (world.discover && !world.broken) drawSealedDiscover(ctx, world, time, hc, !!view.loading)
-  if (world.discover && world.broken) hits = drawOpenedDiscover(ctx, world, view, time)
+  if (world.discover && !world.broken) {
+    drawSealedDiscover(ctx, world, time, hc, !!view.loading)
+    drawPlayer(ctx, world, time, hc)
+  } else {
+    drawPlayer(ctx, world, time, hc)
+    if (world.discover && world.broken) hits = drawOpenedDiscover(ctx, world, view, time)
+  }
   ctx.restore()
   return { gameHits: hits }
 }

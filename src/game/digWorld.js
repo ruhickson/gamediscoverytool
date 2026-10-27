@@ -230,9 +230,11 @@ export function tryMove(world, dir) {
     world.choice.pending = true
     world.choice.selected = index
     spawnBurst(world, nx, ny)
+    world.player.x = nx
+    world.player.y = ny
     world.player.dugAt = performance.now()
     world.player.facing = dir
-    return { moved: false, dug: true, chose: index }
+    return { moved: true, dug: true, chose: index }
   }
   if (tile === TILE.DISCOVER) {
     if (world.broken || world.discoverHeld) return { moved: false, blocked: tile }
@@ -256,4 +258,74 @@ export function tryMove(world, dir) {
   world.player.facing = dir
   if (world.discover && ny === world.discover.lipY) world.reachedDiscover = true
   return { moved: true, dug }
+}
+
+function canCross(tile) {
+  return tile === TILE.OPEN || tile === TILE.SAND || tile === TILE.DIRT
+}
+
+export function steerToChoice(world, index) {
+  if (!world.choice || world.choice.resolved || world.choice.pending) return { moved: false }
+  const slot = world.choice.slots.find((entry) => entry.optionIndex === index)
+  if (!slot) return { moved: false }
+  const targetX = Math.floor((slot.x0 + slot.x1) / 2)
+  const approachY = world.choice.approachY
+  const px = world.player.x
+  const py = world.player.y
+  if (px >= slot.x0 && px <= slot.x1 && py >= slot.y0 && py <= slot.y1) {
+    return { arrived: true, chose: index }
+  }
+  if (py > approachY) return tryMove(world, 'up')
+  if (py < approachY) {
+    if (px !== targetX) {
+      const dir = px < targetX ? 'right' : 'left'
+      const nx = px + (dir === 'right' ? 1 : -1)
+      if (canCross(world.rows[py]?.[nx])) return tryMove(world, dir)
+    }
+    const below = world.rows[py + 1]?.[px]
+    if (!canCross(below) && below !== undefined && px !== targetX) return { moved: false, blocked: below }
+    return tryMove(world, 'down')
+  }
+  if (px !== targetX) return tryMove(world, px < targetX ? 'right' : 'left')
+  return tryMove(world, 'down')
+}
+
+export function steerToDiscover(world) {
+  if (!world.discover || world.broken) return { moved: false }
+  const targetX = Math.floor((world.discover.x0 + world.discover.x1) / 2)
+  const lipY = world.discover.lipY
+  const px = world.player.x
+  const py = world.player.y
+  const onBox = px >= world.discover.x0 && px <= world.discover.x1
+    && py >= world.discover.y0 && py <= world.discover.y1
+  if (onBox) {
+    world.reachedDiscover = true
+    return { arrived: true }
+  }
+  if (py === lipY && px === targetX) {
+    world.player.x = targetX
+    world.player.y = world.discover.y0
+    world.player.facing = 'down'
+    world.reachedDiscover = true
+    return { arrived: true }
+  }
+  if (py > lipY) return tryMove(world, 'up')
+  if (py < lipY) {
+    if (px !== targetX) {
+      const dir = px < targetX ? 'right' : 'left'
+      const nx = px + (dir === 'right' ? 1 : -1)
+      if (canCross(world.rows[py]?.[nx])) return tryMove(world, dir)
+    }
+    const below = world.rows[py + 1]?.[px]
+    if (below === TILE.DISCOVER && px === targetX) {
+      world.player.x = targetX
+      world.player.y = world.discover.y0
+      world.player.facing = 'down'
+      world.reachedDiscover = true
+      return { arrived: true }
+    }
+    if (!canCross(below) && below !== undefined) return { moved: false, blocked: below }
+    return tryMove(world, 'down')
+  }
+  return tryMove(world, px < targetX ? 'right' : 'left')
 }

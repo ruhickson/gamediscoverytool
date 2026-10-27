@@ -101,6 +101,8 @@ import {
   isDiscoverTile,
   makeWorld,
   resolveChoice,
+  steerToChoice,
+  steerToDiscover,
   tapDiscover,
   TILE_SIZE,
   tryMove,
@@ -167,6 +169,8 @@ let nextMoveAt = 0
 let searchGen = 0
 let gameHits = []
 let earliestPromise = null
+let walkTarget = null
+let pendingBoxTaps = 0
 const held = new Set()
 let lastDir = null
 
@@ -276,10 +280,29 @@ function ensureEarliest() {
   return earliestPromise
 }
 
+function playerInSlot(index) {
+  const slot = world?.choice?.slots?.find((entry) => entry.optionIndex === index)
+  if (!slot) return false
+  const { x, y } = world.player
+  return x >= slot.x0 && x <= slot.x1 && y >= slot.y0 && y <= slot.y1
+}
+
+function playerOnBox() {
+  if (!world?.discover) return false
+  const { x, y } = world.player
+  const box = world.discover
+  return x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1
+}
+
 async function choose(index) {
   if (!active.value || (phase.value !== 'choice' && phase.value !== 'play')) return
   const option = active.value.options[index]
   if (!option) return
+  if (!playerInSlot(index)) {
+    walkTarget = { kind: 'choice', index }
+    return
+  }
+  walkTarget = null
   phase.value = 'resolving'
   if (world.choice) world.choice.selected = index
   let effect = { ...option.effect }
@@ -382,14 +405,26 @@ function revealIfOpen() {
   status.value = 'Cracked. Still searching…'
 }
 
-function tapBox() {
-  if (!world?.discover || world.broken) return
-  if (phase.value === 'resolving' || phase.value === 'searching') return
-  tapDiscover(world)
+function applyBoxTap() {
+  const before = world.cracks || 0
+  const tapped = tapDiscover(world)
   cracks.value = world.cracks || 0
   world.reachedDiscover = true
   reached.value = true
-  if (world.broken) revealIfOpen()
+  if ((world.cracks || 0) > before) pendingBoxTaps = Math.max(0, pendingBoxTaps - 1)
+  if (tapped.open || world.broken) revealIfOpen()
+}
+
+function tapBox() {
+  if (!world?.discover || world.broken) return
+  if (phase.value === 'resolving') return
+  if (!playerOnBox()) {
+    pendingBoxTaps += 1
+    walkTarget = { kind: 'discover' }
+    return
+  }
+  pendingBoxTaps += 1
+  applyBoxTap()
 }
 
 async function shareResults() {
@@ -414,6 +449,8 @@ function restart() {
   searchGen += 1
   held.clear()
   lastDir = null
+  walkTarget = null
+  pendingBoxTaps = 0
   resetPicks(picks)
   startLevel()
 }
@@ -514,12 +551,28 @@ function loop(now) {
   const dt = Math.min(40, now - lastFrame || 16)
   lastFrame = now
   if (world && phase.value === 'play' && now >= nextMoveAt) {
-    const dir = currentDir()
-    if (dir) {
-      const result = tryMove(world, dir)
-      nextMoveAt = now + (result.dug ? 125 : 85)
+    if (walkTarget?.kind === 'choice') {
+      const result = steerToChoice(world, walkTarget.index)
+      nextMoveAt = now + 90
       if (result.chose != null) choose(result.chose)
-      if (result.discover) revealIfOpen()
+    } else if (walkTarget?.kind === 'discover') {
+      const result = steerToDiscover(world)
+      nextMoveAt = now + 90
+      if (result.arrived) {
+        walkTarget = null
+        if (pendingBoxTaps > 0) applyBoxTap()
+      }
+    } else if (pendingBoxTaps > 0 && playerOnBox()) {
+      applyBoxTap()
+      nextMoveAt = now + 180
+    } else {
+      const dir = currentDir()
+      if (dir) {
+        const result = tryMove(world, dir)
+        nextMoveAt = now + (result.dug ? 125 : 85)
+        if (result.chose != null) choose(result.chose)
+        if (result.discover) revealIfOpen()
+      }
     }
   }
   if (world) {

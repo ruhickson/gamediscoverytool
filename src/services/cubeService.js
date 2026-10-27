@@ -973,9 +973,7 @@ const DIG_ROW_FIELDS = [
   'Games.name',
   'Games.reviewScoreDesc',
   'Games.releaseDate',
-  'Games.appId',
-  'Games.totalPositiveReviews',
-  'Games.totalNegativeReviews'
+  'Games.appId'
 ]
 
 function digAppKey(value) {
@@ -987,9 +985,7 @@ function shapeDigRows(result) {
   if (!Array.isArray(result) || result.length === 0) return []
   const standardized = result.map((row) => standardizeColumnNames(row, DIG_ROW_FIELDS))
   const numeric = ensureNumeric(standardized, [
-    'Games.totalReviewsValue',
-    'Games.totalPositiveReviews',
-    'Games.totalNegativeReviews'
+    'Games.totalReviewsValue'
   ])
   return numeric.map((row) => ({
     ...row,
@@ -1020,7 +1016,6 @@ async function queryDigWindow({
     filters.push({ member: 'Games.totalReviewsValue', operator: 'lte', values: [Number(maxReviews)] })
   }
   const query = {
-    measures: ['Games.totalPositiveReviews', 'Games.totalNegativeReviews'],
     dimensions: [
       'Games.name',
       'Games.reviewScoreDesc',
