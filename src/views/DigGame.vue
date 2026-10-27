@@ -32,10 +32,10 @@
       </div>
 
       <section class="dig-choices" :class="{ 'is-waiting': phase === 'choice' }" aria-live="polite">
-        <p class="dig-kicker">{{ stopLabel }}</p>
+        <p v-if="stopLabel" class="dig-kicker">{{ stopLabel }}</p>
         <h2 v-if="active">{{ active.prompt }}</h2>
+        <h2 v-else-if="broken">{{ openedHeading }}</h2>
         <h2 v-else-if="phase === 'searching'">Cracking the box…</h2>
-        <h2 v-else-if="phase === 'revealed' || phase === 'error'">The box cracked open.</h2>
         <h2 v-else>discover your next games</h2>
         <p v-if="active" class="dig-detail">{{ active.detail }}</p>
         <p v-else-if="!broken" class="dig-detail">Dig down to the box, then tap it five times.</p>
@@ -155,8 +155,27 @@ const picks = reactive(freshPicks())
 
 const totalStops = computed(() => TAG_ROUND_COUNT + 3)
 const stopLabel = computed(() => {
-  if (!active.value) return broken.value ? 'Box open' : 'Last box'
+  if (!active.value) return broken.value ? '' : 'Last box'
   return `Stop ${completed.value + 1} of ${totalStops.value}`
+})
+const openedHeading = computed(() => {
+  const tags = picks.tags.filter(Boolean)
+  const year = String(picks.minDate || '').slice(0, 4)
+  const lead = [
+    tags.join(', '),
+    tags.length ? 'games' : 'Games',
+    year ? `released in ${year}` : ''
+  ].filter(Boolean).join(' ')
+  const qualifiers = []
+  if (picks.maxReviews === 999) qualifiers.push('under 1000 reviews')
+  else if (picks.minReviews >= 1001) qualifiers.push('over 1000 reviews')
+  else qualifiers.push('at least 11 reviews')
+  if (picks.scoreLabel) {
+    const article = /^[aeiou]/i.test(picks.scoreLabel) ? 'an' : 'a'
+    qualifiers.push(`at least ${article} ${picks.scoreLabel.toLowerCase()} overall rating`)
+  }
+  const withClause = qualifiers.length ? ` with ${qualifiers.join(' and ')}` : ''
+  return lead ? `You wanted ${lead}${withClause}.` : 'The box cracked open.'
 })
 
 let world = null
@@ -211,7 +230,7 @@ function materialize(step) {
   if (step.kind === 'tags') return step
   if (step.kind === 'recency') return recencyEncounter(todayYmd())
   if (step.kind === 'score') return scoreEncounter()
-  if (step.kind === 'reviews') return reviewsEncounter()
+  if (step.kind === 'reviews') return reviewsEncounter(picks.scoreLabel)
   return step
 }
 

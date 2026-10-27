@@ -25,7 +25,7 @@ export function freshPicks() {
     skipDateSplit: false,
     reviewScores: null,
     scoreLabel: '',
-    minReviews: 0,
+    minReviews: 11,
     maxReviews: 10000000,
     reviewCountLabel: '',
     history: []
@@ -147,43 +147,47 @@ export function scoreEncounter() {
   }
 }
 
-export function reviewsEncounter() {
+export function reviewsEncounter(scoreLabel = '') {
+  const options = [
+    {
+      id: 'under-1000',
+      label: '<1000',
+      detail: 'Fewer than 1,000 combined reviews',
+      effect: {
+        type: 'reviews',
+        minReviews: 0,
+        maxReviews: 999,
+        label: '<1000',
+        constraintName: 'under 1,000 reviews'
+      }
+    },
+    {
+      id: 'any',
+      label: "Doesn't matter",
+      detail: 'At least 11 reviews',
+      effect: { type: 'reviews', id: 'any', minReviews: 11, maxReviews: 10000000 }
+    },
+    {
+      id: 'over-1000',
+      label: '>1000',
+      detail: 'More than 1,000 combined reviews',
+      effect: {
+        type: 'reviews',
+        minReviews: 1001,
+        maxReviews: 10000000,
+        label: '>1000',
+        constraintName: 'over 1,000 reviews'
+      }
+    }
+  ]
+  const visible = scoreLabel === 'Overwhelmingly Positive'
+    ? options.filter((option) => option.id !== 'any')
+    : options
   return {
     kind: 'reviews',
     prompt: 'How many reviews?',
     detail: 'Positive reviews plus negative reviews.',
-    options: [
-      {
-        id: 'under-1000',
-        label: '<1000',
-        detail: 'Fewer than 1,000 combined reviews',
-        effect: {
-          type: 'reviews',
-          minReviews: 0,
-          maxReviews: 999,
-          label: '<1000',
-          constraintName: 'under 1,000 reviews'
-        }
-      },
-      {
-        id: 'any',
-        label: "Doesn't matter",
-        detail: 'No review-count clause',
-        effect: { type: 'reviews', id: 'any' }
-      },
-      {
-        id: 'over-1000',
-        label: '>1000',
-        detail: 'More than 1,000 combined reviews',
-        effect: {
-          type: 'reviews',
-          minReviews: 1001,
-          maxReviews: 10000000,
-          label: '>1000',
-          constraintName: 'over 1,000 reviews'
-        }
-      }
-    ]
+    options: visible
   }
 }
 
@@ -238,10 +242,10 @@ export function applyEffect(picks, effect) {
   }
   if (effect.type === 'reviews') {
     if (effect.id === 'any') {
-      picks.minReviews = 0
-      picks.maxReviews = 10000000
+      picks.minReviews = effect.minReviews ?? 11
+      picks.maxReviews = effect.maxReviews ?? 10000000
       picks.reviewCountLabel = ''
-      picks.history.push("Doesn't matter (any number of reviews)")
+      picks.history.push("Doesn't matter (at least 11 reviews)")
       return
     }
     picks.minReviews = effect.minReviews

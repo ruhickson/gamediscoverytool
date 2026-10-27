@@ -1030,7 +1030,7 @@ async function queryDigWindow({
     query.timeDimensions = [{ dimension: 'Games.releaseDate', dateRange: [minDate, maxDate] }]
   }
   if (limit != null) query.limit = limit
-  return shapeDigRows(await queryCube(query))
+  return shapeDigRows(await queryCube(query, 4, 1))
 }
 
 /**

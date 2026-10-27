@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <h1>Game Discovery Tool</h1>
-    <p class="home-lead">Find a game, follow Steam, or read what we're publishing.</p>
+    <p class="home-lead">What you're playing next</p>
     <router-link v-if="feature" class="home-feature" :to="`/blog/${feature.slug}`">
       <img
         v-if="feature.featuredImage"
