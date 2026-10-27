@@ -52,7 +52,7 @@
             :disabled="phase === 'resolving'"
             @click="choose(index)"
           >
-            <span class="dig-option-label">{{ index + 1 }}. {{ option.label }}</span>
+            <span class="dig-option-label">{{ option.label }}</span>
             <span class="dig-option-detail">{{ option.detail }}</span>
           </button>
         </div>

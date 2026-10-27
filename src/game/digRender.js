@@ -99,7 +99,7 @@ function paintSlotLabel(ctx, slot, hc, tone) {
   const y = slot.y0 * TILE_SIZE + 4
   const w = (slot.x1 - slot.x0 + 1) * TILE_SIZE - 12
   const h = (slot.y1 - slot.y0 + 1) * TILE_SIZE - 8
-  const label = `${slot.optionIndex + 1}. ${slot.label}`
+  const label = slot.label
   let fontSize = 12
   let lines = wrapLines(ctx, label, w - 8).slice(0, 3)
   while (fontSize > 9 && lines.some((line) => ctx.measureText(line).width > w - 4)) {
@@ -147,42 +147,29 @@ function drawChoiceLabels(ctx, world, hc) {
   ctx.restore()
 }
 
-function drawPlayer(ctx, world, time, hc) {
+const DIGGER_IDLE = new Image()
+DIGGER_IDLE.src = '/dig/diiigr1.png'
+const DIGGER_SWING = new Image()
+DIGGER_SWING.src = '/dig/diiiigr2.png'
+
+function drawPlayer(ctx, world, time) {
   const { x, y, facing, dugAt } = world.player
-  const lunging = time - dugAt < 140
-  const lunge = lunging ? 5 : 0
+  const lunging = time - dugAt < 200
+  const frame = lunging ? DIGGER_SWING : DIGGER_IDLE
+  if (!frame.complete || !frame.naturalWidth) return
+  const lunge = lunging ? 4 : 0
   const shift = { up: [0, -lunge], down: [0, lunge], left: [-lunge, 0], right: [lunge, 0] }[facing] || [0, 0]
-  const cx = x * TILE_SIZE + TILE_SIZE / 2 + shift[0]
-  const cy = y * TILE_SIZE + TILE_SIZE / 2 + Math.sin(time / 200) * 0.8 + shift[1]
-  ctx.fillStyle = 'rgba(0,0,0,0.35)'
-  ctx.beginPath()
-  ctx.ellipse(cx, y * TILE_SIZE + TILE_SIZE - 6, 8, 3, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = hc ? '#fff' : '#f4e2c8'
-  ctx.beginPath()
-  ctx.arc(cx, cy + 2, 8, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = hc ? '#fff' : '#9eb4c6'
-  ctx.beginPath()
-  ctx.arc(cx, cy - 1, 8, Math.PI, 0)
-  ctx.fill()
-  ctx.fillRect(cx - 8, cy - 2, 16, 3)
-  ctx.fillStyle = hc ? '#000' : '#1c2630'
-  ctx.fillRect(cx - 5, cy - 1, 10, 3)
-  const angle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[facing] || Math.PI / 2
-  const swing = lunging ? Math.sin(time / 30) * 0.45 : 0
+  const dx = x * TILE_SIZE + shift[0]
+  const dy = y * TILE_SIZE + shift[1]
   ctx.save()
-  ctx.translate(cx, cy + 2)
-  ctx.rotate(angle + swing)
-  ctx.fillStyle = hc ? '#fff' : '#6d7c8a'
-  ctx.fillRect(7, -1.5, 9, 3)
-  ctx.fillStyle = hc ? '#fff' : '#d5dbe3'
-  ctx.beginPath()
-  ctx.moveTo(15, -5)
-  ctx.lineTo(22, 0)
-  ctx.lineTo(15, 5)
-  ctx.closePath()
-  ctx.fill()
+  ctx.imageSmoothingEnabled = false
+  if (facing === 'left') {
+    ctx.translate(dx + TILE_SIZE, dy)
+    ctx.scale(-1, 1)
+    ctx.drawImage(frame, 0, 0, TILE_SIZE, TILE_SIZE)
+  } else {
+    ctx.drawImage(frame, dx, dy, TILE_SIZE, TILE_SIZE)
+  }
   ctx.restore()
 }
 
