@@ -25,9 +25,8 @@
           @mousemove="onCanvasMove"
         />
         <div class="dig-pad" aria-label="Move">
-          <button type="button" class="dig-key" aria-label="Dig up" @pointerdown.prevent="holdDir('up', true)" @pointerup="holdDir('up', false)" @pointerleave="holdDir('up', false)">↑</button>
           <button type="button" class="dig-key" aria-label="Dig left" @pointerdown.prevent="holdDir('left', true)" @pointerup="holdDir('left', false)" @pointerleave="holdDir('left', false)">←</button>
-          <button type="button" class="dig-key" aria-label="Dig down" @pointerdown.prevent="holdDir('down', true)" @pointerup="holdDir('down', false)" @pointerleave="holdDir('down', false)">↓</button>
+          <button type="button" class="dig-key dig-key-down" aria-label="Dig down" @pointerdown.prevent="holdDir('down', true)" @pointerup="holdDir('down', false)" @pointerleave="holdDir('down', false)">↓</button>
           <button type="button" class="dig-key" aria-label="Dig right" @pointerdown.prevent="holdDir('right', true)" @pointerup="holdDir('right', false)" @pointerleave="holdDir('right', false)">→</button>
         </div>
       </div>
@@ -635,9 +634,10 @@ onBeforeUnmount(() => {
 
 .dig-pad {
   display: grid;
-  grid-template-columns: repeat(4, 48px);
-  gap: 0.4rem;
-  margin-top: 0.6rem;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.75rem auto 0;
 }
 
 .dig-key {

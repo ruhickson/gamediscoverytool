@@ -63,44 +63,23 @@ export function tagEncounter(group, index) {
   }
 }
 
-export function recencyEncounter(today = todayYmd(), earliest = '') {
-  const year = Number(today.slice(0, 4))
-  const thisYear = { minDate: `${year}-01-01`, maxDate: today }
-  const since2020 = { minDate: '2020-01-01', maxDate: `${year - 1}-12-31` }
-  const before2020 = { minDate: earliest || '', maxDate: '2019-12-31' }
-  const windows = [
-    {
-      id: 'this-year',
-      label: 'This year',
-      ...thisYear,
-      detail: `${formatDay(thisYear.minDate)} – ${formatDay(thisYear.maxDate)}`
-    },
-    {
-      id: 'since-2020',
-      label: '2020 through last year',
-      ...since2020,
-      detail: `${formatDay(since2020.minDate)} – ${formatDay(since2020.maxDate)}`
-    },
-    {
-      id: 'before-2020',
-      label: 'Before 2020',
-      ...before2020,
-      detail: earliest
-        ? `${formatDay(earliest)} – ${formatDay(before2020.maxDate)}`
-        : 'Earliest release on record through 31 Dec 2019'
-    },
-    {
-      id: 'any',
-      label: "Doesn't matter",
-      minDate: '',
-      maxDate: '',
-      detail: 'No date clause. Skips the next stop.'
+export function recencyEncounter(today = todayYmd()) {
+  const currentYear = Number(String(today).slice(0, 4))
+  const windows = [2023, 2024, 2025, 2026].map((year) => {
+    const minDate = `${year}-01-01`
+    const maxDate = year === currentYear ? today : `${year}-12-31`
+    return {
+      id: String(year),
+      label: String(year),
+      minDate,
+      maxDate,
+      detail: `${formatDay(minDate)} – ${formatDay(maxDate)}`
     }
-  ]
+  })
   return {
     kind: 'recency',
     prompt: 'When did it come out?',
-    detail: 'One release-date range, or none.',
+    detail: 'One release year.',
     options: windows.map((window) => ({
       id: window.id,
       label: window.label,
@@ -175,38 +154,14 @@ export function reviewsEncounter() {
     detail: 'Positive reviews plus negative reviews.',
     options: [
       {
-        id: 'gt-10000',
-        label: 'Greater than 10,000',
-        detail: 'More than 10,000 combined reviews',
-        effect: {
-          type: 'reviews',
-          minReviews: 10001,
-          maxReviews: 10000000,
-          label: 'Greater than 10,000',
-          constraintName: 'greater than 10,000 reviews'
-        }
-      },
-      {
-        id: '1k-10k',
-        label: '1,000 through 10,000',
-        detail: '1,000 through 10,000, inclusive',
-        effect: {
-          type: 'reviews',
-          minReviews: 1000,
-          maxReviews: 10000,
-          label: '1,000 through 10,000',
-          constraintName: '1,000 through 10,000 reviews'
-        }
-      },
-      {
         id: 'under-1000',
-        label: 'Under 1,000',
+        label: '<1000',
         detail: 'Fewer than 1,000 combined reviews',
         effect: {
           type: 'reviews',
           minReviews: 0,
           maxReviews: 999,
-          label: 'Under 1,000',
+          label: '<1000',
           constraintName: 'under 1,000 reviews'
         }
       },
@@ -215,6 +170,18 @@ export function reviewsEncounter() {
         label: "Doesn't matter",
         detail: 'No review-count clause',
         effect: { type: 'reviews', id: 'any' }
+      },
+      {
+        id: 'over-1000',
+        label: '>1000',
+        detail: 'More than 1,000 combined reviews',
+        effect: {
+          type: 'reviews',
+          minReviews: 1001,
+          maxReviews: 10000000,
+          label: '>1000',
+          constraintName: 'over 1,000 reviews'
+        }
       }
     ]
   }

@@ -305,46 +305,65 @@ function drawOpenedDiscover(ctx, world, view, time) {
     return hits
   }
   const games = view.games || []
-  ctx.font = '600 13px Figtree, sans-serif'
-  games.forEach((game) => {
-    const cardH = 58
+  const gap = 6
+  const shortfallH = view.shortfall ? 48 : 0
+  const cardH = Math.max(72, box.h - 24 - shortfallH)
+  const cardW = games.length
+    ? (innerW - gap * (games.length - 1)) / games.length
+    : innerW
+  const cam = cameraTop(world)
+  games.forEach((game, index) => {
+    const x = innerX + index * (cardW + gap)
     ctx.fillStyle = hc ? '#000' : '#24323e'
-    roundRect(ctx, innerX, cursorY, innerW, cardH, 6)
+    roundRect(ctx, x, cursorY, cardW, cardH, 6)
     ctx.fill()
     ctx.strokeStyle = hc ? '#fff' : 'rgba(142, 195, 222, 0.55)'
     ctx.lineWidth = 1
     ctx.stroke()
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x + 4, cursorY + 4, cardW - 8, cardH - 8)
+    ctx.clip()
     ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
-    ctx.font = '600 13px Figtree, sans-serif'
-    const name = game.name.length > 42 ? `${game.name.slice(0, 40)}…` : game.name
-    ctx.fillText(name, innerX + 8, cursorY + 5)
-    ctx.font = '11px Figtree, sans-serif'
+    ctx.font = '600 12px Figtree, sans-serif'
+    const nameLines = wrapLines(ctx, game.name, cardW - 16).slice(0, 3)
+    let textY = cursorY + 8
+    nameLines.forEach((line) => {
+      ctx.fillText(line, x + 8, textY)
+      textY += 14
+    })
+    ctx.font = '10px Figtree, sans-serif'
     ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
     const meta = [game.reviewScoreDesc, game.releaseDate, `${game.totalReviews.toLocaleString('en-US')} reviews`]
       .filter(Boolean)
-      .join(' · ')
-    ctx.fillText(meta, innerX + 8, cursorY + 22)
+    const metaLines = wrapLines(ctx, meta.join(' · '), cardW - 16).slice(0, 3)
+    textY += 2
+    metaLines.forEach((line) => {
+      ctx.fillText(line, x + 8, textY)
+      textY += 12
+    })
+    ctx.restore()
+    const linkY = cursorY + cardH - 18
     ctx.fillStyle = hc ? '#fff' : '#8ec3de'
     ctx.font = '600 11px Figtree, sans-serif'
-    ctx.fillText('Steam', innerX + 8, cursorY + 40)
-    ctx.fillText('ITAD', innerX + 58, cursorY + 40)
-    const cam = cameraTop(world)
+    ctx.fillText('Steam', x + 8, linkY)
+    ctx.fillText('ITAD', x + 52, linkY)
     hits.push({
-      x: innerX,
-      y: cursorY + 36 - cam * TILE_SIZE,
-      w: 46,
-      h: 18,
+      x: x + 4,
+      y: linkY - 2 - cam * TILE_SIZE,
+      w: 42,
+      h: 16,
       url: game.url
     })
     hits.push({
-      x: innerX + 50,
-      y: cursorY + 36 - cam * TILE_SIZE,
-      w: 42,
-      h: 18,
+      x: x + 48,
+      y: linkY - 2 - cam * TILE_SIZE,
+      w: 40,
+      h: 16,
       url: game.itadUrl
     })
-    cursorY += cardH + 6
   })
+  cursorY += cardH + 8
   if (view.shortfall) {
     ctx.fillStyle = hc ? '#fff' : '#c5d4e0'
     ctx.font = '12px Figtree, sans-serif'
