@@ -7,9 +7,9 @@
             <div class="card-header">
               <h2 class="mb-0">
                 <i class="fas fa-blog me-2"></i>
-                Game Discovery Blog
+                On Games
               </h2>
-              <p class="text-muted mb-0">Latest news, tips, and insights about game discovery</p>
+              <p class="text-muted mb-0"></p>
             </div>
             <div class="card-body">
               <!-- Blog Posts List -->

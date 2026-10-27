@@ -3,8 +3,7 @@
     <header class="dig-intro">
       <h1>DIIIG</h1>
       <p>
-        Knock away the metal and stone. Dig into a named block to add that choice to a Find a Game search.
-        The search starts as soon as the last choice is in. Tap the last box five times to crack it open.
+        Dig down and find that next game for you.
       </p>
     </header>
 
@@ -121,6 +120,7 @@ import {
   warmAdultExclusion
 } from '../game/digQuery.js'
 import { formatDay, todayYmd } from '../game/digDates.js'
+import { track } from '../services/analytics.js'
 import {
   applyEffect,
   freshPicks,
@@ -343,6 +343,13 @@ async function choose(index) {
   await wait(160)
   if (phase.value !== 'resolving') return
   applyEffect(picks, effect)
+  track('dig_choice', {
+    kind: active.value?.kind || effect.type || '',
+    optionId: option.id,
+    label: effect.historyLabel || effect.label || option.label || '',
+    index,
+    effect
+  }, 'diiig')
   resolveChoice(world)
   advance()
 }
@@ -387,6 +394,18 @@ function beginSearch() {
   if (searchState.value === 'loading' || searchState.value === 'ready') return
   searchState.value = 'loading'
   status.value = 'Searching…'
+  track('search', {
+    tags: picks.tags.filter(Boolean),
+    minDate: picks.minDate,
+    maxDate: picks.maxDate,
+    dateLabel: picks.dateLabel,
+    reviewScores: picks.reviewScores ? [...picks.reviewScores] : null,
+    scoreLabel: picks.scoreLabel,
+    minReviews: picks.minReviews,
+    maxReviews: picks.maxReviews,
+    reviewCountLabel: picks.reviewCountLabel,
+    history: [...picks.history]
+  }, 'diiig')
   const gen = ++searchGen
   runDigSearch(picks)
     .then((rows) => applySearchRows(rows, gen))
@@ -421,6 +440,12 @@ function applyBoxTap() {
   const before = world.cracks || 0
   const tapped = tapDiscover(world)
   cracks.value = world.cracks || 0
+  if ((world.cracks || 0) > before) {
+    track('dig_box_tap', {
+      cracks: world.cracks || 0,
+      opened: !!(tapped.open || world.broken)
+    }, 'diiig')
+  }
   world.reachedDiscover = true
   reached.value = true
   if ((world.cracks || 0) > before) pendingBoxTaps = Math.max(0, pendingBoxTaps - 1)

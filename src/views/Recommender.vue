@@ -308,6 +308,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
+import { track } from '../services/analytics'
 import { getItadUrl } from '../services/itadService'
 
 export default {
@@ -360,7 +361,9 @@ export default {
       searchTimeout = setTimeout(async () => {
         try {
           // Use Algolia-style client-side search (no database queries)
-          const results = await cubeService.searchGamesByName(gameSearchQuery.value, 100)
+          const query = gameSearchQuery.value.trim()
+          track('recommender_query', { query }, 'recommender')
+          const results = await cubeService.searchGamesByName(query, 100)
           filteredGames.value = results
           showGameDropdown.value = true
         } catch (error) {
@@ -377,10 +380,13 @@ export default {
       selectedGame.value = game
       gameSearchQuery.value = game.name
       showGameDropdown.value = false
-      // Clear any previous similar games results
       similarGames.value = []
       similarSearchError.value = ''
       hasSearched.value = false
+      track('recommender_select', {
+        gameName: game.name,
+        appId: game.appId
+      }, 'recommender')
     }
 
     const clearSelection = () => {
@@ -400,8 +406,12 @@ export default {
       similarGames.value = [] // Clear previous results
       
       try {
-        console.log('Starting similarity search for:', selectedGame.value.name, 'App ID:', selectedGame.value.appId, 'with min tags:', minCommonTags.value)
-        // Only now do we query the API for similar games using the selected game's app_id
+        track('recommender_search', {
+          gameName: selectedGame.value.name,
+          appId: selectedGame.value.appId,
+          minCommonTags: minCommonTags.value,
+          includeAdultGames: includeAdultGames.value
+        }, 'recommender')
         let results = await cubeService.findSimilarGames(selectedGame.value.appId, minCommonTags.value)
         
         // Apply cached adult-content exclusions (same sets as homepage search)

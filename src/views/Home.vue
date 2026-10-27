@@ -43,31 +43,31 @@ export default {
           to: '/blog',
           icon: 'fas fa-newspaper',
           title: 'Media',
-          text: 'Essays and notes on games.'
+          text: 'Blog posts and articles.'
         },
         {
           to: '/find',
           icon: 'fas fa-search',
           title: 'Game discovery',
-          text: 'Search Steam by tags, reviews, and release date.'
+          text: 'Find your next Steam game using powerful filters.'
         },
         {
           to: '/diiig',
           icon: 'fas fa-person-digging',
           title: 'DIIIG',
-          text: 'Dig through choices and crack open three games.'
+          text: 'Play your way to a new game.'
         },
         {
           to: '/about',
           icon: 'fas fa-info-circle',
           title: 'About',
-          text: 'What this is, and how to get in touch.'
+          text: ''
         },
         {
           to: '/trends',
           icon: 'fas fa-chart-area',
           title: 'Trends',
-          text: 'State of Steam, month by month.'
+          text: 'The State of Steam.'
         }
       ]
     }

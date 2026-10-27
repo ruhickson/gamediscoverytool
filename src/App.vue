@@ -167,21 +167,21 @@ export default {
         {
           title: 'Game Discovery',
           items: [
-            { to: '/find', label: 'Find a Game for Me', icon: 'fas fa-search', names: ['GameFinder'] }
+            { to: '/find', label: 'Find a Game for Me', icon: 'fas fa-search', names: ['GameFinder'] },
+            { to: '/diiig', label: 'DIIIG', icon: 'fas fa-person-digging', names: ['DigGame'] }
           ]
         },
         {
           title: 'Recommender',
           items: [
-            { to: '/recommender', label: 'Recommender', icon: 'fas fa-magic', names: ['Recommender'] },
-            { to: '/diiig', label: 'DIIIG', icon: 'fas fa-person-digging', names: ['DigGame'] }
+            { to: '/recommender', label: 'Recommender', icon: 'fas fa-magic', names: ['Recommender'] }
           ]
         },
         {
           title: 'Industry',
           items: [
             { to: '/trends', label: 'Trends', icon: 'fas fa-chart-area', names: ['StateOfSteam'] },
-            { to: '/trend-analysis', label: 'Trend Analysis', icon: 'fas fa-chart-line', names: ['TrendAnalysis'] }
+            { to: '/trend-analysis', label: 'Analysis', icon: 'fas fa-chart-line', names: ['TrendAnalysis'] }
           ]
         }
       ]

@@ -493,6 +493,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import cubeService from '../services/cubeService'
+import { track } from '../services/analytics'
 // Steam price hidden
 import { getItadUrl } from '../services/itadService'
 import axios from 'axios'
@@ -816,7 +817,7 @@ export default {
         console.log('Search params reviewScoreOrBetter:', searchParams.reviewScoreOrBetter)
 
         // Call the Cube.js service
-        console.log('Calling findGames with params:', searchParams)
+        track('search', searchParams, 'find_a_game')
         const searchResults = await cubeService.findGames(searchParams)
         console.log('Search results received:', searchResults)
         console.log('Type:', typeof searchResults, 'Is array:', Array.isArray(searchResults))
@@ -1268,7 +1269,11 @@ export default {
         if (Object.keys(q).length) {
           await searchGames()
         } else {
-          // Use includeAdultGames value from URL if present, otherwise default to false (exclude adult games)
+          track('search', {
+            source: 'recent_top',
+            limit: 100,
+            includeAdultGames: includeAdultGames.value
+          }, 'find_a_game')
           const recentGames = await cubeService.getRecentTopGames(100, includeAdultGames.value)
           if (recentGames && recentGames.length > 0) {
             const processedGames = recentGames.map(game => {
