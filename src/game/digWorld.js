@@ -1,4 +1,4 @@
-export const COLS = 21
+export const COLS = 23
 export const TILE_SIZE = 32
 export const VIEW_ROWS = 12
 export const VIEW_W = COLS * TILE_SIZE
@@ -45,7 +45,7 @@ export function makeWorld() {
   rows.push(walled(TILE.OPEN))
   return {
     rows,
-    player: { x: 10, y: 2, facing: 'down', dugAt: 0 },
+    player: { x: Math.floor(COLS / 2), y: 2, facing: 'down', dugAt: 0 },
     choice: null,
     discover: null,
     settled: [],

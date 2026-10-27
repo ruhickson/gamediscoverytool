@@ -114,6 +114,7 @@ import {
   fetchEarliestReleaseDate,
   dealTagGroups,
   loadTagPool,
+  TAG_ROUND_COUNT,
   mapDigGames,
   nameEmptiedConstraint,
   runDigSearch,
@@ -122,7 +123,6 @@ import {
 import { formatDay, todayYmd } from '../game/digDates.js'
 import {
   applyEffect,
-  dateSplitEncounter,
   freshPicks,
   recencyEncounter,
   resetPicks,
@@ -153,7 +153,7 @@ const shareNote = ref('')
 const earliest = ref('')
 const picks = reactive(freshPicks())
 
-const totalStops = computed(() => (picks.skipDateSplit ? 7 : 8))
+const totalStops = computed(() => TAG_ROUND_COUNT + 3)
 const stopLabel = computed(() => {
   if (!active.value) return broken.value ? 'Box open' : 'Last box'
   return `Stop ${completed.value + 1} of ${totalStops.value}`
@@ -200,9 +200,8 @@ function wait(ms) {
 
 function buildScript(groups) {
   return [
-    ...groups.map((group, index) => tagEncounter(group, index)),
     { kind: 'recency' },
-    { kind: 'datesplit' },
+    ...groups.map((group, index) => tagEncounter(group, index, groups.length)),
     { kind: 'score' },
     { kind: 'reviews' }
   ]
@@ -210,8 +209,7 @@ function buildScript(groups) {
 
 function materialize(step) {
   if (step.kind === 'tags') return step
-  if (step.kind === 'recency') return recencyEncounter(todayYmd(), earliest.value || '')
-  if (step.kind === 'datesplit') return dateSplitEncounter(picks.coarseMin, picks.coarseMax)
+  if (step.kind === 'recency') return recencyEncounter(todayYmd())
   if (step.kind === 'score') return scoreEncounter()
   if (step.kind === 'reviews') return reviewsEncounter()
   return step
@@ -252,13 +250,8 @@ function startLevel() {
 function advance() {
   completed.value += 1
   stepIndex += 1
-  while (stepIndex < script.length) {
-    const step = script[stepIndex]
-    if (step.kind === 'datesplit' && picks.skipDateSplit) {
-      stepIndex += 1
-      continue
-    }
-    showEncounter(step)
+  if (stepIndex < script.length) {
+    showEncounter(script[stepIndex])
     return
   }
   appendGround(world, 3)

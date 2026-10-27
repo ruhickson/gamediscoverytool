@@ -967,7 +967,7 @@ async function findGamesSingleTag({
   }
 }
 
-const DIG_WINDOWS = [80, 400, 1600, 6400, null]
+const DIG_WINDOWS = [80, 400, 1600, 6400]
 const DIG_ROW_FIELDS = [
   'Games.totalReviewsValue',
   'Games.name',
@@ -1047,6 +1047,7 @@ export async function findDigMatches({
   maxDate = null,
   limit = 3
 }) {
+  if (!minDate || !maxDate) return []
   const wanted = (Array.isArray(tags) ? tags : []).filter(Boolean)
   const excluded = new Set(
     (await resolveExcludedAppIds({ includeAdultGames: false })).map(digAppKey)
@@ -1054,7 +1055,7 @@ export async function findDigMatches({
   let anchor = wanted[0] || null
   let rest = wanted.slice(1)
   if (wanted.length > 1) {
-    const pool = await getTopTagsByCount(24, ADULT_CONTENT_TAGS)
+    const pool = await getTopTagsByCount(40, ADULT_CONTENT_TAGS)
     const counts = new Map(pool.map((tag) => [tag.name, tag.count]))
     const ranked = [...wanted].sort((a, b) => (
       (counts.get(a) ?? Number.MAX_SAFE_INTEGER) - (counts.get(b) ?? Number.MAX_SAFE_INTEGER)
@@ -1064,10 +1065,11 @@ export async function findDigMatches({
   }
 
   const shared = { reviewScores, minReviews, maxReviews, minDate, maxDate }
+  let matched = []
   for (const windowSize of DIG_WINDOWS) {
     const anchorRows = await queryDigWindow({ tag: anchor, limit: windowSize, ...shared })
     const eligible = anchorRows.filter((row) => !excluded.has(digAppKey(row['Games.appId'])))
-    let matched = eligible
+    matched = eligible
     if (rest.length && eligible.length) {
       const ids = eligible.map((row) => row['Games.appId'])
       const others = await Promise.all(rest.map((tag) => (
@@ -1083,10 +1085,9 @@ export async function findDigMatches({
     matched.sort((a, b) => (
       (Number(b['Games.totalReviewsValue']) || 0) - (Number(a['Games.totalReviewsValue']) || 0)
     ))
-    const exhausted = windowSize == null || anchorRows.length < windowSize
-    if (matched.length >= limit || exhausted) return matched.slice(0, limit)
+    if (matched.length >= limit || anchorRows.length < windowSize) return matched.slice(0, limit)
   }
-  return []
+  return matched.slice(0, limit)
 }
 
 // Get app IDs for a given tag (for exclude functionality)
