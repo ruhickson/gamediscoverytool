@@ -3,32 +3,47 @@ import { getTopTagsByCount } from '../services/tagsSearchEngine.js'
 import { getItadUrl } from '../services/itadService.js'
 import { constraintsOf, queryFromConstraints } from './digRules.js'
 
-export const TAG_ROUND_COUNT = 4
-export const TAGS_PER_ROUND = 6
+export const TAG_ROUND_COUNT = 3
+export const TAGS_PER_ROUND = 7
+const DIG_EXCLUDED_TAGS = ['Early Access', 'Indie', 'Action-Adventure', 'Casual']
+const PAIRED_TAGS = ['2D', '3D']
 
-export async function loadTagPool() {
-  const needed = TAG_ROUND_COUNT * TAGS_PER_ROUND
-  const tags = await getTopTagsByCount(needed, ADULT_CONTENT_TAGS)
-  if (tags.length < needed) {
-    throw new Error(`Expected ${needed} tags after dropping adult tags, found ${tags.length}.`)
-  }
-  return tags
-}
-
-export function dealTagGroups(tags) {
-  const pool = tags.slice()
+function shuffle(list) {
+  const pool = list.slice()
   for (let index = pool.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1))
     const current = pool[index]
     pool[index] = pool[swap]
     pool[swap] = current
   }
-  const groups = []
-  for (let round = 0; round < TAG_ROUND_COUNT; round += 1) {
-    const start = round * TAGS_PER_ROUND
-    groups.push(pool.slice(start, start + TAGS_PER_ROUND))
+  return pool
+}
+
+export async function loadTagPool() {
+  const needed = TAG_ROUND_COUNT * TAGS_PER_ROUND
+  const tags = await getTopTagsByCount(needed, [...ADULT_CONTENT_TAGS, ...DIG_EXCLUDED_TAGS])
+  if (tags.length < needed) {
+    throw new Error(`Expected ${needed} tags after dropping excluded tags, found ${tags.length}.`)
   }
-  return groups
+  return tags
+}
+
+export function dealTagGroups(tags) {
+  const paired = PAIRED_TAGS
+    .map((name) => tags.find((tag) => tag.name === name))
+    .filter(Boolean)
+  const rest = shuffle(tags.filter((tag) => !PAIRED_TAGS.includes(tag.name)))
+  const groups = Array.from({ length: TAG_ROUND_COUNT }, () => [])
+  if (paired.length === PAIRED_TAGS.length) {
+    const line = Math.floor(Math.random() * TAG_ROUND_COUNT)
+    groups[line].push(...paired)
+  } else {
+    rest.push(...paired)
+  }
+  for (const group of groups) {
+    while (group.length < TAGS_PER_ROUND && rest.length) group.push(rest.pop())
+  }
+  return groups.map((group) => shuffle(group))
 }
 
 export function warmAdultExclusion() {

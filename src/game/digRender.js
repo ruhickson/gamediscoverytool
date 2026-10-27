@@ -123,6 +123,33 @@ function paintSlotLabel(ctx, slot, hc, tone) {
   }
 }
 
+function drawSlotDividers(ctx, slots, hc) {
+  if (!slots || slots.length < 2) return
+  const ordered = [...slots].sort((a, b) => a.x0 - b.x0)
+  const paint = (color, width) => {
+    ctx.strokeStyle = color
+    ctx.lineWidth = width
+    for (let i = 0; i < ordered.length - 1; i += 1) {
+      const slot = ordered[i]
+      const x = (slot.x1 + 1) * TILE_SIZE
+      ctx.beginPath()
+      ctx.moveTo(x, slot.y0 * TILE_SIZE)
+      ctx.lineTo(x, (slot.y1 + 1) * TILE_SIZE)
+      ctx.stroke()
+    }
+  }
+  ctx.save()
+  paint(hc ? '#fff' : '#5c6770', 10)
+  paint(hc ? '#fff' : '#e4e9ee', 6)
+  ctx.restore()
+}
+
+function strokeChoice(ctx, slot, color, width) {
+  ctx.strokeStyle = color
+  ctx.lineWidth = width
+  ctx.strokeRect(slot.x0 * TILE_SIZE + 1.5, slot.y0 * TILE_SIZE + 1.5, (slot.x1 - slot.x0 + 1) * TILE_SIZE - 3, (slot.y1 - slot.y0 + 1) * TILE_SIZE - 3)
+}
+
 function drawChoiceLabels(ctx, world, hc) {
   ctx.save()
   ctx.textAlign = 'center'
@@ -130,19 +157,20 @@ function drawChoiceLabels(ctx, world, hc) {
   for (const chamber of world.settled || []) {
     for (const slot of chamber.slots) {
       const chosen = slot.optionIndex === chamber.selected
-      ctx.strokeStyle = hc ? '#fff' : (chosen ? 'rgba(126, 214, 154, 0.95)' : 'rgba(120, 132, 144, 0.45)')
-      ctx.lineWidth = chosen ? 3 : 1
-      ctx.strokeRect(slot.x0 * TILE_SIZE + 1.5, slot.y0 * TILE_SIZE + 1.5, (slot.x1 - slot.x0 + 1) * TILE_SIZE - 3, (slot.y1 - slot.y0 + 1) * TILE_SIZE - 3)
+      strokeChoice(ctx, slot, hc ? '#fff' : (chosen ? 'rgba(126, 214, 154, 0.95)' : 'rgba(120, 132, 144, 0.45)'), chosen ? 3 : 1)
+    }
+    drawSlotDividers(ctx, chamber.slots, hc)
+    for (const slot of chamber.slots) {
+      const chosen = slot.optionIndex === chamber.selected
       paintSlotLabel(ctx, slot, hc, chosen ? '#8ee0a8' : '#8b98a4')
     }
   }
   if (world.choice && !world.choice.resolved) {
     for (const slot of world.choice.slots) {
-      ctx.strokeStyle = hc ? '#fff' : 'rgba(180, 214, 232, 0.95)'
-      ctx.lineWidth = world.choice.selected === slot.optionIndex ? 3 : 2
-      ctx.strokeRect(slot.x0 * TILE_SIZE + 1.5, slot.y0 * TILE_SIZE + 1.5, (slot.x1 - slot.x0 + 1) * TILE_SIZE - 3, (slot.y1 - slot.y0 + 1) * TILE_SIZE - 3)
-      paintSlotLabel(ctx, slot, hc, '#e7f2f8')
+      strokeChoice(ctx, slot, hc ? '#fff' : 'rgba(180, 214, 232, 0.95)', world.choice.selected === slot.optionIndex ? 3 : 2)
     }
+    drawSlotDividers(ctx, world.choice.slots, hc)
+    for (const slot of world.choice.slots) paintSlotLabel(ctx, slot, hc, '#e7f2f8')
   }
   ctx.restore()
 }

@@ -49,10 +49,10 @@ export function resetPicks(picks) {
   picks.reviewCountLabel = next.reviewCountLabel
 }
 
-export function tagEncounter(group, index) {
+export function tagEncounter(group, index, total = group.length) {
   return {
     kind: 'tags',
-    prompt: `Which tag should this include? (${index + 1} of 4)`,
+    prompt: `Which tag should this include? (${index + 1} of ${total})`,
     detail: 'The search requires every tag you pick.',
     options: group.map((tag) => ({
       id: tag.name,
