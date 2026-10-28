@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { linkDetails } from '../src/services/analytics.js'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -109,6 +110,16 @@ const body = {
     },
     {
       occurredAt: startedAt,
+      product: 'diiig',
+      eventName: 'dig_results',
+      path: '/diiig',
+      properties: {
+        count: 1,
+        games: [{ position: 1, name: 'Outer Wilds', appId: 753640, url: 'https://store.steampowered.com/app/753640' }]
+      }
+    },
+    {
+      occurredAt: startedAt,
       product: 'recommender',
       eventName: 'recommender_query',
       path: '/recommender',
@@ -134,7 +145,7 @@ const handler = createHandler(sink)
 const response = await handler({ httpMethod: 'POST', body: JSON.stringify(body) })
 const result = JSON.parse(response.body)
 assert(response.statusCode === 200, `expected 200, got ${response.statusCode}: ${response.body}`)
-assert(result.accepted === 8, `expected 8 events, stored ${result.accepted}`)
+assert(result.accepted === 9, `expected 9 events, stored ${result.accepted}`)
 assert(sink.users.size === 1, 'user was not stored')
 assert(sink.sessions.size === 1, 'session was not stored')
 assert(sink.sessions.get(sessionId).userId === userId, 'session is not tied to the user')
@@ -150,6 +161,11 @@ assert(find.properties.password == null, 'a blocked field was stored')
 assert(dig.properties.tags.join(',') === 'First-Person,Atmospheric,Singleplayer', 'DIIIG tags were dropped')
 assert(dig.properties.scoreLabel === 'Positive', 'DIIIG score was dropped')
 assert(dig.properties.minReviews === 11, 'DIIIG review floor was dropped')
+const discovered = sink.events.find((event) => event.eventName === 'dig_results')
+assert(discovered && discovered.product === 'diiig', 'DIIIG results were not stored')
+assert(discovered.properties.count === 1, 'DIIIG result count was dropped')
+assert(discovered.properties.games[0].name === 'Outer Wilds', 'DIIIG result name was dropped')
+assert(discovered.properties.games[0].appId === 753640, 'DIIIG result app id was dropped')
 
 const lookedUp = sink.events.find((event) => event.eventName === 'recommender_search')
 assert(lookedUp.properties.gameName === 'Hades', 'Recommender game name was dropped')
@@ -159,7 +175,7 @@ assert(sink.events.some((event) => event.eventName === 'click'), 'click was drop
 assert(sink.events.some((event) => event.eventName === 'page_view' && event.product === 'find_a_game'), 'Find a Game page view was dropped')
 
 const again = await handler({ httpMethod: 'POST', body: JSON.stringify(body) })
-assert(JSON.parse(again.body).accepted === 8, 'a second batch was rejected')
+assert(JSON.parse(again.body).accepted === 9, 'a second batch was rejected')
 assert(sink.users.size === 1, 'the same user was inserted twice')
 assert(sink.sessions.size === 1, 'the same session was inserted twice')
 
@@ -192,7 +208,7 @@ assert(calls[0].url === 'https://example.supabase.co/rest/v1/rpc/analytics_inges
 assert(calls[0].options.headers.apikey === 'test-anon-key', 'anon key was not sent')
 const sent = JSON.parse(calls[0].options.body)
 assert(sent.payload.user.id === userId, 'user was not sent to Supabase')
-assert(sent.payload.events.length === 8, 'events were not sent to Supabase')
+assert(sent.payload.events.length === 9, 'events were not sent to Supabase')
 assert(sent.payload.events.every((event) => event.properties.password == null), 'a blocked field was sent to Supabase')
 
 const missing = createSupabaseSink({
@@ -202,6 +218,17 @@ const missing = createSupabaseSink({
 })
 const unavailable = await createHandler(missing)({ httpMethod: 'POST', body: JSON.stringify(body) })
 assert(unavailable.statusCode === 503, 'a missing Supabase function was treated as stored')
+
+const origin = 'https://gamediscoverytool.com'
+const steam = linkDetails('https://store.steampowered.com/app/1145360/Hades/', origin)
+assert(steam.destination === 'steam' && steam.appId === 1145360, 'a Steam link was not recognised')
+const itad = linkDetails('https://isthereanydeal.com/game/hades/info/', origin)
+assert(itad.destination === 'itad' && itad.gameSlug === 'hades', 'an ITAD link was not recognised')
+const blogIndex = linkDetails('/blog', origin)
+assert(blogIndex.destination === 'blog' && blogIndex.slug === '', 'the blog index was not recognised')
+const futurePost = linkDetails('/blog/a-post-that-does-not-exist-yet', origin)
+assert(futurePost.destination === 'blog' && futurePost.slug === 'a-post-that-does-not-exist-yet', 'a future blog post was not recognised')
+assert(!linkDetails('https://example.com/blog/nope', origin).destination, 'an outside link was marked as a blog')
 
 console.log(`analytics smoke test passed: 1 user, 1 session, ${sink.events.length} events`)
 console.log('products:', [...new Set(sink.events.map((event) => event.product))].join(', '))

@@ -386,26 +386,37 @@ function drawOpenedDiscover(ctx, world, view, time) {
     ctx.fillText('Steam', x + 8, linkY)
     ctx.fillText('ITAD', itadX, linkY)
     const linkHitH = Math.max(24, linkSize + 8)
+    const gameName = game.name || ''
+    const appId = Number.isFinite(game.appId) ? game.appId : null
     hits.push({
       x: x + 4,
       y: linkY - linkSize - cam * TILE_SIZE,
       w: steamW + 12,
       h: linkHitH,
-      url: game.url
+      url: game.url,
+      kind: 'steam',
+      gameName,
+      appId
     })
     hits.push({
       x: itadX - 4,
       y: linkY - linkSize - cam * TILE_SIZE,
       w: Math.ceil(ctx.measureText('ITAD').width) + 12,
       h: linkHitH,
-      url: game.itadUrl
+      url: game.itadUrl,
+      kind: 'itad',
+      gameName,
+      appId
     })
     hits.push({
       x: x + 4,
       y: cursorY + 6 - cam * TILE_SIZE,
       w: cardW - 8,
       h: Math.max(28, titleBottom - cursorY - 6),
-      url: game.url
+      url: game.url,
+      kind: 'title',
+      gameName,
+      appId
     })
   })
   cursorY += cardH + 8

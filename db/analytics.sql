@@ -21,12 +21,16 @@
 -- Search parameters live in analytics_events.properties (jsonb), not in extra columns,
 -- so a new filter does not need a new migration. Expected event_name values:
 --   page_view            route change, including the query string
---   click                a click on a link, button, tab, field, or the DIIIG canvas
+--   click                a click on a link, button, tab, field, or the DIIIG canvas.
+--                      Steam, ITAD, and blog clicks add properties.destination
+--                      (steam, itad, or blog). Blog clicks also store properties.slug,
+--                      including posts added later. A blog page view does the same.
 --   search               a Find a Game or DIIIG query; product says which one
 --   dig_choice           one DIIIG choice, including the effect that was applied
 --   dig_box_tap          one counted tap on the DIIIG box
+--   dig_results          the games a DIIIG search returned, in the order shown
 --   recommender_query    the text typed into the Recommender game search
---   recommender_search   the game that was compared, plus the comparison settings
+--   recommender_search   the seed game and comparison settings, not the games returned
 
 CREATE TABLE IF NOT EXISTS analytics_users (
   id uuid PRIMARY KEY,
@@ -91,6 +95,16 @@ CREATE INDEX IF NOT EXISTS analytics_events_recommender_game_idx
 --        properties->>'maxReviews' AS max_reviews
 -- FROM analytics_events
 -- WHERE product = 'diiig' AND event_name = 'search'
+-- ORDER BY occurred_at DESC;
+
+-- Games DIIIG showed, including a short list.
+-- SELECT occurred_at,
+--        game->>'position' AS position,
+--        game->>'name' AS game,
+--        game->>'appId' AS app_id
+-- FROM analytics_events
+-- CROSS JOIN LATERAL jsonb_array_elements(properties->'games') AS game
+-- WHERE product = 'diiig' AND event_name = 'dig_results'
 -- ORDER BY occurred_at DESC;
 
 -- The anon key reaches the tables only through this function. It runs as the owner,

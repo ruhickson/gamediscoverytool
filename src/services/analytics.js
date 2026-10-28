@@ -139,21 +139,65 @@ function clickText(el) {
   return el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || ''
 }
 
+export function linkDetails(href, origin = '') {
+  if (!href) return {}
+  let url
+  try {
+    url = new URL(href, origin || (typeof location !== 'undefined' ? location.origin : 'https://gamediscoverytool.com'))
+  } catch {
+    return {}
+  }
+  const host = url.hostname.replace(/^www\./, '')
+  if (host === 'steampowered.com' || host.endsWith('.steampowered.com')) {
+    const appMatch = url.pathname.match(/\/app\/(\d+)/)
+    const details = { destination: 'steam' }
+    if (appMatch) details.appId = Number(appMatch[1])
+    return details
+  }
+  if (host === 'isthereanydeal.com' || host.endsWith('.isthereanydeal.com')) {
+    const slugMatch = url.pathname.match(/\/game\/([^/]+)/)
+    const details = { destination: 'itad' }
+    if (slugMatch) details.gameSlug = decodeURIComponent(slugMatch[1])
+    return details
+  }
+  const base = origin || (typeof location !== 'undefined' ? location.origin : '')
+  if (base && url.origin === base && (url.pathname === '/blog' || url.pathname.startsWith('/blog/'))) {
+    const slug = decodeURIComponent(url.pathname.replace(/^\/blog\/?/, '').replace(/\/$/, ''))
+    return { destination: 'blog', slug }
+  }
+  return {}
+}
+
+function nearbyGameName(el) {
+  const row = el.closest?.('tr, li')
+  if (!row) return ''
+  const nameLink = row.querySelector('a[href*="steampowered.com"], a.game-link')
+  if (!nameLink || nameLink === el) return ''
+  return (nameLink.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 120)
+}
+
 function onClick(event) {
   const el = event.target?.closest?.(
-    'a, button, [role="tab"], [role="button"], summary, label, select, input, textarea, canvas'
+    'a, button, [role="tab"], [role="button"], summary, label, select, input, textarea, .sortable'
   )
-  if (!el) return
+  if (!el || el.closest('canvas')) return
   const href = el.tagName === 'A' ? el.getAttribute('href') || '' : ''
+  const details = linkDetails(href)
+  const text = clickText(el).replace(/\s+/g, ' ').trim().slice(0, 120)
+  const gameName = details.destination === 'steam' || details.destination === 'itad'
+    ? (nearbyGameName(el) || (details.destination === 'steam' && text && text !== 'Steam' ? text : ''))
+    : ''
   track('click', {
     tag: el.tagName.toLowerCase(),
     id: el.id || '',
     role: el.getAttribute('role') || '',
     type: el.getAttribute('type') || '',
     name: el.getAttribute('name') || '',
-    text: clickText(el).replace(/\s+/g, ' ').trim().slice(0, 120),
+    text,
     href: href.slice(0, 300),
-    checked: el.tagName === 'INPUT' ? !!el.checked : undefined
+    checked: el.tagName === 'INPUT' ? !!el.checked : undefined,
+    ...details,
+    ...(gameName ? { gameName } : {})
   })
 }
 
@@ -162,11 +206,16 @@ export function installAnalytics(router) {
   installed = true
   document.addEventListener('click', onClick, true)
   router.afterEach((to) => {
-    track('page_view', {
+    const properties = {
       name: String(to.name || ''),
       path: to.path,
       query: { ...to.query }
-    }, productForPath(to.path))
+    }
+    if (to.path === '/blog' || to.path.startsWith('/blog/')) {
+      properties.destination = 'blog'
+      properties.slug = to.params?.slug ? String(to.params.slug) : ''
+    }
+    track('page_view', properties, productForPath(to.path))
   })
   const leave = () => flush(true)
   window.addEventListener('pagehide', leave)

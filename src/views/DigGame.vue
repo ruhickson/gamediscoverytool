@@ -120,7 +120,7 @@ import {
   warmAdultExclusion
 } from '../game/digQuery.js'
 import { formatDay, todayYmd } from '../game/digDates.js'
-import { track } from '../services/analytics.js'
+import { linkDetails, track } from '../services/analytics.js'
 import {
   applyEffect,
   freshPicks,
@@ -358,6 +358,15 @@ function applySearchRows(rows, gen) {
   if (gen !== searchGen) return
   games.value = mapDigGames(rows)
   searchState.value = 'ready'
+  track('dig_results', {
+    count: games.value.length,
+    games: games.value.map((game, index) => ({
+      position: index + 1,
+      name: game.name,
+      appId: Number.isFinite(game.appId) ? game.appId : null,
+      url: game.url || ''
+    }))
+  }, 'diiig')
   if (games.value.length < 3) {
     shortfall.value = { count: games.value.length, constraint: '', pending: true }
     if (world?.broken) {
@@ -531,9 +540,20 @@ function onCanvasClick(event) {
     point.localY <= entry.y + entry.h
   ))
   if (hit?.url) {
+    const details = linkDetails(hit.url)
+    const label = hit.kind === 'itad' ? 'ITAD' : hit.kind === 'steam' ? 'Steam' : hit.gameName || ''
+    track('click', {
+      tag: 'canvas',
+      href: hit.url,
+      text: label,
+      gameName: hit.gameName || '',
+      ...details,
+      ...(Number.isFinite(hit.appId) ? { appId: hit.appId } : {})
+    }, 'diiig')
     window.open(hit.url, '_blank', 'noopener')
     return
   }
+  track('click', { tag: 'canvas', text: '' }, 'diiig')
   if (phase.value === 'play' || phase.value === 'choice') {
     const index = choiceIndexAt(world, point.x, point.y)
     if (index >= 0) {

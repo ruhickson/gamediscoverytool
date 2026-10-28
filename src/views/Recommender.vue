@@ -406,6 +406,7 @@ export default {
       similarGames.value = [] // Clear previous results
       
       try {
+        // Parameters only. The similar games that come back are not stored.
         track('recommender_search', {
           gameName: selectedGame.value.name,
           appId: selectedGame.value.appId,
