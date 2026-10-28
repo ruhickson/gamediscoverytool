@@ -28,8 +28,16 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
+function boxFont(ctx, desktopPx) {
+  const canvas = ctx.canvas
+  const cssWidth = canvas?.clientWidth || canvas.width
+  const scale = cssWidth / canvas.width
+  if (!scale || scale >= 0.92) return desktopPx
+  return Math.round(Math.min(desktopPx / scale, desktopPx * 1.45))
+}
+
 function wrapLines(ctx, text, maxWidth) {
-  const words = String(text || '').split(/\s+/)
+  const words = String(text || '').split(/\s+/).filter(Boolean)
   const lines = []
   let line = ''
   for (const word of words) {
@@ -94,18 +102,21 @@ function drawGreyTile(ctx, x, y, hc) {
 }
 
 function paintSlotLabel(ctx, slot, hc, tone) {
-  ctx.font = '600 12px Figtree, sans-serif'
   const x = slot.x0 * TILE_SIZE + 6
   const y = slot.y0 * TILE_SIZE + 4
   const w = (slot.x1 - slot.x0 + 1) * TILE_SIZE - 12
   const h = (slot.y1 - slot.y0 + 1) * TILE_SIZE - 8
   const label = slot.label
-  let fontSize = 12
-  let lines = wrapLines(ctx, label, w - 8).slice(0, 3)
-  while (fontSize > 9 && lines.some((line) => ctx.measureText(line).width > w - 4)) {
+  let fontSize = boxFont(ctx, 13)
+  const floor = 10
+  ctx.font = `600 ${fontSize}px Figtree, sans-serif`
+  const maxLines = Math.max(2, Math.min(3, Math.floor((h - 4) / (fontSize + 2))))
+  let lines = wrapLines(ctx, label, w - 8).slice(0, maxLines)
+  while (fontSize > floor && lines.some((line) => ctx.measureText(line).width > w - 4)) {
     fontSize -= 1
     ctx.font = `600 ${fontSize}px Figtree, sans-serif`
-    lines = wrapLines(ctx, label, w - 8).slice(0, 3)
+    const nextMax = Math.max(2, Math.min(3, Math.floor((h - 4) / (fontSize + 2))))
+    lines = wrapLines(ctx, label, w - 8).slice(0, nextMax)
   }
   const lineH = fontSize + 2
   const blockH = lines.length * lineH
@@ -239,15 +250,18 @@ function drawSealedDiscover(ctx, world, time, hc, loading) {
   ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = '600 18px Fraunces, Georgia, serif'
+  const titleSize = boxFont(ctx, 18)
+  ctx.font = `600 ${titleSize}px Fraunces, Georgia, serif`
+  const titleLine = Math.round(titleSize * 1.2)
   const lines = wrapLines(ctx, 'discover your next games', box.w - 28)
   lines.forEach((line, index) => {
-    ctx.fillText(line, cx, box.y + box.h / 2 - 16 + index * 22)
+    ctx.fillText(line, cx, box.y + box.h / 2 - titleLine + index * titleLine)
   })
-  ctx.font = '12px Figtree, sans-serif'
+  const tapSize = boxFont(ctx, 13)
+  ctx.font = `${tapSize}px Figtree, sans-serif`
   ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
   const taps = `${world.cracks || 0} / 5 taps`
-  ctx.fillText(loading ? `searching…  ${taps}` : taps, cx, box.y + box.h - 22)
+  ctx.fillText(loading ? `searching…  ${taps}` : taps, cx, box.y + box.h - Math.max(22, tapSize + 8))
 }
 
 function drawCracks(ctx, box, cracks, hc) {
@@ -335,21 +349,26 @@ function drawOpenedDiscover(ctx, world, view, time) {
     ctx.strokeStyle = hc ? '#fff' : 'rgba(142, 195, 222, 0.55)'
     ctx.lineWidth = 1
     ctx.stroke()
-    const linkY = cursorY + cardH - 26
+    const linkSize = boxFont(ctx, 16)
+    const linkY = cursorY + cardH - Math.max(28, linkSize + 12)
     ctx.save()
     ctx.beginPath()
     ctx.rect(x + 4, cursorY + 4, cardW - 8, Math.max(24, linkY - cursorY - 10))
     ctx.clip()
     ctx.fillStyle = hc ? '#fff' : '#e7f2f8'
-    ctx.font = '600 24px Figtree, sans-serif'
+    const titleSize = boxFont(ctx, 24)
+    const titleLine = Math.round(titleSize * 1.15)
+    ctx.font = `600 ${titleSize}px Figtree, sans-serif`
     const nameLines = wrapLines(ctx, game.name, cardW - 16).slice(0, 3)
-    let textY = cursorY + 10
+    let textY = cursorY + Math.round(titleSize * 0.85)
     nameLines.forEach((line) => {
       ctx.fillText(line, x + 8, textY)
-      textY += 28
+      textY += titleLine
     })
     const titleBottom = textY
-    ctx.font = '15px Figtree, sans-serif'
+    const metaSize = boxFont(ctx, 15)
+    const metaLine = Math.round(metaSize * 1.2)
+    ctx.font = `${metaSize}px Figtree, sans-serif`
     ctx.fillStyle = hc ? '#fff' : '#b7c9d6'
     const meta = [game.reviewScoreDesc, game.releaseDate, `${game.totalReviews.toLocaleString('en-US')} reviews`]
       .filter(Boolean)
@@ -357,25 +376,28 @@ function drawOpenedDiscover(ctx, world, view, time) {
     textY += 4
     metaLines.forEach((line) => {
       ctx.fillText(line, x + 8, textY)
-      textY += 18
+      textY += metaLine
     })
     ctx.restore()
     ctx.fillStyle = hc ? '#fff' : '#8ec3de'
-    ctx.font = '600 16px Figtree, sans-serif'
+    ctx.font = `600 ${linkSize}px Figtree, sans-serif`
+    const steamW = Math.ceil(ctx.measureText('Steam').width)
+    const itadX = x + 8 + steamW + 16
     ctx.fillText('Steam', x + 8, linkY)
-    ctx.fillText('ITAD', x + 70, linkY)
+    ctx.fillText('ITAD', itadX, linkY)
+    const linkHitH = Math.max(24, linkSize + 8)
     hits.push({
       x: x + 4,
-      y: linkY - 4 - cam * TILE_SIZE,
-      w: 58,
-      h: 24,
+      y: linkY - linkSize - cam * TILE_SIZE,
+      w: steamW + 12,
+      h: linkHitH,
       url: game.url
     })
     hits.push({
-      x: x + 66,
-      y: linkY - 4 - cam * TILE_SIZE,
-      w: 52,
-      h: 24,
+      x: itadX - 4,
+      y: linkY - linkSize - cam * TILE_SIZE,
+      w: Math.ceil(ctx.measureText('ITAD').width) + 12,
+      h: linkHitH,
       url: game.itadUrl
     })
     hits.push({
@@ -389,14 +411,16 @@ function drawOpenedDiscover(ctx, world, view, time) {
   cursorY += cardH + 8
   if (view.shortfall) {
     ctx.fillStyle = hc ? '#fff' : '#c5d4e0'
-    ctx.font = '18px Figtree, sans-serif'
+    const shortfallSize = boxFont(ctx, 18)
+    ctx.font = `${shortfallSize}px Figtree, sans-serif`
     const lead = view.shortfall.pending
       ? `${view.shortfall.count} game${view.shortfall.count === 1 ? '' : 's'} matched, fewer than 3. Finding which constraint emptied the list…`
       : `${view.shortfall.count} game${view.shortfall.count === 1 ? '' : 's'} matched, fewer than 3. The constraint that emptied the list: ${view.shortfall.constraint}.`
     const lines = wrapLines(ctx, lead, innerW)
+    const shortfallLine = Math.round(shortfallSize * 1.25)
     lines.slice(0, 5).forEach((line) => {
       ctx.fillText(line, innerX, cursorY)
-      cursorY += 22
+      cursorY += shortfallLine
     })
   }
   return hits

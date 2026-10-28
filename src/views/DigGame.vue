@@ -782,12 +782,13 @@ onBeforeUnmount(() => {
 }
 
 .dig-option-label {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
 .dig-option-detail {
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .dig-break,
@@ -844,6 +845,24 @@ onBeforeUnmount(() => {
       "stage"
       "choices"
       "panel";
+  }
+}
+
+@media (max-width: 768px) {
+  .dig-option {
+    padding: 0.9rem 1rem;
+  }
+
+  .dig-option-label {
+    font-size: 1.25rem;
+  }
+
+  .dig-option-detail {
+    font-size: 1.1rem;
+  }
+
+  .dig-choices h2 {
+    font-size: 1.45rem;
   }
 }
 </style>
