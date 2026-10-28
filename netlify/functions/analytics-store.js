@@ -185,12 +185,47 @@ function createPgSink(connectionString) {
   }
 }
 
+function createSupabaseSink({ url, anonKey, fetchImpl }) {
+  const base = String(url || '').replace(/\/+$/, '')
+  const endpoint = `${base}/rest/v1/rpc/analytics_ingest`
+  const fetchFn = fetchImpl || globalThis.fetch
+  return {
+    async record(batch, seenAt) {
+      const response = await fetchFn(endpoint, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          payload: {
+            seenAt,
+            user: batch.user,
+            session: batch.session,
+            events: batch.events
+          }
+        }),
+        signal: AbortSignal.timeout(8000)
+      })
+      if (response.ok) return
+      const error = new Error(response.status === 400 ? 'Invalid payload' : 'Analytics database is not configured')
+      error.statusCode = response.status === 400 ? 400 : 503
+      throw error
+    }
+  }
+}
+
 async function ingest(body, sink) {
   const batch = normalizeBatch(body)
   const seenAt = new Date().toISOString()
-  await sink.upsertUser(batch.user, seenAt)
-  await sink.upsertSession(batch.session, seenAt)
-  await sink.insertEvents(batch.events)
+  if (typeof sink.record === 'function') {
+    await sink.record(batch, seenAt)
+  } else {
+    await sink.upsertUser(batch.user, seenAt)
+    await sink.upsertSession(batch.session, seenAt)
+    await sink.insertEvents(batch.events)
+  }
   return { ok: true, accepted: batch.events.length, userId: batch.user.id, sessionId: batch.session.id }
 }
 
@@ -205,7 +240,7 @@ function createHandler(sink) {
       return { statusCode: 200, body: JSON.stringify(result) }
     } catch (err) {
       const statusCode = err.statusCode || 500
-      const message = statusCode === 400 ? err.message : 'Server error'
+      const message = statusCode === 400 || statusCode === 503 ? err.message : 'Server error'
       return { statusCode, body: JSON.stringify({ ok: false, error: message }) }
     }
   }
@@ -216,6 +251,7 @@ module.exports = {
   normalizeBatch,
   createMemorySink,
   createPgSink,
+  createSupabaseSink,
   ingest,
   createHandler
 }

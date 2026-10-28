@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 
 const require = createRequire(import.meta.url)
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { createMemorySink, createHandler } = require(join(root, 'netlify/functions/analytics-store.js'))
+const { createMemorySink, createHandler, createSupabaseSink } = require(join(root, 'netlify/functions/analytics-store.js'))
 
 const userId = '11111111-1111-4111-8111-111111111111'
 const sessionId = '22222222-2222-4222-8222-222222222222'
@@ -21,6 +21,12 @@ for (const table of ['analytics_users', 'analytics_sessions', 'analytics_events'
 }
 assert(sql.includes("CHECK (product IN ('site', 'find_a_game', 'diiig', 'recommender'))"), 'schema does not separate the products')
 assert(sql.includes('properties jsonb'), 'schema is missing the search-parameter column')
+assert(sql.includes('CREATE OR REPLACE FUNCTION analytics_ingest'), 'schema is missing the Supabase ingest function')
+assert(sql.includes('ENABLE ROW LEVEL SECURITY'), 'schema does not lock the tables')
+assert(sql.includes('NEXT_PUBLIC_SUPABASE_URL'), 'schema does not name the Supabase URL variable')
+const functionSource = readFileSync(join(root, 'netlify/functions/analytics.js'), 'utf8')
+assert(functionSource.includes('NEXT_PUBLIC_SUPABASE_URL'), 'function does not read the Supabase URL')
+assert(functionSource.includes('NEXT_PUBLIC_SUPABASE_ANON_KEY'), 'function does not read the Supabase anon key')
 
 const findSearch = {
   tags: ['Puzzle', 'Story Rich'],
@@ -168,6 +174,34 @@ assert(rejected.statusCode === 400, 'an unknown product was accepted')
 
 const wrongMethod = await handler({ httpMethod: 'GET', body: '' })
 assert(wrongMethod.statusCode === 405, 'GET was accepted')
+
+const calls = []
+const supabase = createSupabaseSink({
+  url: 'https://example.supabase.co/',
+  anonKey: 'test-anon-key',
+  fetchImpl: async (url, options) => {
+    calls.push({ url, options })
+    return { ok: true, status: 200 }
+  }
+})
+const supabaseHandler = createHandler(supabase)
+const stored = await supabaseHandler({ httpMethod: 'POST', body: JSON.stringify(body) })
+assert(stored.statusCode === 200, `supabase write failed: ${stored.body}`)
+assert(calls.length === 1, 'supabase was not called once')
+assert(calls[0].url === 'https://example.supabase.co/rest/v1/rpc/analytics_ingest', 'supabase endpoint is wrong')
+assert(calls[0].options.headers.apikey === 'test-anon-key', 'anon key was not sent')
+const sent = JSON.parse(calls[0].options.body)
+assert(sent.payload.user.id === userId, 'user was not sent to Supabase')
+assert(sent.payload.events.length === 8, 'events were not sent to Supabase')
+assert(sent.payload.events.every((event) => event.properties.password == null), 'a blocked field was sent to Supabase')
+
+const missing = createSupabaseSink({
+  url: 'https://example.supabase.co',
+  anonKey: 'test-anon-key',
+  fetchImpl: async () => ({ ok: false, status: 404 })
+})
+const unavailable = await createHandler(missing)({ httpMethod: 'POST', body: JSON.stringify(body) })
+assert(unavailable.statusCode === 503, 'a missing Supabase function was treated as stored')
 
 console.log(`analytics smoke test passed: 1 user, 1 session, ${sink.events.length} events`)
 console.log('products:', [...new Set(sink.events.map((event) => event.product))].join(', '))
