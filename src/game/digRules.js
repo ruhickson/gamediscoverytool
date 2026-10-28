@@ -136,13 +136,13 @@ export function scoreEncounter() {
   options.push({
     id: 'any',
     label: "Doesn't matter",
-    detail: 'No review-score clause',
+    detail: '',
     effect: { type: 'score', id: 'any' }
   })
   return {
     kind: 'score',
     prompt: 'Review score is at least…',
-    detail: 'Least strict to most strict. The chosen label includes every stricter one.',
+    detail: '',
     options
   }
 }
@@ -152,7 +152,7 @@ export function reviewsEncounter(scoreLabel = '') {
     {
       id: 'under-1000',
       label: '<1000',
-      detail: 'Fewer than 1,000 combined reviews',
+      detail: '',
       effect: {
         type: 'reviews',
         minReviews: 0,
@@ -164,13 +164,13 @@ export function reviewsEncounter(scoreLabel = '') {
     {
       id: 'any',
       label: "Doesn't matter",
-      detail: 'At least 11 reviews',
+      detail: '',
       effect: { type: 'reviews', id: 'any', minReviews: 11, maxReviews: 10000000 }
     },
     {
       id: 'over-1000',
       label: '>1000',
-      detail: 'More than 1,000 combined reviews',
+      detail: '',
       effect: {
         type: 'reviews',
         minReviews: 1001,
@@ -186,7 +186,7 @@ export function reviewsEncounter(scoreLabel = '') {
   return {
     kind: 'reviews',
     prompt: 'How many reviews?',
-    detail: 'Positive reviews plus negative reviews.',
+    detail: '',
     options: visible
   }
 }
