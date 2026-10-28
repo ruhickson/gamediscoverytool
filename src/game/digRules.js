@@ -53,7 +53,7 @@ export function tagEncounter(group, index, total = group.length) {
   return {
     kind: 'tags',
     prompt: `Which tag should this include? (${index + 1} of ${total})`,
-    detail: 'The search requires every tag you pick.',
+    detail: '',
     options: group.map((tag) => ({
       id: tag.name,
       label: tag.name,
@@ -79,7 +79,7 @@ export function recencyEncounter(today = todayYmd()) {
   return {
     kind: 'recency',
     prompt: 'When did it come out?',
-    detail: 'One release year.',
+    detail: '',
     options: windows.map((window) => ({
       id: window.id,
       label: window.label,
@@ -102,7 +102,7 @@ export function dateSplitEncounter(minDate, maxDate) {
   const options = splitWindow(minDate, maxDate).map((range, index) => ({
     id: `split-${index + 1}`,
     label: `${formatDay(range.minDate)} – ${formatDay(range.maxDate)}`,
-    detail: 'Replaces the wider release window',
+    detail: '',
     effect: {
       type: 'datesplit',
       minDate: range.minDate,
@@ -112,13 +112,13 @@ export function dateSplitEncounter(minDate, maxDate) {
   options.push({
     id: 'any',
     label: "Doesn't matter",
-    detail: 'Keep the wider release window',
+    detail: '',
     effect: { type: 'datesplit', id: 'any' }
   })
   return {
     kind: 'datesplit',
     prompt: 'Which part of that period?',
-    detail: 'Narrow the release window, or keep the whole period.',
+    detail: '',
     options
   }
 }

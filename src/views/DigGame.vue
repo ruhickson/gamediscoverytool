@@ -67,7 +67,7 @@
         </button>
 
         <p v-if="phase === 'play' && active" class="dig-help">
-          Dig left or right, then dig down into a named block. Press 1–{{ active.options.length }} to pick one.
+          
         </p>
       </section>
 
