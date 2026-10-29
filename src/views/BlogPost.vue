@@ -1,6 +1,9 @@
 <template>
   <div class="blog-post">
-    <div v-if="isImportedEssay" class="imported-essay">
+    <div v-if="resolving && !isImportedEssay" class="blog-post">
+      <p class="text-muted p-4">Loading...</p>
+    </div>
+    <div v-else-if="isImportedEssay" class="imported-essay">
       <router-link to="/blog" class="btn btn-outline-secondary mb-3">
         <i class="fas fa-arrow-left me-2"></i>
         Back to Media
@@ -8,7 +11,7 @@
       <iframe
         class="essay-frame"
         :title="essayTitle"
-        src="/blog/2026-10-22-four-years-after-vampire-survivors.html"
+        :src="essaySrc"
       ></iframe>
     </div>
     <div v-else class="container-fluid">
@@ -146,7 +149,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadBlogSummaries } from '../utils/blogPosts.js'
 
@@ -154,8 +157,10 @@ export default {
   name: 'BlogPost',
   setup() {
     const route = useRoute()
-    const isImportedEssay = computed(() => route.params.slug === '2026-10-22-four-years-after-vampire-survivors')
+    const resolving = ref(true)
+    const essaySrc = ref('')
     const essayTitle = ref('Blog post')
+    const isImportedEssay = computed(() => essaySrc.value !== '')
     const post = ref(null)
     const isLoading = ref(false)
     const error = ref('')
@@ -232,22 +237,34 @@ export default {
       // In production, save to localStorage or user account
     }
 
-    onMounted(async () => {
-      if (isImportedEssay.value) {
-        try {
-          const posts = await loadBlogSummaries()
-          const match = posts.find((item) => item.slug === route.params.slug)
-          if (match?.title) essayTitle.value = match.title
-        } catch (err) {
-          console.error('Error loading essay title:', err)
+    watch(() => route.params.slug, async (slug) => {
+      resolving.value = true
+      essaySrc.value = ''
+      try {
+        const posts = await loadBlogSummaries()
+        const match = posts.find((item) => item.slug === slug && item.file)
+        if (match) {
+          essaySrc.value = match.file
+          essayTitle.value = match.title || 'Blog post'
+          return
         }
-        return
+      } catch (err) {
+        console.error('Error loading essay:', err)
       }
       loadPost()
+    }, { immediate: true })
+
+    watch(isImportedEssay, (ready) => {
+      if (ready) resolving.value = false
+    })
+    watch(isLoading, (loading) => {
+      if (!loading) resolving.value = false
     })
 
     return {
+      resolving,
       isImportedEssay,
+      essaySrc,
       essayTitle,
       post,
       isLoading,

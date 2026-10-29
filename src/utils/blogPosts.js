@@ -3,6 +3,16 @@ const POSTS = [
     slug: '2026-10-22-four-years-after-vampire-survivors',
     publishedAt: '2026-10-22',
     file: '/blog/2026-10-22-four-years-after-vampire-survivors.html'
+  },
+  {
+    slug: '2026-10-28-farewell-bioware-the-impact-of-mass-effect',
+    publishedAt: '2026-10-28',
+    file: '/blog/2026-10-28-farewell-bioware-the-impact-of-mass-effect.html'
+  },
+  {
+    slug: '2026-10-28-critical-mass-ais-takeover-of-steam',
+    publishedAt: '2026-10-28',
+    file: '/blog/2026-10-28-critical-mass-ais-takeover-of-steam.html'
   }
 ]
 

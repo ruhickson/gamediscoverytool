@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <script>
+    if (window.top === window.self) {
+      window.location.replace("/blog/2026-10-28-critical-mass-ais-takeover-of-steam");
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Critical Mass - AI's takeover of Steam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/essay.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <style>
+    .chart { width: 100%; height: 360px; margin-top: 12px; }
+    .chart.tall { height: 480px; }
+    .chart.tags { height: 1480px; }
+    .chart.bars { height: 560px; }
+    .chart.stream { height: 440px; position: relative; }
+    .stream-tip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      background: #1a2438;
+      border: 1px solid #3d4a5c;
+      color: #e8eef7;
+      font-family: Figtree, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 8px 10px;
+      border-radius: 6px;
+      z-index: 2;
+    }
+    .chart.scatter { height: 680px; }
+    .label-toggle {
+      margin-top: 12px;
+      background: transparent;
+      color: #e8eef7;
+      border: 1px solid #d4af37;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .label-toggle[aria-pressed="false"] {
+      border-color: #3d4a5c;
+      color: #94a3b8;
+    }
+    .chart.cloud { height: 520px; }
+    .window-filter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 18px;
+    }
+    .window-filter label {
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .window-filter select {
+      background: #121a2b;
+      color: #e8eef7;
+      border: 1px solid #d4af37;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: 600 14px Figtree, sans-serif;
+      cursor: pointer;
+    }
+    .window-filter select:disabled { opacity: 0.55; cursor: wait; }
+    .copy {
+      max-width: 68ch;
+      margin: 0 0 28px;
+      color: var(--ink);
+      font-size: 1.02rem;
+      line-height: 1.6;
+    }
+    .copy p { margin: 0 0 0.9em; }
+    .copy p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <div class="kicker">
+      <span>Game Discovery · 29 Oct 2026</span>
+      <span>Games released Jan 2020 – Oct 2026</span>
+    </div>
+
+    <h1>Critical Mass - AI's takeover of Steam</h1>
+    <p class="lede">Steam games released from January 2020 through 29 October 2026, split by AI disclosure or no AI disclosure on the store page.</p>
+    <div class="copy">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="stat-total">—</div><div class="l">AI disclosure since Jan 2020</div></div>
+      <div class="stat"><div class="n" id="stat-share">—</div><div class="l">AI disclosure share since Jan 2020</div></div>
+      <div class="stat"><div class="n" id="stat-month">—</div><div class="l">AI disclosure in Oct 2026</div></div>
+      <div class="stat"><div class="n" id="stat-month-share">—</div><div class="l">AI disclosure share in Oct 2026</div></div>
+    </div>
+
+    <div class="hint">
+      <strong>Count.</strong>
+      A row is a Steam app whose type is game, released from 1 January 2020 through 29 October 2026.
+      AI disclosure means the <strong>made with AI</strong> flag, the same one the Trends page uses. No AI disclosure is every other game.
+      October 2026 is the month in progress. A game with several tags is counted once for each of them.
+      The population pyramid compares no AI disclosure on the left with AI disclosure on the right, by Steam review label. Each side sums to 100 percent of that group, for games released from January 2020 through 29 October 2026. Steam’s “1 user reviews” through “9 user reviews” are grouped as 1–9 reviews. A blank label is shown as “No score recorded”.
+      Where a chart says review percentage, that is positive reviews divided by positive plus negative reviews. Games with no reviews are left out of that ratio.
+      Free is the Steam free-to-play flag. Paid is every other game.
+    </div>
+
+    <div class="window-filter">
+      <label for="window">Release window</label>
+      <select id="window" disabled>
+        <option value="all">Since January 2020</option>
+        <option value="y2026">Just 2026</option>
+        <option value="oct">October 2026</option>
+      </select>
+    </div>
+
+    <div class="figures">
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Share of releases</p>
+          <h2>AI disclosure, by month</h2>
+          <p class="cap">100% stacked. Each month sums to 100 percent of games released that month. Gold is AI disclosure. Slate is no AI disclosure.</p>
+        </div>
+        <div id="chart-share" class="chart"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">How many</p>
+          <h2 id="count-title">AI disclosure since January 2020</h2>
+          <p class="cap" id="cap-count">Bars are games released that month with an AI disclosure. The line is the running total.</p>
+        </div>
+        <div id="chart-count" class="chart"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Free and paid</p>
+          <h2>Free and paid, by AI disclosure</h2>
+          <p class="cap" id="cap-free">Free is the Steam free-to-play flag. Paid is every other game.</p>
+        </div>
+        <div id="chart-free" class="chart"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">List price</p>
+          <h2>Games by initial price</h2>
+          <p class="cap" id="cap-price">Each bar is how many games have an initial list price in that dollar.</p>
+        </div>
+        <div id="chart-price" class="chart"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Tags</p>
+          <h2>Top 50 tags on games with an AI disclosure</h2>
+          <p class="cap" id="cap-tags">The fifty tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.</p>
+        </div>
+        <div id="chart-tags" class="chart tags"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Review labels</p>
+          <h2>Review score by AI disclosure</h2>
+          <p class="cap" id="cap-reviews">Population pyramid. No AI disclosure extends left. AI disclosure extends right. A bar is that label’s share of its own group since January 2020, so each side sums to 100 percent.</p>
+        </div>
+        <div id="chart-reviews" class="chart bars"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Review percentage</p>
+          <h2>Review score percentage of games with an AI disclosure, by month</h2>
+          <p class="cap" id="cap-stream">Stream graph of games with an AI disclosure, by review percentage. Ribbons are counts, displaced around the center of the axis.</p>
+        </div>
+        <div id="chart-stream" class="chart stream"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Tags</p>
+          <h2>Where tags sit, AI disclosure and no AI disclosure</h2>
+          <p class="cap">Each point is a tag from the top 50 in either group. Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.</p>
+          <button type="button" id="scatter-labels" class="label-toggle" aria-pressed="true">Hide data labels</button>
+        </div>
+        <div id="chart-scatter" class="chart scatter"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Titles</p>
+          <h2>Words in titles of games with an AI disclosure</h2>
+          <p class="cap">Each title is split into words. Size is how many games with an AI disclosure use that word. The, a, and, of, and similar joining words are left out.</p>
+        </div>
+        <div id="chart-cloud" class="chart cloud"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Disclosure statements</p>
+          <h2>Words in AI disclosure statements</h2>
+          <p class="cap" id="cap-disclosure">Words from the AI disclosure statement on each game. A word counts once per statement. Hyphenated phrases stay together. The, a, and, of, and similar joining words are left out.</p>
+        </div>
+        <div id="chart-disclosure" class="chart cloud"></div>
+        <div class="commentary">
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+      </section>
+    </div>
+
+    <footer class="note">
+      <p>Counts are from the Games cube on 29 October 2026. The AI disclosure total in this window is 13,137, the same figure the Trends page reports as all-time.</p>
+      <p>Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":9948},{"name":"Indie","ai":7535},{"name":"Casual","ai":6754},{"name":"2D","ai":5815},{"name":"3D","ai":4383},{"name":"Action","ai":4313},{"name":"Adventure","ai":4155},{"name":"Simulation","ai":3958},{"name":"Strategy","ai":3648},{"name":"Atmospheric","ai":2944},{"name":"Colorful","ai":2808},{"name":"First-Person","ai":2584},{"name":"RPG","ai":2540},{"name":"Exploration","ai":2362},{"name":"Early Access","ai":2335},{"name":"Puzzle","ai":2318},{"name":"Relaxing","ai":2285},{"name":"Cute","ai":2247},{"name":"Fantasy","ai":2195},{"name":"Pixel Graphics","ai":1985},{"name":"Story Rich","ai":1953},{"name":"Combat","ai":1929},{"name":"Arcade","ai":1872},{"name":"Stylized","ai":1843},{"name":"Top-Down","ai":1765},{"name":"Multiplayer","ai":1762},{"name":"Funny","ai":1612},{"name":"PvE","ai":1609},{"name":"Choices Matter","ai":1582},{"name":"Realistic","ai":1581},{"name":"Horror","ai":1581},{"name":"Action-Adventure","ai":1576},{"name":"Family Friendly","ai":1527},{"name":"Roguelite","ai":1427},{"name":"Roguelike","ai":1387},{"name":"Management","ai":1387},{"name":"Sci-fi","ai":1385},{"name":"Resource Management","ai":1344},{"name":"Free to Play","ai":1326},{"name":"Third Person","ai":1297},{"name":"Dark","ai":1278},{"name":"PvP","ai":1263},{"name":"Controller","ai":1247},{"name":"Shooter","ai":1221},{"name":"Mystery","ai":1216},{"name":"Multiple Endings","ai":1199},{"name":"Immersive Sim","ai":1198},{"name":"Retro","ai":1175},{"name":"Psychological Horror","ai":1155},{"name":"Linear","ai":1154}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
+
+    const omittedTags = new Set(["Singleplayer", "Indie", "Action", "Adventure", "2D", "3D", "Casual"]);
+    const axisText = { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 };
+    const tooltipBase = {
+      backgroundColor: "#1a2438",
+      borderColor: "#3d4a5c",
+      borderWidth: 1,
+      textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+      confine: true
+    };
+    const reviewColors = {
+      "Overwhelmingly Positive": "#059669",
+      "Very Positive": "#34d399",
+      "Mostly Positive": "#6ee7b7",
+      "Positive": "#a7f3d0",
+      "Mixed": "#d4af37",
+      "Mostly Negative": "#fb923c",
+      "Negative": "#f87171",
+      "Very Negative": "#ef4444",
+      "Overwhelmingly Negative": "#b91c1c",
+      "1–9 reviews": "#64748b",
+      "No user reviews": "#475569",
+      "No score recorded": "#334155"
+    };
+
+    function sum(values) {
+      return values.reduce((total, value) => total + value, 0);
+    }
+
+    const totalDeclared = sum(DATA.declared);
+    const totalOther = sum(DATA.other);
+    const last = DATA.declared.length - 1;
+    const monthDeclared = DATA.declared[last];
+    const monthOther = DATA.other[last];
+    document.getElementById("stat-total").textContent = totalDeclared.toLocaleString("en-US");
+    document.getElementById("stat-share").textContent = (totalDeclared / (totalDeclared + totalOther) * 100).toFixed(1) + "%";
+    document.getElementById("stat-month").textContent = monthDeclared.toLocaleString("en-US");
+    document.getElementById("stat-month-share").textContent = (monthDeclared / (monthDeclared + monthOther) * 100).toFixed(1) + "%";
+
+    const WINDOW_META = {
+      all: { phrase: "since January 2020", totalName: "Total since Jan 2020", title: "AI disclosure since January 2020", start: "2020-01", end: "2026-10" },
+      y2026: { phrase: "in 2026", totalName: "Total in 2026", title: "AI disclosure in 2026", start: "2026-01", end: "2026-10" },
+      oct: { phrase: "in October 2026", totalName: "October 2026", title: "AI disclosure in October 2026", start: "2026-10", end: "2026-10" }
+    };
+    let windowsExtra = null;
+    let vizPayload = null;
+    let current = null;
+    const charts = {};
+
+    function monthIndexes(months, start, end) {
+      const indexes = [];
+      months.forEach((month, index) => {
+        if (month >= start && month <= end) indexes.push(index);
+      });
+      return indexes;
+    }
+
+    function summedReviews(table) {
+      const counts = {};
+      for (const label of DATA.reviewOrder) counts[label] = sum(table[label]);
+      return counts;
+    }
+
+    function sliceStream(stream, start, end, unscored) {
+      const indexes = monthIndexes(stream.months, start, end);
+      const counts = stream.counts.map((band) => indexes.map((index) => band[index]));
+      return {
+        months: indexes.map((index) => stream.months[index]),
+        bands: stream.bands,
+        counts,
+        scored: counts.reduce((total, band) => total + sum(band), 0),
+        unscored
+      };
+    }
+
+    function buildCurrent(key) {
+      const meta = WINDOW_META[key];
+      const indexes = monthIndexes(DATA.months, meta.start, meta.end);
+      const declared = indexes.map((index) => DATA.declared[index]);
+      const other = indexes.map((index) => DATA.other[index]);
+      const extra = key === "all"
+        ? {
+            tags: DATA.tags,
+            reviews: { ai: summedReviews(DATA.aiReviews), other: summedReviews(DATA.otherReviews) },
+            freePaid: vizPayload && vizPayload.freePaid,
+            words: vizPayload && vizPayload.words,
+            disclosureWords: vizPayload && vizPayload.disclosureWords,
+            disclosureStatements: vizPayload && vizPayload.disclosureStatements,
+            disclosureBlank: vizPayload && vizPayload.disclosureBlank,
+            clusters: vizPayload && vizPayload.clusters,
+            unscored: vizPayload ? vizPayload.stream.unscored : 0
+          }
+        : windowsExtra[key];
+      return {
+        key,
+        ...meta,
+        months: indexes.map((index) => DATA.months[index]),
+        declared,
+        other,
+        aiTotal: sum(declared),
+        otherTotal: sum(other),
+        stream: vizPayload ? sliceStream(vizPayload.stream, meta.start, meta.end, extra.unscored) : null,
+        ...extra,
+        price: key === "all" ? vizPayload && vizPayload.priceHist : extra.priceHist
+      };
+    }
+
+    current = buildCurrent("all");
+
+    function monthLabel(value, index) {
+      if (current.months.length <= 12) return value;
+      if (value.endsWith("-01") || index === current.months.length - 1) return value;
+      return "";
+    }
+
+    function categoryAxis(boundaryGap) {
+      return {
+        type: "category",
+        data: current.months,
+        boundaryGap,
+        axisLabel: { ...axisText, interval: 0, rotate: 40, formatter: monthLabel },
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        axisTick: { alignWithLabel: true }
+      };
+    }
+
+    charts.share = echarts.init(document.getElementById("chart-share"));
+    function renderShare() {
+      const declaredShare = current.months.map((_, index) => {
+        const total = current.declared[index] + current.other[index];
+        return total ? (current.declared[index] / total) * 100 : 0;
+      });
+      const otherShare = declaredShare.map((value) => 100 - value);
+      const oneMonth = current.months.length < 3;
+      charts.share.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        formatter(params) {
+          const index = params[0].dataIndex;
+          const declared = current.declared[index];
+          const other = current.other[index];
+          const total = declared + other;
+          const share = total ? (declared / total) * 100 : 0;
+          return `<b>${current.months[index]}</b><br/>AI disclosure: <b>${declared.toLocaleString("en-US")}</b> (${share.toFixed(1)}%)<br/>No AI disclosure: <b>${other.toLocaleString("en-US")}</b> (${(100 - share).toFixed(1)}%)`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 48, right: 18, top: 36, bottom: 48 },
+      xAxis: categoryAxis(oneMonth),
+      yAxis: {
+        type: "value",
+        min: 0,
+        max: 100,
+        axisLabel: { ...axisText, formatter: (value) => value + "%" },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+      },
+      series: [
+        {
+          name: "AI disclosure",
+          type: "line",
+          stack: "share",
+          data: declaredShare,
+          symbol: oneMonth ? "circle" : "none",
+          symbolSize: 8,
+          lineStyle: { width: 1.5, color: "#d4af37" },
+          itemStyle: { color: "#d4af37" },
+          areaStyle: { color: "rgba(212, 175, 55, 0.85)" }
+        },
+        {
+          name: "No AI disclosure",
+          type: "line",
+          stack: "share",
+          data: otherShare,
+          symbol: oneMonth ? "circle" : "none",
+          symbolSize: 8,
+          lineStyle: { width: 1.5, color: "#94a3b8" },
+          itemStyle: { color: "#64748b" },
+          areaStyle: { color: "#3d4d66" }
+        }
+      ]
+    }, { notMerge: true });
+    }
+
+    charts.count = echarts.init(document.getElementById("chart-count"));
+    function renderCount() {
+      const cumulative = [];
+      current.declared.reduce((running, value) => {
+        const next = running + value;
+        cumulative.push(next);
+        return next;
+      }, 0);
+      document.getElementById("count-title").textContent = current.title;
+      document.getElementById("cap-count").textContent = `Bars are games released that month with an AI disclosure. The line is the running total ${current.phrase}.`;
+      charts.count.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        formatter(params) {
+          const index = params[0].dataIndex;
+          return `<b>${current.months[index]}</b><br/>AI disclosure that month: <b>${current.declared[index].toLocaleString("en-US")}</b><br/>${current.totalName}: <b>${cumulative[index].toLocaleString("en-US")}</b>`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 52, right: 58, top: 36, bottom: 48 },
+      xAxis: { ...categoryAxis(true), boundaryGap: true },
+      yAxis: [
+        {
+          type: "value",
+          name: "Games / month",
+          nameTextStyle: { ...axisText, color: "#d4af37" },
+          axisLabel: { ...axisText, color: "#d4af37" },
+          axisLine: { show: true, lineStyle: { color: "#d4af37" } },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        {
+          type: "value",
+          nameTextStyle: { ...axisText, color: "#7dd3fc" },
+          axisLabel: { ...axisText, color: "#7dd3fc" },
+          axisLine: { show: true, lineStyle: { color: "#7dd3fc" } },
+          splitLine: { show: false }
+        }
+      ],
+      series: [
+        {
+          name: "AI disclosure that month",
+          type: "bar",
+          data: current.declared,
+          itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+          barMaxWidth: 14
+        },
+        {
+          name: current.totalName,
+          type: "line",
+          yAxisIndex: 1,
+          data: cumulative,
+          symbol: current.months.length < 3 ? "circle" : "none",
+          smooth: 0.15,
+          lineStyle: { width: 2.25, color: "#7dd3fc" },
+          itemStyle: { color: "#7dd3fc" }
+        }
+      ]
+    }, { notMerge: true });
+    }
+
+    renderShare();
+    renderCount();
+
+    charts.tags = echarts.init(document.getElementById("chart-tags"));
+    function renderTags() {
+      const tagRows = current.tags.filter((row) => !omittedTags.has(row.name)).sort((a, b) => b.ai - a.ai || a.name.localeCompare(b.name));
+      const tagMax = Math.max(...tagRows.map((row) => row.ai));
+      const tagMin = Math.min(...tagRows.map((row) => row.ai));
+      const tagSize = (count) => {
+        if (!count || tagMax === tagMin) return 12;
+        const t = (count - tagMin) / (tagMax - tagMin);
+        return 10 + t * 18;
+      };
+      document.getElementById("cap-tags").textContent = `The fifty tags attached to the most games with an AI disclosure ${current.phrase}, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.`;
+      charts.tags.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "item",
+        formatter(params) {
+          const count = params.data.count;
+          const share = current.aiTotal ? (count / current.aiTotal) * 100 : 0;
+          return `<b>${params.data.name}</b><br/>AI disclosure: <b>${count.toLocaleString("en-US")}</b><br/>Share of games with an AI disclosure: <b>${share.toFixed(1)}%</b>`;
+        }
+      },
+      grid: { left: 8, right: 28, top: 12, bottom: 36, containLabel: true },
+      xAxis: {
+        type: "value",
+        name: "AI disclosure",
+        nameLocation: "middle",
+        nameGap: 26,
+        nameTextStyle: axisText,
+        axisLabel: axisText,
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.45)" } }
+      },
+      yAxis: {
+        type: "category",
+        data: tagRows.map((row) => row.name),
+        inverse: true,
+        axisLabel: { ...axisText, color: "#e8eef7" },
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        splitLine: { show: true, lineStyle: { color: "rgba(61, 74, 92, 0.35)" } }
+      },
+      series: [{
+        name: "AI disclosure",
+        type: "scatter",
+        data: tagRows.map((row) => ({
+          name: row.name,
+          value: [row.ai, row.name],
+          count: row.ai
+        })),
+        symbolSize: (value) => tagSize(value[0]),
+        itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+      }]
+    }, { notMerge: true });
+    }
+    renderTags();
+
+    function reviewShares(countsByLabel) {
+      const counts = DATA.reviewOrder.map((label) => countsByLabel[label] || 0);
+      const total = sum(counts);
+      return {
+        counts,
+        total,
+        shares: counts.map((count) => (total ? (count / total) * 100 : 0))
+      };
+    }
+
+    charts.reviews = echarts.init(document.getElementById("chart-reviews"));
+    function renderReviews() {
+      const aiReview = reviewShares(current.reviews.ai);
+      const otherReview = reviewShares(current.reviews.other);
+      const reviewMax = Math.max(...aiReview.shares, ...otherReview.shares, 1);
+      const reviewAxisMax = Math.ceil(reviewMax / 5) * 5;
+      const reviewPercentLabel = (value) => Math.abs(value) >= 0.05 ? Math.abs(value).toFixed(1) + "%" : "";
+      const labelCol = 140;
+      const chartWidth = charts.reviews.getWidth() || document.getElementById("chart-reviews").clientWidth || 640;
+      const side = Math.max(80, Math.floor((chartWidth - labelCol - 16) / 2));
+      document.getElementById("cap-reviews").textContent = `Population pyramid. No AI disclosure extends left. AI disclosure extends right. A bar is that label’s share of its own group ${current.phrase}, so each side sums to 100 percent.`;
+      charts.reviews.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter(params) {
+          const index = params[0].dataIndex;
+          const label = DATA.reviewOrder[index];
+          const otherCount = otherReview.counts[index];
+          const aiCount = aiReview.counts[index];
+          return `<b>${label}</b><br/>No AI disclosure: <b>${otherCount.toLocaleString("en-US")}</b> (${otherReview.shares[index].toFixed(1)}%)<br/>AI disclosure: <b>${aiCount.toLocaleString("en-US")}</b> (${aiReview.shares[index].toFixed(1)}%)`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: [
+        { left: 8, width: side, top: 36, bottom: 28 },
+        { left: 8 + side + labelCol, width: side, top: 36, bottom: 28 }
+      ],
+      xAxis: [
+        {
+          type: "value",
+          gridIndex: 0,
+          inverse: true,
+          min: 0,
+          max: reviewAxisMax,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        {
+          type: "value",
+          gridIndex: 1,
+          min: 0,
+          max: reviewAxisMax,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        }
+      ],
+      yAxis: [
+        {
+          type: "category",
+          gridIndex: 0,
+          data: DATA.reviewOrder,
+          inverse: true,
+          position: "right",
+          axisTick: { show: false },
+          axisLine: { show: false },
+          axisLabel: {
+            ...axisText,
+            color: "#e8eef7",
+            align: "center",
+            margin: labelCol / 2,
+            width: labelCol - 8,
+            overflow: "break"
+          }
+        },
+        {
+          type: "category",
+          gridIndex: 1,
+          data: DATA.reviewOrder,
+          inverse: true,
+          axisTick: { show: false },
+          axisLine: { show: false },
+          axisLabel: { show: false }
+        }
+      ],
+      series: [
+        {
+          name: "No AI disclosure",
+          type: "bar",
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: otherReview.shares,
+          itemStyle: { color: "#22d3ee", borderRadius: [3, 0, 0, 3] },
+          barMaxWidth: 18,
+          label: {
+            show: true,
+            position: "left",
+            formatter: (params) => reviewPercentLabel(params.value),
+            color: "#e8eef7",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 11
+          }
+        },
+        {
+          name: "AI disclosure",
+          type: "bar",
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: aiReview.shares,
+          itemStyle: { color: "#d4af37", borderRadius: [0, 3, 3, 0] },
+          barMaxWidth: 18,
+          label: {
+            show: true,
+            position: "right",
+            formatter: (params) => reviewPercentLabel(params.value),
+            color: "#e8eef7",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 11
+          }
+        }
+      ]
+    }, { notMerge: true });
+    }
+    renderReviews();
+
+    const bandColors = ["#059669", "#34d399", "#a7f3d0", "#d4af37", "#f87171"];
+
+    function drawStream(el, stream) {
+      el.replaceChildren();
+      const legend = document.createElement("div");
+      legend.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 4px 0;font:11px Figtree,sans-serif;color:#94a3b8";
+      stream.bands.forEach((band, index) => {
+        const item = document.createElement("span");
+        item.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${bandColors[index]};margin-right:6px;vertical-align:-2px"></span>${band}`;
+        legend.appendChild(item);
+      });
+      el.appendChild(legend);
+      if (stream.months.length < 2) {
+        const counts = stream.bands.map((_, index) => stream.counts[index][0] || 0);
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "display:flex;align-items:stretch;gap:18px;height:360px;padding:18px 8px 8px";
+        const bar = document.createElement("div");
+        bar.style.cssText = "display:flex;flex-direction:column;width:84px;border-radius:6px;overflow:hidden";
+        const list = document.createElement("div");
+        list.style.cssText = "display:flex;flex-direction:column;justify-content:center;gap:8px;font:13px Figtree,sans-serif;color:#e8eef7";
+        stream.bands.forEach((band, index) => {
+          const part = document.createElement("div");
+          part.style.flex = String(Math.max(counts[index], 0));
+          part.style.background = bandColors[index];
+          bar.appendChild(part);
+          const row = document.createElement("div");
+          row.innerHTML = `<span style="color:${bandColors[index]}">●</span> ${band}: <b>${counts[index].toLocaleString("en-US")}</b>`;
+          list.appendChild(row);
+        });
+        wrap.append(bar, list);
+        el.appendChild(wrap);
+        return;
+      }
+      const width = Math.max(el.clientWidth || 0, 320);
+      const height = Math.max((el.clientHeight || 440) - legend.offsetHeight, 280);
+      const margin = { top: 16, right: 12, bottom: 32, left: 48 };
+      const rows = stream.months.map((month, index) => {
+        const row = { month };
+        stream.bands.forEach((band, bandIndex) => {
+          row[band] = stream.counts[bandIndex][index];
+        });
+        return row;
+      });
+      const layers = d3.stack().keys([...stream.bands].reverse()).order(d3.stackOrderNone).offset(d3.stackOffsetSilhouette)(rows);
+      const x = d3.scaleTime()
+        .domain(d3.extent(rows, (row) => new Date(`${row.month}-01`)))
+        .range([margin.left, width - margin.right]);
+      const y = d3.scaleLinear()
+        .domain([
+          d3.min(layers, (layer) => d3.min(layer, (point) => point[0])),
+          d3.max(layers, (layer) => d3.max(layer, (point) => point[1]))
+        ])
+        .nice()
+        .range([height - margin.bottom, margin.top]);
+      const area = d3.area()
+        .x((point) => x(new Date(`${point.data.month}-01`)))
+        .y0((point) => y(point[0]))
+        .y1((point) => y(point[1]))
+        .curve(d3.curveMonotoneX);
+      const svg = d3.select(el).append("svg").attr("width", width).attr("height", height);
+      svg.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(6).tickFormat((value) => Math.abs(value).toLocaleString("en-US")))
+        .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
+        .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
+        .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
+      svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %Y")))
+        .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
+        .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
+        .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
+      svg.append("line")
+        .attr("x1", margin.left)
+        .attr("x2", width - margin.right)
+        .attr("y1", y(0))
+        .attr("y2", y(0))
+        .attr("stroke", "#94a3b8")
+        .attr("stroke-dasharray", "3 4");
+      svg.append("g")
+        .selectAll("path")
+        .data(layers)
+        .join("path")
+        .attr("fill", (layer) => bandColors[stream.bands.indexOf(layer.key)])
+        .attr("fill-opacity", 0.92)
+        .attr("d", area);
+      const rule = svg.append("line")
+        .attr("y1", margin.top)
+        .attr("y2", height - margin.bottom)
+        .attr("stroke", "#e8eef7")
+        .attr("stroke-opacity", 0.45)
+        .style("display", "none");
+      const tip = document.createElement("div");
+      tip.className = "stream-tip";
+      el.appendChild(tip);
+      svg.append("rect")
+        .attr("x", margin.left)
+        .attr("y", margin.top)
+        .attr("width", width - margin.left - margin.right)
+        .attr("height", height - margin.top - margin.bottom)
+        .attr("fill", "transparent")
+        .on("mousemove", (event) => {
+          const [mx, my] = d3.pointer(event);
+          const date = x.invert(mx);
+          let nearest = 0;
+          let best = Infinity;
+          rows.forEach((row, index) => {
+            const distance = Math.abs(new Date(`${row.month}-01`) - date);
+            if (distance < best) {
+              best = distance;
+              nearest = index;
+            }
+          });
+          const month = rows[nearest].month;
+          const xPos = x(new Date(`${month}-01`));
+          rule.attr("x1", xPos).attr("x2", xPos).style("display", null);
+          const total = stream.bands.reduce((sum, _, index) => sum + stream.counts[index][nearest], 0);
+          const lines = stream.bands.map((band, index) => `<div><span style="color:${bandColors[index]}">●</span> ${band}: <b>${stream.counts[index][nearest].toLocaleString("en-US")}</b></div>`).join("");
+          tip.innerHTML = `<b>${month}</b><div>${total.toLocaleString("en-US")} scored games</div>${lines}`;
+          tip.style.display = "block";
+          let left = xPos + 12;
+          if (left + tip.offsetWidth > width - 8) left = Math.max(8, xPos - tip.offsetWidth - 12);
+          tip.style.left = `${left}px`;
+          tip.style.top = `${Math.max(8, Math.min(my, height - tip.offsetHeight - 8))}px`;
+        })
+        .on("mouseleave", () => {
+          rule.style("display", "none");
+          tip.style.display = "none";
+        });
+    }
+
+    function renderFreePaid(free) {
+      const aiTotal = free.ai.free + free.ai.paid;
+      const otherTotal = free.other.free + free.other.paid;
+      const pct = (part, total) => (total ? (part / total) * 100 : 0);
+      const share = (part, total) => pct(part, total).toFixed(1);
+      const point = (part, total) => ({ value: pct(part, total), count: part });
+      document.getElementById("cap-free").textContent = `Free is the Steam free-to-play flag. Paid is every other game. Bars are each group’s own share. AI disclosure: ${free.ai.free.toLocaleString("en-US")} free and ${free.ai.paid.toLocaleString("en-US")} paid, so ${share(free.ai.free, aiTotal)} percent are free. No AI disclosure: ${free.other.free.toLocaleString("en-US")} free and ${free.other.paid.toLocaleString("en-US")} paid, so ${share(free.other.free, otherTotal)} percent are free.`;
+      const percentLabel = {
+        show: true,
+        position: "top",
+        color: "#e8eef7",
+        fontFamily: "Figtree, sans-serif",
+        fontSize: 12,
+        formatter: (params) => Number(params.value).toFixed(1) + "%"
+      };
+      if (!charts.free) charts.free = echarts.init(document.getElementById("chart-free"));
+      charts.free.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const lines = params.map((row) => `${row.marker}${row.seriesName}: <b>${row.data.count.toLocaleString("en-US")}</b> (${Number(row.value).toFixed(1)}%)`);
+            return [`<b>${params[0].axisValue}</b>`, ...lines].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 52, right: 16, top: 64, bottom: 28 },
+        xAxis: {
+          type: "category",
+          data: ["Free", "Paid"],
+          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 13 },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          max: 100,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: [point(free.other.free, otherTotal), point(free.other.paid, otherTotal)],
+            itemStyle: { color: "#22d3ee", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 56,
+            label: percentLabel
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: [point(free.ai.free, aiTotal), point(free.ai.paid, aiTotal)],
+            itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 56,
+            label: percentLabel
+          }
+        ]
+      }, { notMerge: true });
+    }
+
+    function renderInitialPrice(spec) {
+      const cap = document.getElementById("cap-price");
+      cap.textContent = `Each bar is how many games have an initial list price in that dollar. The price is the store price overview’s initial price, divided by 100. The last bar is $60 or more. A few list prices are not in the cents of a major currency. ${spec.matchedAi.toLocaleString("en-US")} games with an AI disclosure and ${spec.matchedOther.toLocaleString("en-US")} with no AI disclosure have a price record. Games with none are left out.`;
+      const priceLabel = (value) => {
+        if (value === "60+") return "$60 or more";
+        if (value === "0") return "Under $1";
+        return `$${value}–$${value}.99`;
+      };
+      if (!charts.price) charts.price = echarts.init(document.getElementById("chart-price"));
+      charts.price.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const lines = params.map((row) => `${row.marker}${row.seriesName}: <b>${Number(row.value).toLocaleString("en-US")}</b>`);
+            return [`<b>${priceLabel(params[0].axisValue)}</b>`, ...lines].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 52, right: 16, top: 36, bottom: 48 },
+        xAxis: {
+          type: "category",
+          name: "Initial price",
+          nameLocation: "middle",
+          nameGap: 32,
+          nameTextStyle: axisText,
+          data: spec.labels,
+          axisLabel: {
+            ...axisText,
+            interval: 0,
+            formatter: (value, index) => (index % 5 === 0 || value === "60+" ? (value === "60+" ? "60+" : "$" + value) : "")
+          },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          name: "Games",
+          nameTextStyle: axisText,
+          axisLabel: axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: spec.other,
+            itemStyle: { color: "#22d3ee" },
+            barMaxWidth: 7
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: spec.ai,
+            itemStyle: { color: "#d4af37" },
+            barMaxWidth: 7
+          }
+        ]
+      }, { notMerge: true });
+    }
+
+    function renderStreamCharts() {
+      const stream = current.stream;
+      const streamCap = document.getElementById("cap-stream");
+      const single = stream.months.length < 2;
+      const lead = single
+        ? `One month, so the bands are a stacked bar rather than a stream. Each band is the number of games with an AI disclosure released that month whose review percentage falls in it.`
+        : `Stream graph. Each ribbon is the number of games with an AI disclosure released that month whose review percentage falls in that band. The ribbons are displaced around the center line, so the stream starts in the middle of the axis and spreads up and down with volume. The 95–100% band is the top ribbon.`;
+      streamCap.textContent = `${lead} The percentage is positive reviews divided by positive plus negative reviews. ${stream.scored.toLocaleString("en-US")} games have at least one review. ${stream.unscored.toLocaleString("en-US")} games with an AI disclosure have none, so they are not in the stream.`;
+      drawStream(document.getElementById("chart-stream"), stream);
+      renderFreePaid(current.freePaid);
+      renderInitialPrice(current.price);
+
+      const shareAxis = {
+        type: "value",
+        min: 0,
+        nameTextStyle: axisText,
+        axisLabel: { ...axisText, formatter: (value) => value + "%" },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+        axisLine: { lineStyle: { color: "#3d4a5c" } }
+      };
+      if (!charts.scatter) charts.scatter = echarts.init(document.getElementById("chart-scatter"));
+      const labelsOn = document.getElementById("scatter-labels").getAttribute("aria-pressed") === "true";
+      charts.scatter.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "item",
+          formatter(params) {
+            const tag = params.data;
+            return `<b>${tag.name}</b><br/>AI disclosure: <b>${tag.yShare.toFixed(1)}%</b> (${tag.ai.toLocaleString("en-US")})<br/>No AI disclosure: <b>${tag.xShare.toFixed(1)}%</b> (${tag.other.toLocaleString("en-US")})`;
+          }
+        },
+        grid: { left: 72, right: 20, top: 16, bottom: 52 },
+        xAxis: {
+          ...shareAxis,
+          name: "No AI disclosure",
+          nameLocation: "middle",
+          nameGap: 30
+        },
+        yAxis: {
+          ...shareAxis,
+          name: "AI disclosure",
+          nameLocation: "middle",
+          nameGap: 48
+        },
+        series: [
+          {
+            id: "tags",
+            type: "scatter",
+            data: current.clusters.filter((tag) => tag.x > 0 && tag.y > 0 && !omittedTags.has(tag.name)).map((tag) => ({
+              name: tag.name,
+              value: [tag.x, tag.y],
+              ai: tag.ai,
+              other: tag.other,
+              xShare: tag.x,
+              yShare: tag.y
+            })),
+            symbolSize: 11,
+            itemStyle: { color: "#d4af37", opacity: 0.95 },
+            label: {
+              show: labelsOn,
+              formatter: (params) => params.data.name,
+              position: "top",
+              color: "#e8eef7",
+              fontFamily: "Figtree, sans-serif",
+              fontSize: 10
+            },
+            labelLayout: { hideOverlap: true },
+            z: 3
+          },
+          {
+            id: "guide",
+            type: "line",
+            data: [[0, 0], [25, 25]],
+            symbol: "none",
+            silent: true,
+            z: 2,
+            lineStyle: { color: "#22d3ee", width: 2 },
+            tooltip: { show: false }
+          }
+        ]
+      }, { notMerge: true });
+      function placeScatterGuide() {
+        const chart = charts.scatter;
+        const above = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [1.2, 26]);
+        const below = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [7, 1.6]);
+        if (!above || !below || !Number.isFinite(above[0]) || !Number.isFinite(below[0])) return;
+        const key = [...above, ...below].map((value) => Math.round(value)).join(",");
+        if (key === placeScatterGuide.key) return;
+        placeScatterGuide.key = key;
+        const style = {
+          fill: "#22d3ee",
+          stroke: "#121a2b",
+          lineWidth: 3,
+          font: "600 13px Figtree, sans-serif",
+          align: "left",
+          verticalAlign: "middle"
+        };
+        chart.setOption({
+          graphic: [
+            { id: "ai-side", type: "text", x: above[0], y: above[1], silent: true, style: { ...style, text: "More likely in games with AI disclosure" } },
+            { id: "other-side", type: "text", x: below[0], y: below[1], silent: true, style: { ...style, text: "More likely in games without AI disclosure" } }
+          ]
+        });
+      }
+      charts.scatter.placeGuide = placeScatterGuide;
+      placeScatterGuide.key = "";
+      if (!charts.scatter.__guideBound) {
+        charts.scatter.__guideBound = true;
+        charts.scatter.on("finished", () => charts.scatter.placeGuide());
+        const scatterLabels = document.getElementById("scatter-labels");
+        scatterLabels.addEventListener("click", () => {
+          const showing = scatterLabels.getAttribute("aria-pressed") !== "true";
+          scatterLabels.setAttribute("aria-pressed", String(showing));
+          scatterLabels.textContent = showing ? "Hide data labels" : "Show data labels";
+          charts.scatter.setOption({ series: [{ id: "tags", label: { show: showing } }] });
+        });
+      }
+
+      if (!charts.cloud) charts.cloud = echarts.init(document.getElementById("chart-cloud"));
+      charts.cloud.setOption({
+        tooltip: {
+          ...tooltipBase,
+          formatter(params) { return `<b>${params.name}</b><br/>Titles: <b>${params.value.toLocaleString("en-US")}</b>`; }
+        },
+        series: [{
+          type: "wordCloud",
+          shape: "circle",
+          sizeRange: [14, 72],
+          rotationRange: [0, 0],
+          gridSize: 8,
+          textStyle: {
+            color(params) {
+              const rank = params.dataIndex;
+              if (rank < 8) return "#d4af37";
+              if (rank < 24) return "#7dd3fc";
+              return "#94a3b8";
+            }
+          },
+          data: current.words
+        }]
+      }, { notMerge: true });
+
+      const disclosureCap = document.getElementById("cap-disclosure");
+      disclosureCap.textContent = `Words from the AI disclosure statement on each game. Size is how many statements contain that word, counted once per statement. Hyphenated phrases stay together. The, a, and, of, and similar joining words are left out. ${current.disclosureStatements.toLocaleString("en-US")} games have a statement. ${current.disclosureBlank.toLocaleString("en-US")} do not, so they are not in the cloud.`;
+      if (!charts.disclosure) charts.disclosure = echarts.init(document.getElementById("chart-disclosure"));
+      charts.disclosure.setOption({
+        tooltip: {
+          ...tooltipBase,
+          formatter(params) { return `<b>${params.name}</b><br/>Statements: <b>${params.value.toLocaleString("en-US")}</b>`; }
+        },
+        series: [{
+          type: "wordCloud",
+          shape: "circle",
+          sizeRange: [14, 72],
+          rotationRange: [0, 0],
+          gridSize: 8,
+          textStyle: {
+            color(params) {
+              const rank = params.dataIndex;
+              if (rank < 8) return "#d4af37";
+              if (rank < 24) return "#7dd3fc";
+              return "#94a3b8";
+            }
+          },
+          data: current.disclosureWords
+        }]
+      }, { notMerge: true });
+    }
+
+    function showWindow(key) {
+      current = buildCurrent(key);
+      renderShare();
+      renderCount();
+      renderTags();
+      renderReviews();
+      if (current.stream) renderStreamCharts();
+    }
+
+    Promise.all([
+      fetch("/blog/critical-mass-viz.json").then((response) => response.json()),
+      fetch("/blog/critical-mass-windows.json").then((response) => response.json())
+    ]).then(([viz, windows]) => {
+      vizPayload = viz;
+      windowsExtra = windows;
+      const select = document.getElementById("window");
+      select.disabled = false;
+      select.addEventListener("change", () => showWindow(select.value));
+      showWindow("all");
+    }).catch((error) => {
+      console.error(error);
+      document.getElementById("cap-stream").textContent = "These charts are still loading.";
+    });
+
+    window.addEventListener("resize", () => {
+      Object.values(charts).forEach((chart) => chart.resize());
+      if (charts.reviews) renderReviews();
+      if (!current || !current.stream) return;
+      if (charts.scatter && charts.scatter.placeGuide) charts.scatter.placeGuide.key = "";
+      drawStream(document.getElementById("chart-stream"), current.stream);
+    });
+  </script>
+</body>
+</html>
