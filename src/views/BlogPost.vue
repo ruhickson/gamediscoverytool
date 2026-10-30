@@ -3,16 +3,12 @@
     <div v-if="resolving && !isImportedEssay" class="blog-post">
       <p class="text-muted p-4">Loading...</p>
     </div>
-    <div v-else-if="isImportedEssay" class="imported-essay">
-      <router-link to="/blog" class="btn btn-outline-secondary mb-3">
+    <div v-else-if="isImportedEssay" class="essay-page">
+      <router-link to="/blog" class="btn btn-outline-secondary essay-back">
         <i class="fas fa-arrow-left me-2"></i>
         Back to Media
       </router-link>
-      <iframe
-        class="essay-frame"
-        :title="essayTitle"
-        :src="essaySrc"
-      ></iframe>
+      <article ref="essayHost" class="imported-essay" :aria-label="essayTitle"></article>
     </div>
     <div v-else class="container-fluid">
       <div class="row">
@@ -149,9 +145,10 @@
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadBlogSummaries } from '../utils/blogPosts.js'
+import { mountEssay } from '../utils/mountEssay.js'
 
 export default {
   name: 'BlogPost',
@@ -160,7 +157,9 @@ export default {
     const resolving = ref(true)
     const essaySrc = ref('')
     const essayTitle = ref('Blog post')
+    const essayHost = ref(null)
     const isImportedEssay = computed(() => essaySrc.value !== '')
+    let releaseEssay = null
     const post = ref(null)
     const isLoading = ref(false)
     const error = ref('')
@@ -254,16 +253,43 @@ export default {
       loadPost()
     }, { immediate: true })
 
-    watch(isImportedEssay, (ready) => {
-      if (ready) resolving.value = false
-    })
+    let essayGeneration = 0
+    const showEssay = async () => {
+      const generation = ++essayGeneration
+      releaseEssay?.()
+      releaseEssay = null
+      if (!essaySrc.value) return
+      await nextTick()
+      if (generation !== essayGeneration || !essayHost.value) return
+      try {
+        const release = await mountEssay(essayHost.value, essaySrc.value)
+        if (generation !== essayGeneration) {
+          release()
+          return
+        }
+        releaseEssay = release
+      } catch (err) {
+        console.error('Error mounting essay:', err)
+        if (generation === essayGeneration) error.value = err.message || 'Could not load this essay.'
+      } finally {
+        if (generation === essayGeneration) resolving.value = false
+      }
+    }
+
+    watch(essaySrc, showEssay)
     watch(isLoading, (loading) => {
       if (!loading) resolving.value = false
+    })
+
+    onBeforeUnmount(() => {
+      releaseEssay?.()
+      releaseEssay = null
     })
 
     return {
       resolving,
       isImportedEssay,
+      essayHost,
       essaySrc,
       essayTitle,
       post,
@@ -284,20 +310,12 @@ export default {
 </script>
 
 <style scoped>
-.imported-essay {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+.essay-page {
   padding: 1rem 1.25rem 0;
 }
 
-.essay-frame {
-  flex: 1;
-  width: 100%;
-  min-height: 70vh;
-  border: 0;
-  border-radius: var(--radius);
-  background: #0f172a;
+.essay-back {
+  margin-bottom: 0.25rem;
 }
 
 .blog-post-title {

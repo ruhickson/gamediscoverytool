@@ -67,14 +67,14 @@ function baseFilters(ai, range) {
   }
 }
 
-async function topTags(ai, range) {
+async function topTags(ai, range, limit = 50) {
   const rows = await load({
     measures: ['Games.count'],
     dimensions: ['GameTags.tag'],
     ...baseFilters(ai, range),
     filters: [...baseFilters(ai, range).filters, { member: 'GameTags.tag', operator: 'set' }],
     order: [['Games.count', 'desc']],
-    limit: 50
+    limit
   })
   return rows
     .map((row) => ({ name: row['GameTags.tag'], count: Number(row['Games.count']) || 0 }))
@@ -196,7 +196,7 @@ for (const [key, range] of Object.entries(WINDOWS)) {
     if (total <= 0) unscored += 1
   }
 
-  const [freeRows, reviewRows, aiTags, otherTags] = await Promise.all([
+  const [freeRows, reviewRows, aiTags, otherTags, chartTags] = await Promise.all([
     load({
       measures: ['Games.count'],
       dimensions: ['Games.isFree', 'Games.madeWithAi'],
@@ -211,7 +211,8 @@ for (const [key, range] of Object.entries(WINDOWS)) {
       limit: 500
     }),
     topTags(true, range),
-    topTags(false, range)
+    topTags(false, range),
+    topTags(true, range, 100)
   ])
 
   const freePaid = { ai: { free: 0, paid: 0 }, other: { free: 0, paid: 0 } }
@@ -252,7 +253,7 @@ for (const [key, range] of Object.entries(WINDOWS)) {
   const texts = await disclosures(range, `disclosures-${key}.json`)
   out[key] = {
     freePaid,
-    tags: aiTags.map((tag) => ({ name: tag.name, ai: tag.count })),
+    tags: chartTags.map((tag) => ({ name: tag.name, ai: tag.count })),
     clusters,
     reviews: { ai: aiReviews, other: otherReviews },
     words: titleWords(games),

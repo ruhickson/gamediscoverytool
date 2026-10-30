@@ -53,6 +53,27 @@
       border-color: #3d4a5c;
       color: #94a3b8;
     }
+    .axis-switch {
+      display: inline-flex;
+      margin-top: 12px;
+      border: 1px solid #3d4a5c;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .axis-switch-option {
+      background: transparent;
+      color: #94a3b8;
+      border: 0;
+      padding: 6px 14px;
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .axis-switch-option[aria-pressed="true"] {
+      background: #d4af37;
+      color: #121a2b;
+    }
     .chart.cloud { height: 520px; }
     .window-filter {
       display: flex;
@@ -90,15 +111,22 @@
 <body>
   <div class="site">
     <div class="kicker">
-      <span>Game Discovery · 29 Oct 2026</span>
+      <span>Ru Hickson</span>
       <span>Games released Jan 2020 – Oct 2026</span>
     </div>
 
     <h1>Critical Mass - AI's takeover of Steam</h1>
     <p class="lede">Steam games released from January 2020 through 29 October 2026, split by AI disclosure or no AI disclosure on the store page.</p>
     <div class="copy">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      <p>Like I mentioned in the previous article on Vampire Survivors and its clones, the recent high profile issue of Needle in a Haystack Simulator being cloned using AI to steal territority is a growing problem on Steam. A major complaint with Steam Next Fest was AI-generated copies of many games in the event were being promoted the same as the games they were based on, with the customer left to do the homework on whether or not the one they're looking at is the original.</p>
+      <p>This is a problem that is only growing, and Valve's stance on the matter so far is to remain somewhat hands-off, though they have indicated they are aware of it. Whether or not this is the right approach won't be debated here, but the trend is highly likely to accelerate until something changes. As a temporary measure, Valve ask developers to put in a voluntary disclosure over whether or not AI was used in the development of your game.</p>
+      <p><a href="https://store.steampowered.com/news/group/4145017/view/3862463747997849618"></a>This disclosure</a> is required simply for two categories: Pre-generated content (art/code/sound/etc) created with the help of AI tools during development and Live-Generated content (AI-generated content provided while playing the game). Which tools are used is not required. The generalised nature of this disclosure means it's impossible to discriminate between a game that was developed with AI used as a minor part of one of its workflows versus a game that was entirely generated with AI. Both will be flagged just the same.</p>
+      <p>I would like to start by saying this is purely an analysis of the growing trend of games on Steam where AI-generated content was used in development. There is a meatier piece of text at the end that will open things up for discussion, but in the interests of getting to the data first, I wanted to kick off with a single idea and take it from there.</p>
+      <br />
+      <b><p>AI is going nowhere.</p></b>
+      <br />
+      <p>We do hear about the imminent AI bubble bursting all the time, but this is in relation to the big AI companies that are pushing it everywhere they can. The truth is the technology is now so deeply integrated with everything in the world that, even if a bunch of these trillion-dollar companies collapse and fail, AI is here to stay. That's something we have to figure out how to navigate in the future.</p>
+      <p>But for the moment, let's talk about some games, shall we?</p>
     </div>
 
     <div class="stats">
@@ -106,16 +134,6 @@
       <div class="stat"><div class="n" id="stat-share">—</div><div class="l">AI disclosure share since Jan 2020</div></div>
       <div class="stat"><div class="n" id="stat-month">—</div><div class="l">AI disclosure in Oct 2026</div></div>
       <div class="stat"><div class="n" id="stat-month-share">—</div><div class="l">AI disclosure share in Oct 2026</div></div>
-    </div>
-
-    <div class="hint">
-      <strong>Count.</strong>
-      A row is a Steam app whose type is game, released from 1 January 2020 through 29 October 2026.
-      AI disclosure means the <strong>made with AI</strong> flag, the same one the Trends page uses. No AI disclosure is every other game.
-      October 2026 is the month in progress. A game with several tags is counted once for each of them.
-      The population pyramid compares no AI disclosure on the left with AI disclosure on the right, by Steam review label. Each side sums to 100 percent of that group, for games released from January 2020 through 29 October 2026. Steam’s “1 user reviews” through “9 user reviews” are grouped as 1–9 reviews. A blank label is shown as “No score recorded”.
-      Where a chart says review percentage, that is positive reviews divided by positive plus negative reviews. Games with no reviews are left out of that ratio.
-      Free is the Steam free-to-play flag. Paid is every other game.
     </div>
 
     <div class="window-filter">
@@ -130,57 +148,68 @@
     <div class="figures">
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">Share of releases</p>
-          <h2>AI disclosure, by month</h2>
-          <p class="cap">100% stacked. Each month sums to 100 percent of games released that month. Gold is AI disclosure. Slate is no AI disclosure.</p>
+          <p class="eyebrow"></p>
+          <h2>Share of releases with an AI disclosure by month</h2>
+          <p class="cap"></p>
         </div>
         <div id="chart-share" class="chart"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>Back in June 2024 was when Valve began requiring developers to voluntarily disclose whether or not AI was used in the making of games. There were some games before that point that did disclose this information, but you can see immediate jump in the trend and the gradual linear increase. By June, more than 10% of games had an AI disclosure.</p>
+          <p>October 2026 is when the "flippening" happened, a point by which more new releases than not are disclosing AI use in development (54.3%). It's possible the true flip happened sooner, given that some developers likely do not disclose AI use.</p>
+          <p><i>It was highlighted on a recent <a href="https://aftermath.site">Aftermath</a> podcast that the consequence of not declaring AI usage and later being discovered to have done so allows Valve to forcefully refund buyers.</i></p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">How many</p>
-          <h2 id="count-title">AI disclosure since January 2020</h2>
+          <p class="eyebrow"></p>
+          <h2 id="count-title">Count of releases with AI disclosure</h2>
           <p class="cap" id="cap-count">Bars are games released that month with an AI disclosure. The line is the running total.</p>
         </div>
         <div id="chart-count" class="chart"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>Looking at the trendline of counts over time, you can see that the growth in releases with AI disclosures is becoming exponential. It is worth noting that, with the upcoming release of Grand Theft Auto Six in mid-November, most games were shunted into the September and October release window to avoid clashing with what's likely to be the biggest-selling game of all-time. We'll revisit this chart in a couple of months to see if it's a flash in the pan, or an indictor of what's to come.</p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">Free and paid</p>
-          <h2>Free and paid, by AI disclosure</h2>
-          <p class="cap" id="cap-free">Free is the Steam free-to-play flag. Paid is every other game.</p>
+          <p class="eyebrow"></p>
+          <h2>Free vs. Paid</h2>
+          <p class="cap" id="cap-free">p>
         </div>
         <div id="chart-free" class="chart"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>There are essentially two kinds of free games on Steam - the passion projects and art games folk want to make because it's important to them, and the games that allow you no barrier to entry, but have microtransactions. What's interesting about this chart is it tells us developers who use AI are <i>more</i> interested in getting paid than ones who don't.</p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">List price</p>
-          <h2>Games by initial price</h2>
-          <p class="cap" id="cap-price">Each bar is how many games have an initial list price in that dollar.</p>
+          <p class="eyebrow"></p>
+          <h2>Games by initial price (€)</h2>
+          <p class="cap" id="cap-price"></p>
+          <div class="axis-switch" role="group" aria-label="Price chart scale">
+            <button type="button" id="price-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="price-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
+          </div>
         </div>
         <div id="chart-price" class="chart"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>As for the paid games, the ones with AI disclosure statements generally occupy the lower end of the price scale. Whether or not this translates to the lower end of the value scale is up for debate. What is definite is how the median price for an AI disclosure game is cheaper than its median non-AI counterpart by 20c (€4.99 vs €5.19)</p>
+          <p>Looking at the same data as a % of All Releases, it's clearer to see that the games with AI disclosure hover around multiples of 5 the same way the the AI Disclosure do. But as a percentage of the whole, AI disclosure games have spikes at every price point below and including €8. With the notable exception of €0, where you are less than half as likely to find one compared to games released in the non-AI disclosure category</p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
           <p class="eyebrow">Tags</p>
-          <h2>Top 50 tags on games with an AI disclosure</h2>
-          <p class="cap" id="cap-tags">The fifty tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.</p>
+          <h2>Top 100 tags on games with an AI disclosure</h2>
+          <p class="cap" id="cap-tags">The hundred tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.</p>
+          <div class="axis-switch" role="group" aria-label="Tag chart scale">
+            <button type="button" id="tags-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="tags-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
+          </div>
         </div>
         <div id="chart-tags" class="chart tags"></div>
         <div class="commentary">
@@ -257,7 +286,7 @@
   </div>
 
   <script>
-    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":9948},{"name":"Indie","ai":7535},{"name":"Casual","ai":6754},{"name":"2D","ai":5815},{"name":"3D","ai":4383},{"name":"Action","ai":4313},{"name":"Adventure","ai":4155},{"name":"Simulation","ai":3958},{"name":"Strategy","ai":3648},{"name":"Atmospheric","ai":2944},{"name":"Colorful","ai":2808},{"name":"First-Person","ai":2584},{"name":"RPG","ai":2540},{"name":"Exploration","ai":2362},{"name":"Early Access","ai":2335},{"name":"Puzzle","ai":2318},{"name":"Relaxing","ai":2285},{"name":"Cute","ai":2247},{"name":"Fantasy","ai":2195},{"name":"Pixel Graphics","ai":1985},{"name":"Story Rich","ai":1953},{"name":"Combat","ai":1929},{"name":"Arcade","ai":1872},{"name":"Stylized","ai":1843},{"name":"Top-Down","ai":1765},{"name":"Multiplayer","ai":1762},{"name":"Funny","ai":1612},{"name":"PvE","ai":1609},{"name":"Choices Matter","ai":1582},{"name":"Realistic","ai":1581},{"name":"Horror","ai":1581},{"name":"Action-Adventure","ai":1576},{"name":"Family Friendly","ai":1527},{"name":"Roguelite","ai":1427},{"name":"Roguelike","ai":1387},{"name":"Management","ai":1387},{"name":"Sci-fi","ai":1385},{"name":"Resource Management","ai":1344},{"name":"Free to Play","ai":1326},{"name":"Third Person","ai":1297},{"name":"Dark","ai":1278},{"name":"PvP","ai":1263},{"name":"Controller","ai":1247},{"name":"Shooter","ai":1221},{"name":"Mystery","ai":1216},{"name":"Multiple Endings","ai":1199},{"name":"Immersive Sim","ai":1198},{"name":"Retro","ai":1175},{"name":"Psychological Horror","ai":1155},{"name":"Linear","ai":1154}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
+    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181},{"name":"Indie","ai":7746},{"name":"Casual","ai":6921},{"name":"2D","ai":5975},{"name":"3D","ai":4481},{"name":"Action","ai":4410},{"name":"Adventure","ai":4226},{"name":"Simulation","ai":4050},{"name":"Strategy","ai":3753},{"name":"Atmospheric","ai":3016},{"name":"Colorful","ai":2896},{"name":"First-Person","ai":2631},{"name":"RPG","ai":2589},{"name":"Exploration","ai":2402},{"name":"Early Access","ai":2380},{"name":"Puzzle","ai":2373},{"name":"Relaxing","ai":2358},{"name":"Cute","ai":2318},{"name":"Fantasy","ai":2246},{"name":"Pixel Graphics","ai":2048},{"name":"Combat","ai":1989},{"name":"Story Rich","ai":1987},{"name":"Arcade","ai":1923},{"name":"Stylized","ai":1912},{"name":"Multiplayer","ai":1831},{"name":"Top-Down","ai":1815},{"name":"Funny","ai":1660},{"name":"PvE","ai":1658},{"name":"Choices Matter","ai":1609},{"name":"Realistic","ai":1603},{"name":"Horror","ai":1601},{"name":"Action-Adventure","ai":1601},{"name":"Family Friendly","ai":1569},{"name":"Roguelite","ai":1470},{"name":"Roguelike","ai":1430},{"name":"Sci-fi","ai":1423},{"name":"Management","ai":1419},{"name":"Resource Management","ai":1395},{"name":"Free to Play","ai":1348},{"name":"Third Person","ai":1328},{"name":"PvP","ai":1311},{"name":"Dark","ai":1301},{"name":"Controller","ai":1285},{"name":"Shooter","ai":1249},{"name":"Mystery","ai":1236},{"name":"Multiple Endings","ai":1222},{"name":"Immersive Sim","ai":1208},{"name":"Retro","ai":1201},{"name":"Anime","ai":1177},{"name":"Psychological Horror","ai":1173},{"name":"Linear","ai":1167},{"name":"Physics","ai":1144},{"name":"Survival","ai":1113},{"name":"2D Platformer","ai":1071},{"name":"Cartoony","ai":1062},{"name":"Idler","ai":1030},{"name":"Visual Novel","ai":1030},{"name":"Economy","ai":979},{"name":"Comedy","ai":974},{"name":"Minimalist","ai":965},{"name":"Character Customization","ai":961},{"name":"Action Roguelike","ai":960},{"name":"Sandbox","ai":953},{"name":"Tactical","ai":944},{"name":"Turn-Based Tactics","ai":944},{"name":"Medieval","ai":923},{"name":"Card Game","ai":918},{"name":"Life Sim","ai":915},{"name":"Logic","ai":910},{"name":"Turn-Based Strategy","ai":910},{"name":"Point & Click","ai":894},{"name":"Text-Based","ai":883},{"name":"Online Co-Op","ai":843},{"name":"Co-op","ai":838},{"name":"Hidden Object","ai":831},{"name":"Dark Fantasy","ai":829},{"name":"Open World","ai":822},{"name":"Magic","ai":807},{"name":"Female Protagonist","ai":804},{"name":"Interactive Fiction","ai":793},{"name":"Action RPG","ai":776},{"name":"Procedural Generation","ai":773},{"name":"Building","ai":773},{"name":"Crafting","ai":772},{"name":"Choose Your Own Adventure","ai":758},{"name":"Walking Simulator","ai":756},{"name":"Space","ai":747},{"name":"Turn-Based Combat","ai":737},{"name":"Artificial Intelligence","ai":733},{"name":"3D Platformer","ai":730},{"name":"Platformer","ai":727},{"name":"Old School","ai":714},{"name":"Incremental","ai":714},{"name":"FPS","ai":714},{"name":"Time Management","ai":714},{"name":"Score Attack","ai":711},{"name":"Futuristic","ai":698},{"name":"Cartoon","ai":682},{"name":"Deckbuilding","ai":675},{"name":"Emotional","ai":660}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
 
     const omittedTags = new Set(["Singleplayer", "Indie", "Action", "Adventure", "2D", "3D", "Casual"]);
     const axisText = { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 };
@@ -509,8 +538,12 @@
     renderCount();
 
     charts.tags = echarts.init(document.getElementById("chart-tags"));
+    let tagsAsShare = false;
     function renderTags() {
-      const tagRows = current.tags.filter((row) => !omittedTags.has(row.name)).sort((a, b) => b.ai - a.ai || a.name.localeCompare(b.name));
+      const tagRows = current.tags
+        .filter((row) => !omittedTags.has(row.name))
+        .sort((a, b) => b.ai - a.ai || a.name.localeCompare(b.name))
+        .slice(0, 100);
       const tagMax = Math.max(...tagRows.map((row) => row.ai));
       const tagMin = Math.min(...tagRows.map((row) => row.ai));
       const tagSize = (count) => {
@@ -518,7 +551,14 @@
         const t = (count - tagMin) / (tagMax - tagMin);
         return 10 + t * 18;
       };
-      document.getElementById("cap-tags").textContent = `The fifty tags attached to the most games with an AI disclosure ${current.phrase}, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.`;
+      const shareOf = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const host = document.getElementById("chart-tags");
+      host.style.height = `${Math.max(1480, tagRows.length * 32 + 72)}px`;
+      charts.tags.resize();
+      const omitted = "Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual";
+      document.getElementById("cap-tags").textContent = tagsAsShare
+        ? `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Distance to the right is that tag’s share of all releases with an AI disclosure. Bubble size is the count.`
+        : `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.`;
       charts.tags.setOption({
       animationDuration: 650,
       tooltip: {
@@ -526,18 +566,21 @@
         trigger: "item",
         formatter(params) {
           const count = params.data.count;
-          const share = current.aiTotal ? (count / current.aiTotal) * 100 : 0;
-          return `<b>${params.data.name}</b><br/>AI disclosure: <b>${count.toLocaleString("en-US")}</b><br/>Share of games with an AI disclosure: <b>${share.toFixed(1)}%</b>`;
+          const share = shareOf(count);
+          const shown = tagsAsShare
+            ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+            : count.toLocaleString("en-US");
+          return `<b>${params.data.name}</b><br/>AI disclosure: <b>${shown}</b>`;
         }
       },
       grid: { left: 8, right: 28, top: 12, bottom: 36, containLabel: true },
       xAxis: {
         type: "value",
-        name: "AI disclosure",
+        name: tagsAsShare ? "% of all releases" : "AI disclosure",
         nameLocation: "middle",
         nameGap: 26,
         nameTextStyle: axisText,
-        axisLabel: axisText,
+        axisLabel: tagsAsShare ? { ...axisText, formatter: (value) => value + "%" } : axisText,
         axisLine: { lineStyle: { color: "#3d4a5c" } },
         splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.45)" } }
       },
@@ -554,13 +597,29 @@
         type: "scatter",
         data: tagRows.map((row) => ({
           name: row.name,
-          value: [row.ai, row.name],
+          value: [tagsAsShare ? shareOf(row.ai) : row.ai, row.name],
           count: row.ai
         })),
-        symbolSize: (value) => tagSize(value[0]),
+        symbolSize: (value, params) => tagSize(params.data.count),
         itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
       }]
     }, { notMerge: true });
+      const tagsCount = document.getElementById("tags-count");
+      const tagsShare = document.getElementById("tags-share");
+      if (tagsCount && tagsShare) {
+        tagsCount.setAttribute("aria-pressed", String(!tagsAsShare));
+        tagsShare.setAttribute("aria-pressed", String(tagsAsShare));
+        if (!tagsCount.dataset.bound) {
+          tagsCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (tagsAsShare === share) return;
+            tagsAsShare = share;
+            renderTags();
+          };
+          tagsCount.addEventListener("click", () => choose(false));
+          tagsShare.addEventListener("click", () => choose(true));
+        }
+      }
     }
     renderTags();
 
@@ -830,7 +889,7 @@
       const pct = (part, total) => (total ? (part / total) * 100 : 0);
       const share = (part, total) => pct(part, total).toFixed(1);
       const point = (part, total) => ({ value: pct(part, total), count: part });
-      document.getElementById("cap-free").textContent = `Free is the Steam free-to-play flag. Paid is every other game. Bars are each group’s own share. AI disclosure: ${free.ai.free.toLocaleString("en-US")} free and ${free.ai.paid.toLocaleString("en-US")} paid, so ${share(free.ai.free, aiTotal)} percent are free. No AI disclosure: ${free.other.free.toLocaleString("en-US")} free and ${free.other.paid.toLocaleString("en-US")} paid, so ${share(free.other.free, otherTotal)} percent are free.`;
+      document.getElementById("cap-free").textContent = ``;
       const percentLabel = {
         show: true,
         position: "top",
@@ -886,13 +945,21 @@
       }, { notMerge: true });
     }
 
+    let priceAsShare = false;
+
     function renderInitialPrice(spec) {
       const cap = document.getElementById("cap-price");
-      cap.textContent = `Each bar is how many games have an initial list price in that dollar. The price is the store price overview’s initial price, divided by 100. The last bar is $60 or more. A few list prices are not in the cents of a major currency. ${spec.matchedAi.toLocaleString("en-US")} games with an AI disclosure and ${spec.matchedOther.toLocaleString("en-US")} with no AI disclosure have a price record. Games with none are left out.`;
+      const shareOf = (counts, total) => counts.map((count) => (total ? (count / total) * 100 : 0));
+      const otherData = priceAsShare ? shareOf(spec.other, spec.matchedOther) : spec.other;
+      const aiData = priceAsShare ? shareOf(spec.ai, spec.matchedAi) : spec.ai;
+      const priceNote = `The price is the store price overview’s initial price, divided by 100. The last bar is €60 or more. A few list prices are not in the cents of a major currency. ${spec.matchedAi.toLocaleString("en-US")} games with an AI disclosure and ${spec.matchedOther.toLocaleString("en-US")} with no AI disclosure have a price record. Games with none are left out.`;
+      cap.textContent = priceAsShare
+        ? `Each bar is that price’s share of all releases in its own group. The two groups are scaled separately, so each sums to 100%. ${priceNote}`
+        : `Each bar is how many games have an initial list price in that euro. ${priceNote}`;
       const priceLabel = (value) => {
-        if (value === "60+") return "$60 or more";
-        if (value === "0") return "Under $1";
-        return `$${value}–$${value}.99`;
+        if (value === "60+") return "€60 or more";
+        if (value === "0") return "Under €1";
+        return `€${value}–€${value}.99`;
       };
       if (!charts.price) charts.price = echarts.init(document.getElementById("chart-price"));
       charts.price.setOption({
@@ -901,12 +968,18 @@
           ...tooltipBase,
           trigger: "axis",
           formatter(params) {
-            const lines = params.map((row) => `${row.marker}${row.seriesName}: <b>${Number(row.value).toLocaleString("en-US")}</b>`);
+            const lines = params.map((row) => {
+              const count = row.seriesName === "AI disclosure" ? spec.ai[row.dataIndex] : spec.other[row.dataIndex];
+              const shown = priceAsShare
+                ? `${Number(row.value).toFixed(1)}% (${count.toLocaleString("en-US")})`
+                : Number(row.value).toLocaleString("en-US");
+              return `${row.marker}${row.seriesName}: <b>${shown}</b>`;
+            });
             return [`<b>${priceLabel(params[0].axisValue)}</b>`, ...lines].join("<br/>");
           }
         },
         legend: { top: 0, textStyle: axisText },
-        grid: { left: 52, right: 16, top: 36, bottom: 48 },
+        grid: { left: 56, right: 16, top: 36, bottom: 48 },
         xAxis: {
           type: "category",
           name: "Initial price",
@@ -917,35 +990,51 @@
           axisLabel: {
             ...axisText,
             interval: 0,
-            formatter: (value, index) => (index % 5 === 0 || value === "60+" ? (value === "60+" ? "60+" : "$" + value) : "")
+            formatter: (value, index) => (index % 5 === 0 || value === "60+" ? (value === "60+" ? "€60+" : "€" + value) : "")
           },
           axisLine: { lineStyle: { color: "#3d4a5c" } }
         },
         yAxis: {
           type: "value",
           min: 0,
-          name: "Games",
+          name: priceAsShare ? "% of all releases" : "Games",
           nameTextStyle: axisText,
-          axisLabel: axisText,
+          axisLabel: priceAsShare ? { ...axisText, formatter: (value) => value + "%" } : axisText,
           splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
         },
         series: [
           {
             name: "No AI disclosure",
             type: "bar",
-            data: spec.other,
+            data: otherData,
             itemStyle: { color: "#22d3ee" },
             barMaxWidth: 7
           },
           {
             name: "AI disclosure",
             type: "bar",
-            data: spec.ai,
+            data: aiData,
             itemStyle: { color: "#d4af37" },
             barMaxWidth: 7
           }
         ]
       }, { notMerge: true });
+      const priceCount = document.getElementById("price-count");
+      const priceShare = document.getElementById("price-share");
+      if (priceCount && priceShare) {
+        priceCount.setAttribute("aria-pressed", String(!priceAsShare));
+        priceShare.setAttribute("aria-pressed", String(priceAsShare));
+        if (!priceCount.dataset.bound) {
+          priceCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (priceAsShare === share) return;
+            priceAsShare = share;
+            if (current && current.price) renderInitialPrice(current.price);
+          };
+          priceCount.addEventListener("click", () => choose(false));
+          priceShare.addEventListener("click", () => choose(true));
+        }
+      }
     }
 
     function renderStreamCharts() {
