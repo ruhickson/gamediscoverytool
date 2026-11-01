@@ -253,7 +253,8 @@ function percent(game) {
   return (positive / total) * 100
 }
 
-const BANDS = ['95–100%', '80–94%', '70–79%', '40–69%', 'Under 40%']
+const BANDS = ['95–100%', '80–94%', '70–79%', '40–69%', 'Under 40%', '10 or fewer reviews']
+const FEW_BAND = BANDS.length - 1
 function bandIndex(value) {
   if (value >= 95) return 0
   if (value >= 80) return 1
@@ -262,17 +263,27 @@ function bandIndex(value) {
   return 4
 }
 
+function reviewCount(game) {
+  if (game.positive == null && game.negative == null) return game.total
+  return (game.positive || 0) + (game.negative || 0)
+}
+
 const byMonth = new Map()
 let unscored = 0
 for (const game of aiGames) {
-  const value = percent(game)
   const month = game.date.slice(0, 7)
   if (!month || month.length < 7) continue
+  if (!byMonth.has(month)) byMonth.set(month, BANDS.map(() => 0))
+  const reviews = reviewCount(game)
+  if (reviews == null || reviews <= 10) {
+    byMonth.get(month)[FEW_BAND] += 1
+    continue
+  }
+  const value = percent(game)
   if (value == null) {
     unscored += 1
     continue
   }
-  if (!byMonth.has(month)) byMonth.set(month, [0, 0, 0, 0, 0])
   byMonth.get(month)[bandIndex(value)] += 1
 }
 const months = [...byMonth.keys()].sort()
@@ -552,7 +563,7 @@ const viz = {
     bands: BANDS,
     series: streamSeries,
     counts: streamCounts,
-    scored: aiPercents.length,
+    scored: streamCounts.reduce((total, band) => total + band.reduce((sum, value) => sum + value, 0), 0),
     unscored
   },
   boxplot: {

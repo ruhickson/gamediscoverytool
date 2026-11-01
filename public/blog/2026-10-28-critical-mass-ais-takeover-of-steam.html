@@ -74,7 +74,8 @@
       background: #d4af37;
       color: #121a2b;
     }
-    .axis-switch + .axis-switch {
+    .axis-switch + .axis-switch,
+    .axis-switch + .label-toggle {
       margin-left: 8px;
     }
     .chart.cloud { height: 520px; }
@@ -231,12 +232,62 @@
       <section class="figure">
         <div class="figure-meta">
           <p class="eyebrow"></p>
+          <h2>Where tags sit, AI disclosure and no AI disclosure</h2>
+          <p class="cap" id="cap-scatter">Each point is one of the hundred tags attached to the most games with an AI disclosure. Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.</p>
+          <div class="axis-switch" role="group" aria-label="Scatter chart scale">
+            <button type="button" id="scatter-count" class="axis-switch-option" aria-pressed="false">Count</button>
+            <button type="button" id="scatter-share" class="axis-switch-option" aria-pressed="true">% of All Releases</button>
+          </div>
+          <button type="button" id="scatter-labels" class="label-toggle" aria-pressed="true">Hide data labels</button>
+        </div>
+        <div id="chart-scatter" class="chart scatter"></div>
+        <div class="commentary">
+          <p>Another way of looking at the same tag data shows how far off the expected mean some of these tags are. 
+
+            Searching for Simulation-Economy games in the last 3 years, the top game by review count is BidKing, which has mostly negative reviews, due to the large amount pf AI-generated content and unreliable servers, leading to a rarely-seen scale of disapproval on Steam.
+            
+            Even some of the better reviewed titles in this category, like Survival Log, have reviews criticising its use of AI for generating dialogue and narrative text, as well as its soundtrack.
+            
+            Conversely</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Words in titles of games with an AI disclosure</h2>
+          <p class="cap"></p>
+        </div>
+        <div id="chart-cloud" class="chart cloud"></div>
+        <div class="commentary">
+          <p>Looking at the most common words in the games made with AI disclosure, an uninspiring picture begins to form. Many of the words are generic placeholders that begin to explain why a Steam user might consider AI-developed games "slop". </p>
+          <p>You can take almost any two words from the cloud, plug them into Steam search, and discover a multitude of games that have 10 or fewer reviews, developed with AI, and are little more than a concept that has been pushed to the store. As an example, take <a href="https://store.steampowered.com/app/3436020/Idle_Clicker_Tower/">Idle Tower Clicker</a> and you'll see a game developed with AI, released at the tail end of October, with No user reviews, no community interaction, and has a price point under €5. This is prototypical of the kind of AI-associated growth that is encroaching on the platform.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Word Cloud of AI disclosure statements</h2>
+          <p class="cap" id="cap-disclosure"></p>
+        </div>
+        <div id="chart-disclosure" class="chart cloud"></div>
+        <div class="commentary">
+          <p>I don't actually think there's anything particularly surprising in this word cloud of words most commonly found in the disclosure statement, but I've added it in for redundancy and someone may find it interesting.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
           <h2>But are AI-disclosed games any use?</h2>
-          <p class="cap" id="cap-reviews">Population pyramid. No AI disclosure extends left. AI disclosure extends right. A bar is that label’s share of its own group since January 2020, so each side sums to 100 percent.</p>
+          <p class="cap" id="cap-reviews"></p>
         </div>
         <div id="chart-reviews" class="chart bars"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>The trillion-dollar question. On a recent Game Business podcast interview with Romy Halfweeg of Poki, Halfweeg and host Christopher Dring discussed the idea that just because a game is made with or without AI doesn't actually determine whether a game is good. It's possible to make a good game using AI and also to make a terrible game organically and by hand-crafting every single element. There is no absolute.</p>
+          <p>However, just because it is not absolute fact doesn't mean it's uncommon, something that becomes plainly obvious when looking ath the overall share of review scores. Putting aside the low/no scores for a moment, Games with no AI-disclosure outperform games with AI disclosure in every neutral-to-positive category.</p>
+          <p>Negative reviews do take up a larger share on the No AI disclosure side too, though these are somewhat marginal in the grand scheme of things, taking up < 1.5% of all games released in either category. While negative reviews are not a rarity on Steam, pile ons are indeed rarer than one might expect.</p>
           <p></p>
         </div>
       </section>
@@ -246,45 +297,12 @@
           <p class="eyebrow">Review percentage</p>
           <h2>Review score percentage of games with an AI disclosure, by month</h2>
           <p class="cap" id="cap-stream">Stream graph of games with an AI disclosure, by review percentage. Ribbons are counts, displaced around the center of the axis.</p>
+          <div class="axis-switch" role="group" aria-label="Ribbon chart layout">
+            <button type="button" id="stream-ribbon" class="axis-switch-option" aria-pressed="true">Stream</button>
+            <button type="button" id="stream-stacked" class="axis-switch-option" aria-pressed="false">100% stacked</button>
+          </div>
         </div>
         <div id="chart-stream" class="chart stream"></div>
-        <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        </div>
-      </section>
-
-      <section class="figure">
-        <div class="figure-meta">
-          <p class="eyebrow">Tags</p>
-          <h2>Where tags sit, AI disclosure and no AI disclosure</h2>
-          <p class="cap">Each point is a tag from the top 50 in either group. Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.</p>
-          <button type="button" id="scatter-labels" class="label-toggle" aria-pressed="true">Hide data labels</button>
-        </div>
-        <div id="chart-scatter" class="chart scatter"></div>
-        <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        </div>
-      </section>
-
-      <section class="figure">
-        <div class="figure-meta">
-          <p class="eyebrow">Titles</p>
-          <h2>Words in titles of games with an AI disclosure</h2>
-          <p class="cap">Each title is split into words. Size is how many games with an AI disclosure use that word. The, a, and, of, and similar joining words are left out.</p>
-        </div>
-        <div id="chart-cloud" class="chart cloud"></div>
-        <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        </div>
-      </section>
-
-      <section class="figure">
-        <div class="figure-meta">
-          <p class="eyebrow">Disclosure statements</p>
-          <h2>Words in AI disclosure statements</h2>
-          <p class="cap" id="cap-disclosure">Words from the AI disclosure statement on each game. A word counts once per statement. Hyphenated phrases stay together. The, a, and, of, and similar joining words are left out.</p>
-        </div>
-        <div id="chart-disclosure" class="chart cloud"></div>
         <div class="commentary">
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
         </div>
@@ -400,7 +418,7 @@
         other,
         aiTotal: sum(declared),
         otherTotal: sum(other),
-        stream: vizPayload ? sliceStream(vizPayload.stream, meta.start, meta.end, extra.unscored) : null,
+        stream: vizPayload ? sliceStream(vizPayload.stream, meta.start, meta.end, key === "all" ? vizPayload.stream.unscored : 0) : null,
         ...extra,
         price: key === "all" ? vizPayload && vizPayload.priceHist : extra.priceHist
       };
@@ -552,6 +570,8 @@
     charts.tags = echarts.init(document.getElementById("chart-tags"));
     let tagsAsShare = false;
     let tagsByGap = false;
+    let scatterAsShare = true;
+    let streamStacked = false;
     function renderTags() {
       const aiShare = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
       const otherShare = (count) => (current.otherTotal ? (count / current.otherTotal) * 100 : 0);
@@ -807,7 +827,7 @@
     }
     renderReviews();
 
-    const bandColors = ["#059669", "#34d399", "#a7f3d0", "#d4af37", "#f87171"];
+    const bandColors = ["#059669", "#34d399", "#a7f3d0", "#fb923c", "#f87171", "#d4af37"];
 
     function drawStream(el, stream) {
       el.replaceChildren();
@@ -827,13 +847,18 @@
         bar.style.cssText = "display:flex;flex-direction:column;width:84px;border-radius:6px;overflow:hidden";
         const list = document.createElement("div");
         list.style.cssText = "display:flex;flex-direction:column;justify-content:center;gap:8px;font:13px Figtree,sans-serif;color:#e8eef7";
+        const monthTotal = counts.reduce((sum, count) => sum + count, 0);
         stream.bands.forEach((band, index) => {
           const part = document.createElement("div");
           part.style.flex = String(Math.max(counts[index], 0));
           part.style.background = bandColors[index];
           bar.appendChild(part);
+          const share = monthTotal ? (counts[index] / monthTotal) * 100 : 0;
+          const shown = streamStacked
+            ? `${share.toFixed(1)}% (${counts[index].toLocaleString("en-US")})`
+            : counts[index].toLocaleString("en-US");
           const row = document.createElement("div");
-          row.innerHTML = `<span style="color:${bandColors[index]}">●</span> ${band}: <b>${counts[index].toLocaleString("en-US")}</b>`;
+          row.innerHTML = `<span style="color:${bandColors[index]}">●</span> ${band}: <b>${shown}</b>`;
           list.appendChild(row);
         });
         wrap.append(bar, list);
@@ -845,31 +870,40 @@
       const margin = { top: 16, right: 12, bottom: 32, left: 48 };
       const rows = stream.months.map((month, index) => {
         const row = { month };
+        const total = stream.bands.reduce((sum, _, bandIndex) => sum + (stream.counts[bandIndex][index] || 0), 0);
         stream.bands.forEach((band, bandIndex) => {
-          row[band] = stream.counts[bandIndex][index];
+          const count = stream.counts[bandIndex][index] || 0;
+          row[band] = streamStacked ? (total ? (count / total) * 100 : 0) : count;
         });
         return row;
       });
-      const layers = d3.stack().keys([...stream.bands].reverse()).order(d3.stackOrderNone).offset(d3.stackOffsetSilhouette)(rows);
+      const layers = d3.stack()
+        .keys([...stream.bands].reverse())
+        .order(d3.stackOrderNone)
+        .offset(streamStacked ? d3.stackOffsetNone : d3.stackOffsetSilhouette)(rows);
       const x = d3.scaleTime()
         .domain(d3.extent(rows, (row) => new Date(`${row.month}-01`)))
         .range([margin.left, width - margin.right]);
       const y = d3.scaleLinear()
-        .domain([
-          d3.min(layers, (layer) => d3.min(layer, (point) => point[0])),
-          d3.max(layers, (layer) => d3.max(layer, (point) => point[1]))
-        ])
-        .nice()
+        .domain(streamStacked
+          ? [0, 100]
+          : [
+            d3.min(layers, (layer) => d3.min(layer, (point) => point[0])),
+            d3.max(layers, (layer) => d3.max(layer, (point) => point[1]))
+          ])
         .range([height - margin.bottom, margin.top]);
+      if (!streamStacked) y.nice();
       const area = d3.area()
         .x((point) => x(new Date(`${point.data.month}-01`)))
         .y0((point) => y(point[0]))
         .y1((point) => y(point[1]))
-        .curve(d3.curveMonotoneX);
+        .curve(streamStacked ? d3.curveLinear : d3.curveMonotoneX);
       const svg = d3.select(el).append("svg").attr("width", width).attr("height", height);
       svg.append("g")
         .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y).ticks(6).tickFormat((value) => Math.abs(value).toLocaleString("en-US")))
+        .call(d3.axisLeft(y).ticks(streamStacked ? 5 : 6).tickFormat((value) => streamStacked
+          ? `${Math.round(value)}%`
+          : Math.abs(value).toLocaleString("en-US")))
         .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
         .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
         .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
@@ -879,13 +913,15 @@
         .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
         .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
         .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
-      svg.append("line")
-        .attr("x1", margin.left)
-        .attr("x2", width - margin.right)
-        .attr("y1", y(0))
-        .attr("y2", y(0))
-        .attr("stroke", "#94a3b8")
-        .attr("stroke-dasharray", "3 4");
+      if (!streamStacked) {
+        svg.append("line")
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right)
+          .attr("y1", y(0))
+          .attr("y2", y(0))
+          .attr("stroke", "#94a3b8")
+          .attr("stroke-dasharray", "3 4");
+      }
       svg.append("g")
         .selectAll("path")
         .data(layers)
@@ -924,8 +960,15 @@
           const xPos = x(new Date(`${month}-01`));
           rule.attr("x1", xPos).attr("x2", xPos).style("display", null);
           const total = stream.bands.reduce((sum, _, index) => sum + stream.counts[index][nearest], 0);
-          const lines = stream.bands.map((band, index) => `<div><span style="color:${bandColors[index]}">●</span> ${band}: <b>${stream.counts[index][nearest].toLocaleString("en-US")}</b></div>`).join("");
-          tip.innerHTML = `<b>${month}</b><div>${total.toLocaleString("en-US")} scored games</div>${lines}`;
+          const lines = stream.bands.map((band, index) => {
+            const count = stream.counts[index][nearest];
+            const share = total ? (count / total) * 100 : 0;
+            const shown = streamStacked
+              ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+              : count.toLocaleString("en-US");
+            return `<div><span style="color:${bandColors[index]}">●</span> ${band}: <b>${shown}</b></div>`;
+          }).join("");
+          tip.innerHTML = `<b>${month}</b><div>${total.toLocaleString("en-US")} games</div>${lines}`;
           tip.style.display = "block";
           let left = xPos + 12;
           if (left + tip.offsetWidth > width - 8) left = Math.max(8, xPos - tip.offsetWidth - 12);
@@ -1092,28 +1135,51 @@
       }
     }
 
-    function renderStreamCharts() {
-      const stream = current.stream;
-      const streamCap = document.getElementById("cap-stream");
-      const single = stream.months.length < 2;
-      const lead = single
-        ? `One month, so the bands are a stacked bar rather than a stream. Each band is the number of games with an AI disclosure released that month whose review percentage falls in it.`
-        : `Stream graph. Each ribbon is the number of games with an AI disclosure released that month whose review percentage falls in that band. The ribbons are displaced around the center line, so the stream starts in the middle of the axis and spreads up and down with volume. The 95–100% band is the top ribbon.`;
-      streamCap.textContent = `${lead} The percentage is positive reviews divided by positive plus negative reviews. ${stream.scored.toLocaleString("en-US")} games have at least one review. ${stream.unscored.toLocaleString("en-US")} games with an AI disclosure have none, so they are not in the stream.`;
-      drawStream(document.getElementById("chart-stream"), stream);
-      renderFreePaid(current.freePaid);
-      renderInitialPrice(current.price);
-
-      const shareAxis = {
+    function renderScatter() {
+      if (!current || !current.tags) return;
+      if (!charts.scatter) charts.scatter = echarts.init(document.getElementById("chart-scatter"));
+      const labelsOn = document.getElementById("scatter-labels").getAttribute("aria-pressed") === "true";
+      const aiShareOf = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const otherShareOf = (count) => (current.otherTotal ? ((count || 0) / current.otherTotal) * 100 : 0);
+      const points = current.tags.filter((tag) => !omittedTags.has(tag.name)).map((tag) => {
+        const xShare = otherShareOf(tag.other);
+        const yShare = aiShareOf(tag.ai);
+        return {
+          name: tag.name,
+          value: scatterAsShare ? [xShare, yShare] : [tag.other || 0, tag.ai],
+          ai: tag.ai,
+          other: tag.other || 0,
+          xShare,
+          yShare
+        };
+      });
+      const across = scatterAsShare
+        ? "Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it."
+        : "Across is the number of games with no AI disclosure that carry it. Up is the number of games with an AI disclosure that carry it.";
+      document.getElementById("cap-scatter").textContent = `Each point is one of the hundred tags attached to the most games with an AI disclosure ${current.phrase}. ${across} Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.`;
+      const axisLabel = scatterAsShare
+        ? { ...axisText, formatter: (value) => value + "%" }
+        : { ...axisText, formatter: (value) => Math.round(value).toLocaleString("en-US") };
+      const valueAxis = {
         type: "value",
         min: 0,
         nameTextStyle: axisText,
-        axisLabel: { ...axisText, formatter: (value) => value + "%" },
+        axisLabel,
         splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
         axisLine: { lineStyle: { color: "#3d4a5c" } }
       };
-      if (!charts.scatter) charts.scatter = echarts.init(document.getElementById("chart-scatter"));
-      const labelsOn = document.getElementById("scatter-labels").getAttribute("aria-pressed") === "true";
+      const xMax = scatterAsShare ? 25 : 20000;
+      const yMax = scatterAsShare ? 33 : 4100;
+      const ratio = current.otherTotal ? current.aiTotal / current.otherTotal : 1;
+      const guideEnd = scatterAsShare
+        ? [xMax, Math.min(yMax, xMax)]
+        : [xMax, Math.min(yMax, xMax * ratio)];
+      charts.scatter.guideAnchors = scatterAsShare
+        ? [[1.2, 26], [7, 1.6]]
+        : [[xMax * 0.1, yMax * 0.78], [xMax * 0.62, yMax * 0.08]];
+      const shown = (share, count) => scatterAsShare
+        ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+        : count.toLocaleString("en-US");
       charts.scatter.setOption({
         animationDuration: 650,
         tooltip: {
@@ -1121,34 +1187,30 @@
           trigger: "item",
           formatter(params) {
             const tag = params.data;
-            return `<b>${tag.name}</b><br/>AI disclosure: <b>${tag.yShare.toFixed(1)}%</b> (${tag.ai.toLocaleString("en-US")})<br/>No AI disclosure: <b>${tag.xShare.toFixed(1)}%</b> (${tag.other.toLocaleString("en-US")})`;
+            return `<b>${tag.name}</b><br/>AI disclosure: <b>${shown(tag.yShare, tag.ai)}</b><br/>No AI disclosure: <b>${shown(tag.xShare, tag.other)}</b>`;
           }
         },
-        grid: { left: 72, right: 20, top: 16, bottom: 52 },
+        grid: { left: scatterAsShare ? 72 : 86, right: 20, top: 16, bottom: 52 },
         xAxis: {
-          ...shareAxis,
+          ...valueAxis,
+          max: xMax,
           name: "No AI disclosure",
           nameLocation: "middle",
           nameGap: 30
         },
         yAxis: {
-          ...shareAxis,
+          ...valueAxis,
+          max: yMax,
           name: "AI disclosure",
           nameLocation: "middle",
-          nameGap: 48
+          nameGap: scatterAsShare ? 48 : 58
         },
         series: [
           {
             id: "tags",
             type: "scatter",
-            data: current.clusters.filter((tag) => tag.x > 0 && tag.y > 0 && !omittedTags.has(tag.name)).map((tag) => ({
-              name: tag.name,
-              value: [tag.x, tag.y],
-              ai: tag.ai,
-              other: tag.other,
-              xShare: tag.x,
-              yShare: tag.y
-            })),
+            data: points,
+            clip: true,
             symbolSize: 11,
             itemStyle: { color: "#d4af37", opacity: 0.95 },
             label: {
@@ -1165,7 +1227,7 @@
           {
             id: "guide",
             type: "line",
-            data: [[0, 0], [25, 25]],
+            data: [[0, 0], guideEnd],
             symbol: "none",
             silent: true,
             z: 2,
@@ -1176,8 +1238,9 @@
       }, { notMerge: true });
       function placeScatterGuide() {
         const chart = charts.scatter;
-        const above = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [1.2, 26]);
-        const below = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [7, 1.6]);
+        const anchors = chart.guideAnchors || [[1.2, 26], [7, 1.6]];
+        const above = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, anchors[0]);
+        const below = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, anchors[1]);
         if (!above || !below || !Number.isFinite(above[0]) || !Number.isFinite(below[0])) return;
         const key = [...above, ...below].map((value) => Math.round(value)).join(",");
         if (key === placeScatterGuide.key) return;
@@ -1209,7 +1272,58 @@
           scatterLabels.textContent = showing ? "Hide data labels" : "Show data labels";
           charts.scatter.setOption({ series: [{ id: "tags", label: { show: showing } }] });
         });
+        const scatterCount = document.getElementById("scatter-count");
+        const scatterShare = document.getElementById("scatter-share");
+        const chooseScale = (asShare) => {
+          if (scatterAsShare === asShare) return;
+          scatterAsShare = asShare;
+          renderScatter();
+        };
+        scatterCount.addEventListener("click", () => chooseScale(false));
+        scatterShare.addEventListener("click", () => chooseScale(true));
       }
+      const scatterCount = document.getElementById("scatter-count");
+      const scatterShare = document.getElementById("scatter-share");
+      scatterCount.setAttribute("aria-pressed", String(!scatterAsShare));
+      scatterShare.setAttribute("aria-pressed", String(scatterAsShare));
+    }
+
+    function renderStreamCharts() {
+      const stream = current.stream;
+      const streamCap = document.getElementById("cap-stream");
+      const single = stream.months.length < 2;
+      const fewIndex = stream.bands.indexOf("10 or fewer reviews");
+      const fewCount = fewIndex >= 0 ? sum(stream.counts[fewIndex]) : 0;
+      const lead = single
+        ? `One month, so the bands are a stacked bar rather than a stream.`
+        : streamStacked
+          ? `100% stacked. Each month’s ribbons sum to 100%. The 95–100% band is the top ribbon.`
+          : `Stream graph. Ribbons are counts, displaced around the center of the axis. The 95–100% band is the top ribbon.`;
+      const streamRibbon = document.getElementById("stream-ribbon");
+      const streamStackedButton = document.getElementById("stream-stacked");
+      if (streamRibbon && streamStackedButton) {
+        streamRibbon.setAttribute("aria-pressed", String(!streamStacked));
+        streamStackedButton.setAttribute("aria-pressed", String(streamStacked));
+        if (!streamRibbon.dataset.bound) {
+          streamRibbon.dataset.bound = "true";
+          const chooseLayout = (stacked) => {
+            if (streamStacked === stacked) return;
+            streamStacked = stacked;
+            renderStreamCharts();
+          };
+          streamRibbon.addEventListener("click", () => chooseLayout(false));
+          streamStackedButton.addEventListener("click", () => chooseLayout(true));
+        }
+      }
+      const heldOut = stream.unscored
+        ? ` ${stream.unscored.toLocaleString("en-US")} games have more than 10 reviews but no positive and negative split, so they are not in the chart.`
+        : "";
+      streamCap.textContent = `${lead} Games with 10 or fewer reviews are the gold ribbon: ${fewCount.toLocaleString("en-US")} in this window. Every other ribbon is the review percentage of games with more than 10 reviews, positive reviews divided by positive plus negative reviews.${heldOut}`;
+      drawStream(document.getElementById("chart-stream"), stream);
+      renderFreePaid(current.freePaid);
+      renderInitialPrice(current.price);
+
+      renderScatter();
 
       if (!charts.cloud) charts.cloud = echarts.init(document.getElementById("chart-cloud"));
       charts.cloud.setOption({
