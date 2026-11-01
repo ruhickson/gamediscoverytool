@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/blog/essay.css" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <style>
@@ -39,6 +40,43 @@
       z-index: 2;
     }
     .chart.scatter { height: 680px; }
+    .review-roll { margin-top: 18px; }
+    .review-roll .cap { margin: 4px 0 10px; }
+    .review-scroll {
+      max-height: 520px;
+      overflow: auto;
+      margin-top: 12px;
+      border: 1px solid #3d4a5c;
+      border-radius: 8px;
+    }
+    .review-roll table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .review-roll th {
+      position: sticky;
+      top: 0;
+      background: #1a2438;
+      color: #94a3b8;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      border-bottom: 1px solid #3d4a5c;
+    }
+    .review-roll td {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(61, 74, 92, 0.55);
+      color: #e8eef7;
+      vertical-align: baseline;
+    }
+    .review-roll td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .review-roll th.num { text-align: right; }
+    .review-roll a { color: #d4af37; text-decoration: none; }
+    .review-roll a:hover { text-decoration: underline; }
+    .review-roll td.side { white-space: nowrap; }
+    .review-roll tr[data-side="ai"] td.side { color: #d4af37; }
+    .review-roll tr[data-side="other"] td.side { color: #22d3ee; }
+    .review-roll tbody tr:hover td { background: rgba(212, 175, 55, 0.08); }
     .label-toggle {
       margin-top: 12px;
       background: transparent;
@@ -79,6 +117,21 @@
     .axis-switch + .axis-switch,
     .axis-switch + .label-toggle {
       margin-left: 8px;
+    }
+    .axis-switch.views {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+    }
+    .axis-switch.views .axis-switch-option {
+      border: 1px solid #3d4a5c;
+      border-radius: 999px;
+    }
+    .axis-switch.views .axis-switch-option[aria-pressed="true"] {
+      border-color: #d4af37;
     }
     .chart.cloud { height: 520px; }
     .window-filter {
@@ -222,7 +275,7 @@
         <div class="figure-meta">
           <p class="eyebrow"></p>
           <h2>Top 100 tags on games with an AI disclosure</h2>
-          <p class="cap" id="cap-tags">The hundred tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Gold is games with an AI disclosure. Cyan is games with no AI disclosure. Distance to the right, and bubble size, are how many games in that group carry the tag.</p>
+          <p class="cap" id="cap-tags"></p>
           <div class="axis-switch" role="group" aria-label="Tag chart scale">
             <button type="button" id="tags-count" class="axis-switch-option" aria-pressed="true">Count</button>
             <button type="button" id="tags-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
@@ -294,17 +347,17 @@
         </div>
         <div id="chart-reviews" class="chart bars"></div>
         <div class="commentary">
-          <p>The trillion-dollar question. On a recent Game Business podcast interview with Romy Halfweeg of Poki, Halfweeg and host Christopher Dring discussed the idea that just because a game is made with or without AI doesn't actually determine whether a game is good. It's possible to make a good game using AI and also to make a terrible game organically and by hand-crafting every single element. There is no absolute.</p>
+          <p>The trillion-dollar question. On a recent Game Business podcast interview with Romy Halfweeg of Poki, Halfweeg and host Christopher Dring discussed the idea that <a href="https://youtu.be/sA6M3isZFIc?si=wpaTaLKCbCULK4SC">just because a game is made with or without AI doesn't actually determine whether a game is good</a>. It's possible to make a good game using AI and also to make a terrible game organically and by hand-crafting every single element. There is no absolute.</p>
           <p>However, just because it is not absolute fact doesn't mean it's uncommon, something that becomes plainly obvious when looking at the overall share of review scores. Putting aside the low/no scores for a moment, Games with no AI-disclosure outperform games with AI disclosure in every neutral-to-positive category.</p>
           <p>Negative reviews do take up a larger share on the No AI disclosure side too, though these are somewhat marginal in the grand scheme of things, taking up < 1.5% of all games released in either category. While negative reviews are not a rarity on Steam, pile ons are indeed rarer than one might expect.</p>
-          <p></p>
+          <p>Of course, the most damning thing here is that over 2/3rds (67% at the time of writing) of all games with AI disclosures have 10 or fewer reviews. That is a quite astonishing amount of abandonware, junk, slop, or whatever you want to call it. These games are being sent out to die. Or perhaps just occupy server space. The vast majority of them have zero engagement with a community, Steam as a whole, or the Internet in general. They appear to have no purpose, and it is now having a non-negligible having an effect on the platform.</p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
           <p class="eyebrow">Review percentage</p>
-          <h2>Review score percentage of games with an AI disclosure, by month</h2>
+          <h2>Positive <ruby></ruby>eview score percentage of games with an AI disclosure, by month</h2>
           <p class="cap" id="cap-stream">Stream graph of games with an AI disclosure, by review percentage. Ribbons are counts, displaced around the center of the axis.</p>
           <div class="axis-switch" role="group" aria-label="Ribbon chart layout">
             <button type="button" id="stream-ribbon" class="axis-switch-option" aria-pressed="true">Stream</button>
@@ -322,28 +375,88 @@
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">More than 10 reviews</p>
-          <h2>Review-score mix, in bands of 1,000 reviews</h2>
-          <p class="cap" id="cap-bands">Share of reviews inside each band of 1,000. Games with 10 or fewer reviews are left out, so the first band is 11–1,000. Released 1 January 2020 through 29 October 2026. This chart stays on that full window when the release window above changes.</p>
+          <p class="eyebrow"></p>
+          <h2>Review scores bucketed into bands of 1,000 reviews</h2>
+          <p class="cap" id="cap-bands"></p>
+          <div class="axis-switch" role="group" aria-label="Review mix scale">
+            <button type="button" id="bands-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="bands-share" class="axis-switch-option" aria-pressed="false">% of all</button>
+          </div>
         </div>
         <div id="chart-bands" class="chart bands"></div>
         <div class="commentary">
-          <p>The score mix inside a band is close. In 11–1,000, which holds 3,927 of the 4,127 games with an AI disclosure and more than 10 reviews, Very Positive is 47.0% of their reviews and 51.2% of the reviews on games with no disclosure. Mostly Positive, Mixed, and Overwhelmingly Positive sit within a few points of each other too.</p>
-          <p>The disclosed side thins out fast. Past a few thousand reviews a bar is often a handful of games, and past 9,000 it is often one title. The 21 bands here are every step from 11 through 21,000. Above that line there are 23 disclosed games and 469 others, and those 492 games hold about two thirds of all reviews in the window.</p>
+          <p>Of the ~4,100 games to be released with an AI disclosure, only 200 or so have more than 1,000 reviews, and only 37 have more than 10,000 reviews each. Those have been listed in a table below.</p>
+
+        </div>
+        <div class="review-roll">
+          <p class="cap"><i></i>Games with an AI disclosure released from 1 January 2020 through 31st October 2026 with >10,000 reviews.</i></p>
+          <div class="review-scroll">
+            <table>
+              <thead>
+                <tr><th>Game</th><th class="num">Reviews</th><th>Score</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><a href="https://store.steampowered.com/app/1938090" target="_blank" rel="noopener">Call of Duty®</a></td><td class="num">717,339</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2073850" target="_blank" rel="noopener">THE FINALS</a></td><td class="num">232,955</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1599340" target="_blank" rel="noopener">Lost Ark</a></td><td class="num">202,047</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1808500" target="_blank" rel="noopener">ARC Raiders</a></td><td class="num">138,785</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1868140" target="_blank" rel="noopener">DAVE THE DIVER</a></td><td class="num">129,831</td><td>Overwhelmingly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3405690" target="_blank" rel="noopener">EA SPORTS FC™ 26</a></td><td class="num">109,007</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/516750" target="_blank" rel="noopener">My Summer Car</a></td><td class="num">91,721</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2923300" target="_blank" rel="noopener">Banana</a></td><td class="num">89,933</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3564740" target="_blank" rel="noopener">Where Winds Meet</a></td><td class="num">74,767</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1304930" target="_blank" rel="noopener">The Outlast Trials</a></td><td class="num">67,793</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2429640" target="_blank" rel="noopener">THRONE AND LIBERTY</a></td><td class="num">63,768</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3321460" target="_blank" rel="noopener">Crimson Desert</a></td><td class="num">63,732</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3097560" target="_blank" rel="noopener">Liar&#x27;s Bar</a></td><td class="num">48,745</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3350200" target="_blank" rel="noopener">捞女游戏</a></td><td class="num">47,110</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1962663" target="_blank" rel="noopener">Call of Duty®: Warzone™</a></td><td class="num">45,213</td><td>Mostly Negative</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1987080" target="_blank" rel="noopener">Inside the Backrooms</a></td><td class="num">45,064</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2524890" target="_blank" rel="noopener">Pixel Gun 3D: PC Edition</a></td><td class="num">38,980</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3393110" target="_blank" rel="noopener">AION 2</a></td><td class="num">37,373</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1268750" target="_blank" rel="noopener">Starship Troopers: Extermination</a></td><td class="num">31,063</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4197610" target="_blank" rel="noopener">Librarian: Tidy Up the Arcane Library!</a></td><td class="num">26,718</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4128580" target="_blank" rel="noopener">BidKing</a></td><td class="num">23,499</td><td>Mostly Negative</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1040200" target="_blank" rel="noopener">Crime Scene Cleaner</a></td><td class="num">22,276</td><td>Overwhelmingly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2456740" target="_blank" rel="noopener">inZOI</a></td><td class="num">21,581</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1549250" target="_blank" rel="noopener">Undecember</a></td><td class="num">19,936</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4164420" target="_blank" rel="noopener">My Winter Car</a></td><td class="num">19,443</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/736590" target="_blank" rel="noopener">Operation: Harsh Doorstop</a></td><td class="num">18,487</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4384550" target="_blank" rel="noopener">Call of Duty®: Black Ops 6</a></td><td class="num">16,422</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4025700" target="_blank" rel="noopener">Heartopia</a></td><td class="num">16,090</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3557620" target="_blank" rel="noopener">Blue Archive</a></td><td class="num">14,692</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1465460" target="_blank" rel="noopener">Infection Free Zone</a></td><td class="num">14,688</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2933620" target="_blank" rel="noopener">Call of Duty®: Black Ops 6 - Campaign</a></td><td class="num">14,000</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4570720" target="_blank" rel="noopener">DragonSword : Awakening</a></td><td class="num">13,302</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2772750" target="_blank" rel="noopener">Age of History 3</a></td><td class="num">13,018</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1812450" target="_blank" rel="noopener">Bellwright</a></td><td class="num">12,234</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4080220" target="_blank" rel="noopener">EA SPORTS FC™ 27</a></td><td class="num">10,936</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1114150" target="_blank" rel="noopener">CarX Street</a></td><td class="num">10,774</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1331550" target="_blank" rel="noopener">Big Ambitions</a></td><td class="num">10,771</td><td>Very Positive</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">Same cutoff, except the price rows</p>
-          <h2>Scores, review percentage, list price, and the tags from above</h2>
-          <p class="cap" id="cap-profile">Gold is an AI disclosure. Cyan is no AI disclosure. Review percentage and review-score rows are games with more than 10 reviews: the score rows are a share of reviews, and the two percentage rows are how often a review is positive. Tag rows are the share of those games carrying the tag. List-price rows are the euro brackets from the price chart above, so they still include games with 10 or fewer reviews. This chart stays on the full window.</p>
+          <p class="eyebrow"></p>
+          <h2>Putting it all together</h2>
+          <p class="cap" id="cap-profile">Each point is a game with more than 10 positive reviews and a known list price. Gold is a title with AI disclosure, Cyan is no disclosure. The three axes are Tag-score (the likelihood that a game is AI-developed based on its tags), List price (the price the game was initially listed for in €), and Count of Positive Reviews.</p>
+          <div class="axis-switch views" role="group" aria-label="Axis view">
+            <button type="button" class="axis-switch-option" data-profile-view="xy" aria-pressed="false">Positive reviews x Tag score²</button>
+            <button type="button" class="axis-switch-option" data-profile-view="xz" aria-pressed="false">Positive reviews x €</button>
+            <button type="button" class="axis-switch-option" data-profile-view="yz" aria-pressed="false">Tag score² x €</button>
+          </div>
         </div>
         <div id="chart-profile" class="chart profile"></div>
         <div class="commentary">
-          <p>Counted one game at a time, the positive rate is 79.5% with a disclosure and 80.9% without. Weight the same reviews by how many there are and the disclosed group falls to 74.3%, against 84.2%. The reviews land in different labels: 35.1% of disclosed review volume is Mixed, against 13.7%, and Overwhelmingly Positive is 6.0% against 24.0%. That is not a worse mix inside the same band. Call of Duty, Mixed, with an AI disclosure, is about a fifth of every review on a disclosed game.</p>
-          <p>The list price still leans cheap, on the same records as the price chart. 43.5% of priced disclosed games are €1–€4.99 and 32.1% are €5–€9.99, against 39.9% and 26.1%. Under €1 goes the other way, 4.8% against 9.9%. Among games with more than 10 reviews, free is almost the same share either way: 20.9% disclosed, 21.0% not.</p>
+          <p>Here we really see the whole picture, and it shows the AI games tend to cluster toward the octant closest to the origin.</p>
+          <p>The Tag-Score axis assigned a likelihood score of a game being AI-developed based on the tags used in the store page.</p>
           <p>The tags from the chart above survive the 10-review cutoff. Simulation is on 41.1% of disclosed games with more than 10 reviews and 22.7% of the rest. Management, economy, idler, and incremental lean the same way. Platformer still leans the other way, 3.9% against 9.7%.</p>
+          <p>Shoutout to <a href="https://store.steampowered.com/app/1216540/Fishy2/">Fishy2</a> for being the game least likely to be AI generated in the entire Steam catalogue with a tag-score of -23.8.</p>
+          <p>Similarly: shoutout to <a href="https://store.steampowered.com/app/3406070/Bubble_Tea_Revolution/#app_reviews_hash">Bubble Tea Revolution</a> for being the game least likely to be AI generated in the entire Steam catalogue a score of 100, with its AI capsule art, AI in-game images and audio, AI translations, etc...</p>
         </div>
       </section>
     </div>
@@ -381,7 +494,7 @@
   </div>
 
   <script>
-    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181,"other":60830},{"name":"Indie","ai":7746,"other":42133},{"name":"Casual","ai":6921,"other":38084},{"name":"2D","ai":5975,"other":33372},{"name":"3D","ai":4481,"other":26933},{"name":"Action","ai":4410,"other":34255},{"name":"Adventure","ai":4226,"other":32678},{"name":"Simulation","ai":4050,"other":17684},{"name":"Strategy","ai":3753,"other":17558},{"name":"Atmospheric","ai":3016,"other":18521},{"name":"Colorful","ai":2896,"other":19470},{"name":"First-Person","ai":2631,"other":14945},{"name":"RPG","ai":2589,"other":14729},{"name":"Exploration","ai":2402,"other":17032},{"name":"Early Access","ai":2380,"other":10427},{"name":"Puzzle","ai":2373,"other":17332},{"name":"Relaxing","ai":2358,"other":12398},{"name":"Cute","ai":2318,"other":16471},{"name":"Fantasy","ai":2246,"other":13776},{"name":"Pixel Graphics","ai":2048,"other":17171},{"name":"Combat","ai":1989,"other":11604},{"name":"Story Rich","ai":1987,"other":14333},{"name":"Arcade","ai":1923,"other":13993},{"name":"Stylized","ai":1912,"other":10998},{"name":"Multiplayer","ai":1831,"other":10610},{"name":"Top-Down","ai":1815,"other":10113},{"name":"Funny","ai":1660,"other":11188},{"name":"PvE","ai":1658,"other":7985},{"name":"Choices Matter","ai":1609,"other":7311},{"name":"Realistic","ai":1603,"other":7462},{"name":"Horror","ai":1601,"other":10603},{"name":"Action-Adventure","ai":1601,"other":12767},{"name":"Family Friendly","ai":1569,"other":10412},{"name":"Roguelite","ai":1470,"other":6107},{"name":"Roguelike","ai":1430,"other":6635},{"name":"Sci-fi","ai":1423,"other":9145},{"name":"Management","ai":1419,"other":5147},{"name":"Resource Management","ai":1395,"other":4403},{"name":"Free to Play","ai":1348,"other":8463},{"name":"Third Person","ai":1328,"other":8990},{"name":"PvP","ai":1311,"other":7108},{"name":"Dark","ai":1301,"other":7727},{"name":"Controller","ai":1285,"other":10074},{"name":"Shooter","ai":1249,"other":9936},{"name":"Mystery","ai":1236,"other":7718},{"name":"Multiple Endings","ai":1222,"other":6828},{"name":"Immersive Sim","ai":1208,"other":4620},{"name":"Retro","ai":1201,"other":10024},{"name":"Anime","ai":1177,"other":7578},{"name":"Psychological Horror","ai":1173,"other":7060},{"name":"Linear","ai":1167,"other":9428},{"name":"Physics","ai":1144,"other":7470},{"name":"Survival","ai":1113,"other":6823},{"name":"2D Platformer","ai":1071,"other":9118},{"name":"Cartoony","ai":1062,"other":8556},{"name":"Idler","ai":1030,"other":3063},{"name":"Visual Novel","ai":1030,"other":5869},{"name":"Economy","ai":979,"other":2493},{"name":"Comedy","ai":974,"other":6738},{"name":"Minimalist","ai":965,"other":7527},{"name":"Character Customization","ai":961,"other":5524},{"name":"Action Roguelike","ai":960,"other":4967},{"name":"Sandbox","ai":953,"other":5002},{"name":"Tactical","ai":944,"other":4639},{"name":"Turn-Based Tactics","ai":944,"other":4136},{"name":"Medieval","ai":923,"other":4431},{"name":"Card Game","ai":918,"other":2878},{"name":"Life Sim","ai":915,"other":2858},{"name":"Logic","ai":910,"other":5363},{"name":"Turn-Based Strategy","ai":910,"other":4077},{"name":"Point & Click","ai":894,"other":6070},{"name":"Text-Based","ai":883,"other":3115},{"name":"Online Co-Op","ai":843,"other":4012},{"name":"Co-op","ai":838,"other":5144},{"name":"Hidden Object","ai":831,"other":4959},{"name":"Dark Fantasy","ai":829,"other":3837},{"name":"Open World","ai":822,"other":5699},{"name":"Magic","ai":807,"other":5375},{"name":"Female Protagonist","ai":804,"other":7327},{"name":"Interactive Fiction","ai":793,"other":4301},{"name":"Action RPG","ai":776,"other":4853},{"name":"Procedural Generation","ai":773,"other":4428},{"name":"Building","ai":773,"other":4631},{"name":"Crafting","ai":772,"other":3894},{"name":"Choose Your Own Adventure","ai":758,"other":3979},{"name":"Walking Simulator","ai":756,"other":4217},{"name":"Space","ai":747,"other":4680},{"name":"Turn-Based Combat","ai":737,"other":3981},{"name":"Artificial Intelligence","ai":733,"other":1614},{"name":"3D Platformer","ai":730,"other":5735},{"name":"Platformer","ai":727,"other":9475},{"name":"Old School","ai":714,"other":5420},{"name":"Incremental","ai":714,"other":994},{"name":"FPS","ai":714,"other":5343},{"name":"Time Management","ai":714,"other":2527},{"name":"Score Attack","ai":711,"other":4247},{"name":"Futuristic","ai":698,"other":4605},{"name":"Cartoon","ai":682,"other":4986},{"name":"Deckbuilding","ai":675,"other":2094},{"name":"Emotional","ai":660,"other":4137}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
+    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181,"other":60830},{"name":"Indie","ai":7746,"other":42133},{"name":"Casual","ai":6921,"other":38084},{"name":"2D","ai":5975,"other":33372},{"name":"3D","ai":4481,"other":26933},{"name":"Action","ai":4410,"other":34255},{"name":"Adventure","ai":4226,"other":32678},{"name":"Simulation","ai":4050,"other":17684},{"name":"Strategy","ai":3753,"other":17558},{"name":"Atmospheric","ai":3016,"other":18521},{"name":"Colorful","ai":2896,"other":19470},{"name":"First-Person","ai":2631,"other":14945},{"name":"RPG","ai":2589,"other":14729},{"name":"Exploration","ai":2402,"other":17032},{"name":"Early Access","ai":2380,"other":10427},{"name":"Puzzle","ai":2373,"other":17332},{"name":"Relaxing","ai":2358,"other":12398},{"name":"Cute","ai":2318,"other":16471},{"name":"Fantasy","ai":2246,"other":13776},{"name":"Pixel Graphics","ai":2048,"other":17171},{"name":"Combat","ai":1989,"other":11604},{"name":"Story Rich","ai":1987,"other":14333},{"name":"Arcade","ai":1923,"other":13993},{"name":"Stylized","ai":1912,"other":10998},{"name":"Multiplayer","ai":1831,"other":10610},{"name":"Top-Down","ai":1815,"other":10113},{"name":"Funny","ai":1660,"other":11188},{"name":"PvE","ai":1658,"other":7985},{"name":"Choices Matter","ai":1609,"other":7311},{"name":"Realistic","ai":1603,"other":7462},{"name":"Horror","ai":1601,"other":10603},{"name":"Action-Adventure","ai":1601,"other":12767},{"name":"Family Friendly","ai":1569,"other":10412},{"name":"Roguelite","ai":1470,"other":6107},{"name":"Roguelike","ai":1430,"other":6635},{"name":"Sci-fi","ai":1423,"other":9145},{"name":"Management","ai":1419,"other":5147},{"name":"Resource Management","ai":1395,"other":4403},{"name":"Free to Play","ai":1348,"other":8463},{"name":"Third Person","ai":1328,"other":8990},{"name":"PvP","ai":1311,"other":7108},{"name":"Dark","ai":1301,"other":7727},{"name":"Controller","ai":1285,"other":10074},{"name":"Shooter","ai":1249,"other":9936},{"name":"Mystery","ai":1236,"other":7718},{"name":"Multiple Endings","ai":1222,"other":6828},{"name":"Immersive Sim","ai":1208,"other":4620},{"name":"Retro","ai":1201,"other":10024},{"name":"Anime","ai":1177,"other":7578},{"name":"Psychological Horror","ai":1173,"other":7060},{"name":"Linear","ai":1167,"other":9428},{"name":"Physics","ai":1144,"other":7470},{"name":"Survival","ai":1113,"other":6823},{"name":"2D Platformer","ai":1071,"other":9118},{"name":"Cartoony","ai":1062,"other":8556},{"name":"Idler","ai":1030,"other":3063},{"name":"Visual Novel","ai":1030,"other":5869},{"name":"Economy","ai":979,"other":2493},{"name":"Comedy","ai":974,"other":6738},{"name":"Minimalist","ai":965,"other":7527},{"name":"Character Customization","ai":961,"other":5524},{"name":"Action Roguelike","ai":960,"other":4967},{"name":"Sandbox","ai":953,"other":5002},{"name":"Tactical","ai":944,"other":4639},{"name":"Turn-Based Tactics","ai":944,"other":4136},{"name":"Medieval","ai":923,"other":4431},{"name":"Card Game","ai":918,"other":2878},{"name":"Life Sim","ai":915,"other":2858},{"name":"Logic","ai":910,"other":5363},{"name":"Turn-Based Strategy","ai":910,"other":4077},{"name":"Point & Click","ai":894,"other":6070},{"name":"Text-Based","ai":883,"other":3115},{"name":"Online Co-Op","ai":843,"other":4012},{"name":"Co-op","ai":838,"other":5144},{"name":"Hidden Object","ai":831,"other":4959},{"name":"Dark Fantasy","ai":829,"other":3837},{"name":"Open World","ai":822,"other":5699},{"name":"Magic","ai":807,"other":5375},{"name":"Female Protagonist","ai":804,"other":7327},{"name":"Interactive Fiction","ai":793,"other":4301},{"name":"Action RPG","ai":776,"other":4853},{"name":"Procedural Generation","ai":773,"other":4428},{"name":"Building","ai":773,"other":4631},{"name":"Crafting","ai":772,"other":3894},{"name":"Choose Your Own Adventure","ai":758,"other":3979},{"name":"Walking Simulator","ai":756,"other":4217},{"name":"Space","ai":747,"other":4680},{"name":"Turn-Based Combat","ai":737,"other":3981},{"name":"Artificial Intelligence","ai":733,"other":1614},{"name":"3D Platformer","ai":730,"other":5735},{"name":"Platformer","ai":727,"other":9475},{"name":"Old School","ai":714,"other":5420},{"name":"Incremental","ai":714,"other":994},{"name":"FPS","ai":714,"other":5343},{"name":"Time Management","ai":714,"other":2527},{"name":"Score Attack","ai":711,"other":4247},{"name":"Futuristic","ai":698,"other":4605},{"name":"Cartoon","ai":682,"other":4986},{"name":"Deckbuilding","ai":675,"other":2094},{"name":"Emotional","ai":660,"other":4137}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,13],"Very Positive":[0,6,18,42,196,322,449],"Mostly Positive":[0,3,17,27,155,196,337],"Positive":[0,1,9,35,302,528,633],"Mixed":[0,1,20,12,195,281,375],"Mostly Negative":[0,0,3,0,34,31,70],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,4],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1737,3461],"No user reviews":[0,1,3,6,209,606,2221]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,149,122],"Very Positive":[1637,1792,1825,2113,2599,2519,1907],"Mostly Positive":[1169,1215,1274,1320,1398,1039,680],"Positive":[1404,1849,1995,2433,3214,3203,1637],"Mixed":[1466,1709,1639,1645,1512,993,609],"Mostly Negative":[185,217,224,212,172,109,71],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,4,2],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4505,5977,6456,4821],"No user reviews":[286,421,483,811,1358,2068,2068]}};
 
     const omittedTags = new Set(["Singleplayer", "Indie", "Action", "Adventure", "2D", "3D", "Casual"]);
     const axisText = { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 };
@@ -404,7 +517,6 @@
       "Overwhelmingly Negative": "#b91c1c",
       "1–9 reviews": "#64748b",
       "No user reviews": "#475569",
-      "No score recorded": "#334155"
     };
 
     function sum(values) {
@@ -422,7 +534,7 @@
     document.getElementById("stat-month-share").textContent = (monthDeclared / (monthDeclared + monthOther) * 100).toFixed(1) + "%";
 
     const WINDOW_META = {
-      all: { phrase: "since January 2020", totalName: "Total since Jan 2020", title: "AI disclosure since January 2020", start: "2020-01", end: "2026-10" },
+      all: { phrase: "since January 2020", totalName: "Total since Jan 2020", title: "Count of releases with an AI disclosure since January 2020", start: "2020-01", end: "2026-10" },
       y2026: { phrase: "in 2026", totalName: "Total in 2026", title: "AI disclosure in 2026", start: "2026-01", end: "2026-10" },
       oct: { phrase: "in October 2026", totalName: "October 2026", title: "AI disclosure in October 2026", start: "2026-10", end: "2026-10" }
     };
@@ -655,7 +767,7 @@
         return next;
       }, 0);
       document.getElementById("count-title").textContent = current.title;
-      document.getElementById("cap-count").textContent = `Bars are games released that ${unit} with an AI disclosure. The line is the running total ${current.phrase}.`;
+      document.getElementById("cap-count").textContent = ``;
       charts.count.setOption({
       animationDuration: 650,
       tooltip: {
@@ -743,13 +855,13 @@
       host.style.height = `${Math.max(1480, tagRows.length * 32 + 80)}px`;
       charts.tags.resize();
       const omitted = "Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual";
-      const scope = `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Gold is an AI disclosure. Cyan is no AI disclosure.`;
+      const scope = ``;
       const order = tagsByGap
-        ? " Ordered by the biggest difference in % of all releases between the two groups."
+        ? ""
         : "";
       document.getElementById("cap-tags").textContent = tagsAsShare
-        ? `${scope}${order} Distance to the right is that tag’s share of all releases in its own group. The two groups are scaled separately. Bubble size is the count.`
-        : `${scope}${order} Distance to the right, and bubble size, are how many games in that group carry the tag.`;
+        ? ``
+        : ``;
       charts.tags.setOption({
       animationDuration: 650,
       tooltip: {
@@ -858,12 +970,13 @@
       const aiReview = reviewShares(current.reviews.ai);
       const otherReview = reviewShares(current.reviews.other);
       const reviewMax = Math.max(...aiReview.shares, ...otherReview.shares, 1);
-      const reviewAxisMax = Math.ceil(reviewMax / 5) * 5;
+      let reviewAxisMax = Math.max(50, Math.ceil(reviewMax / 5) * 5);
+      if (reviewMax > reviewAxisMax - 4) reviewAxisMax += 5;
       const reviewPercentLabel = (value) => Math.abs(value) >= 0.05 ? Math.abs(value).toFixed(1) + "%" : "";
       const labelCol = 140;
       const chartWidth = charts.reviews.getWidth() || document.getElementById("chart-reviews").clientWidth || 640;
       const side = Math.max(80, Math.floor((chartWidth - labelCol - 16) / 2));
-      document.getElementById("cap-reviews").textContent = `Population pyramid. No AI disclosure extends left. AI disclosure extends right. A bar is that label’s share of its own group ${current.phrase}, so each side sums to 100 percent.`;
+      document.getElementById("cap-reviews").textContent = ``;
       charts.reviews.setOption({
       animationDuration: 650,
       tooltip: {
@@ -1037,7 +1150,7 @@
       }
       const width = Math.max(el.clientWidth || 0, 320);
       const height = Math.max((el.clientHeight || 440) - legend.offsetHeight, 280);
-      const margin = { top: 16, right: 12, bottom: 32, left: 48 };
+      const margin = { top: 16, right: 12, bottom: 32, left: streamStacked ? 48 : 72 };
       const rows = stream.months.map((month, index) => {
         const row = { month };
         const total = visible.reduce((sum, band) => sum + countAt(band, index), 0);
@@ -1077,6 +1190,15 @@
         .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
         .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
         .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
+      if (!streamStacked) {
+        svg.append("text")
+          .attr("transform", `translate(14,${(margin.top + height - margin.bottom) / 2}) rotate(-90)`)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#94a3b8")
+          .attr("font-family", "Figtree, sans-serif")
+          .attr("font-size", 11)
+          .text("Review count");
+      }
       svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %Y")))
@@ -1214,6 +1336,7 @@
     }
 
     let priceAsShare = false;
+    let bandsAsShare = true;
 
     function renderInitialPrice(spec) {
       const cap = document.getElementById("cap-price");
@@ -1222,8 +1345,8 @@
       const aiData = priceAsShare ? shareOf(spec.ai, spec.matchedAi) : spec.ai;
       const priceNote = `The price is the store price overview’s initial price, divided by 100. The last bar is €60 or more. A few list prices are not in the cents of a major currency. ${spec.matchedAi.toLocaleString("en-US")} games with an AI disclosure and ${spec.matchedOther.toLocaleString("en-US")} with no AI disclosure have a price record. Games with none are left out.`;
       cap.textContent = priceAsShare
-        ? `Each bar is that price’s share of all releases in its own group. The two groups are scaled separately, so each sums to 100%. ${priceNote}`
-        : `Each bar is how many games have an initial list price in that euro. ${priceNote}`;
+        ? ``
+        : ``;
       const priceLabel = (value) => {
         if (value === "60+") return "€60 or more";
         if (value === "0") return "Under €1";
@@ -1324,9 +1447,9 @@
         };
       });
       const across = scatterAsShare
-        ? "Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it."
-        : "Across is the number of games with no AI disclosure that carry it. Up is the number of games with an AI disclosure that carry it.";
-      document.getElementById("cap-scatter").textContent = `Each point is one of the hundred tags attached to the most games with an AI disclosure ${current.phrase}. ${across} Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.`;
+        ? ""
+        : "";
+      document.getElementById("cap-scatter").textContent = ``;
       const axisLabel = scatterAsShare
         ? { ...axisText, formatter: (value) => value + "%" }
         : { ...axisText, formatter: (value) => Math.round(value).toLocaleString("en-US") };
@@ -1469,8 +1592,8 @@
       const lead = single
         ? `One month, so the bands are a stacked bar rather than a stream.`
         : streamStacked
-          ? `100% stacked. Each month’s ribbons sum to 100%${focused ? " of the bands still showing" : ""}. The 95–100% band is the top ribbon.`
-          : `Stream graph. Ribbons are counts, displaced around the center of the axis.${focused ? " The scale fits the bands still showing." : " The 95–100% band is the top ribbon."}`;
+          ? ``
+          : ``;
       const streamRibbon = document.getElementById("stream-ribbon");
       const streamStackedButton = document.getElementById("stream-stacked");
       if (streamRibbon && streamStackedButton) {
@@ -1527,7 +1650,7 @@
       }, { notMerge: true });
 
       const disclosureCap = document.getElementById("cap-disclosure");
-      disclosureCap.textContent = `Words from the AI disclosure statement on each game. Size is how many statements contain that word, counted once per statement. Hyphenated phrases stay together. The, a, and, of, and similar joining words are left out. ${current.disclosureStatements.toLocaleString("en-US")} games have a statement. ${current.disclosureBlank.toLocaleString("en-US")} do not, so they are not in the cloud.`;
+      disclosureCap.textContent = ``;
       if (!charts.disclosure) charts.disclosure = echarts.init(document.getElementById("chart-disclosure"));
       charts.disclosure.setOption({
         tooltip: {
@@ -1575,7 +1698,9 @@
           data: REVIEW_CUT.buckets.map((bucket) => {
             const pack = bucket[side];
             if (!pack.s) return { value: null };
-            return { value: pack.s[index], games: pack.g, reviews: pack.r };
+            const share = pack.s[index];
+            const count = Math.round(pack.r * share / 100);
+            return { value: bandsAsShare ? share : count, games: pack.g, reviews: pack.r, share, count };
           })
         }));
       }
@@ -1587,10 +1712,14 @@
         const pack = bucket[side];
         const who = side === "ai" ? "AI disclosure" : "No AI disclosure";
         const lines = bands.map((name, index) => {
-          const value = pack.s[index];
-          if (!value) return "";
+          const share = pack.s[index];
+          if (!share) return "";
+          const count = Math.round(pack.r * share / 100);
           const weight = name === row.seriesName ? "700" : "500";
-          return `<div style="font-weight:${weight}">${name}: <b>${value.toFixed(1)}%</b></div>`;
+          const shown = bandsAsShare
+            ? `${share.toFixed(1)}%`
+            : `${count.toLocaleString("en-US")} · ${share.toFixed(1)}%`;
+          return `<div style="font-weight:${weight}">${name}: <b>${shown}</b></div>`;
         }).filter(Boolean).join("");
         return `<div style="margin-bottom:4px"><b>${bucket.label}</b><br/>${who}</div>`
           + `<div style="margin-bottom:6px">${pack.g.toLocaleString("en-US")} games · ${pack.r.toLocaleString("en-US")} reviews</div>`
@@ -1610,9 +1739,18 @@
         type: "value",
         gridIndex,
         min: 0,
-        max: 100,
+        max: bandsAsShare ? 100 : null,
         name: "",
-        axisLabel: { ...axisText, formatter: (value) => value + "%" },
+        axisLabel: {
+          ...axisText,
+          formatter: bandsAsShare
+            ? (value) => value + "%"
+            : (value) => {
+                if (value >= 1e6) return `${(value / 1e6).toFixed(value >= 1e7 ? 0 : 1)}m`;
+                if (value >= 1e3) return `${Math.round(value / 1e3)}k`;
+                return String(value);
+              }
+        },
         splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
       });
       charts.bands.setOption({
@@ -1636,75 +1774,152 @@
         yAxis: [valueAxis(0), valueAxis(1)],
         series: [...seriesFor("non", "non", 0), ...seriesFor("ai", "ai", 1)]
       }, { notMerge: true });
+      const cap = document.getElementById("cap-bands");
+      if (cap) {
+        cap.textContent = bandsAsShare
+          ? ""
+          : "";
+      }
+      const bandsCount = document.getElementById("bands-count");
+      const bandsShare = document.getElementById("bands-share");
+      if (bandsCount && bandsShare) {
+        bandsCount.setAttribute("aria-pressed", String(!bandsAsShare));
+        bandsShare.setAttribute("aria-pressed", String(bandsAsShare));
+        if (!bandsCount.dataset.bound) {
+          bandsCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (bandsAsShare === share) return;
+            bandsAsShare = share;
+            renderReviewBands();
+          };
+          bandsCount.addEventListener("click", () => choose(false));
+          bandsShare.addEventListener("click", () => choose(true));
+        }
+      }
     }
 
-    function renderReviewProfile() {
+    function priceBandLabel(band) {
+      if (band <= 0) return "Under €1";
+      if (band >= 60) return "€60 or more";
+      return `€${band}–€${band}.99`;
+    }
+
+    function renderReviewProfile(payload) {
       const host = document.getElementById("chart-profile");
-      if (!host) return;
+      if (!host || !payload) return;
       if (!charts.profile) charts.profile = echarts.init(host);
-      const rows = REVIEW_CUT.profile;
-      const unitLine = (row) => {
-        if (row.group === "Review percentage" && row.label === "Weighted by reviews") return "percent of reviews that are positive";
-        if (row.group === "Review percentage") return "average of each game’s positive rate";
-        if (row.group === "Review score") return "share of reviews";
-        if (row.group === "List price") return "share of games with an initial price";
-        return "share of games with more than 10 reviews";
+      const axisName = { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13 };
+      const signedSquare = (score) => {
+        const value = Number(score) || 0;
+        return Math.round(Math.sign(value) * value * value * 10) / 10;
       };
+      const point = (row) => ({ name: row[3], score: row[1], value: [row[0], signedSquare(row[1]), row[2]] });
+      const seriesFor = (name, rows, color) => ({
+        name,
+        type: "scatter3D",
+        data: rows.map(point),
+        symbolSize: name === "AI disclosure" ? 6 : 3,
+        itemStyle: { color, opacity: name === "AI disclosure" ? 0.95 : 0.45 },
+        emphasis: { itemStyle: { opacity: 1 } }
+      });
       charts.profile.setOption({
         animationDuration: 650,
         tooltip: {
           ...tooltipBase,
-          trigger: "axis",
-          axisPointer: { type: "shadow" },
-          formatter(params) {
-            const row = rows[params[0].dataIndex];
-            const lines = params.map((item) => `${item.marker}${item.seriesName}: <b>${Number(item.value).toFixed(1)}%</b>`);
-            const counts = row.aiN != null
-              ? `<div style="margin-top:4px">${row.aiN.toLocaleString("en-US")} disclosed · ${row.nonN.toLocaleString("en-US")} with no disclosure</div>`
-              : "";
-            return `<b>${row.group}</b> · ${row.label}<br/>${unitLine(row)}<br/>${lines.join("<br/>")}${counts}`;
+          formatter(item) {
+            const [positive, plotted, band] = item.value;
+            const score = Number(item.data.score);
+            const lean = score > 0 ? "more common on disclosed games" : score < 0 ? "more common on games with no disclosure" : "even";
+            return `<b>${item.name}</b><br/>${item.seriesName}<br/>${Number(positive).toLocaleString("en-US")} positive reviews<br/>Tag score <b>${score.toFixed(1)}</b> · plotted at <b>${Number(plotted).toLocaleString("en-US")}</b><br/>${lean}<br/>${priceBandLabel(band)}`;
           }
         },
-        legend: { top: 0, textStyle: axisText },
-        grid: { left: 12, right: 24, top: 36, bottom: 28, containLabel: true },
-        xAxis: {
-          type: "value",
-          min: 0,
-          max: 100,
-          name: "%",
-          nameTextStyle: axisText,
-          axisLabel: { ...axisText, formatter: (value) => value + "%" },
-          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        legend: { top: 0, textStyle: axisText, data: ["No AI disclosure", "AI disclosure"] },
+        xAxis3D: {
+          type: "log",
+          name: "Positive reviews",
+          min: 10,
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11, formatter: (value) => Number(value).toLocaleString("en-US") },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
         },
-        yAxis: {
-          type: "category",
-          inverse: true,
-          data: rows.map((row) => `${row.group} · ${row.label}`),
-          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 11, width: 230, overflow: "truncate" },
-          axisTick: { show: false },
-          axisLine: { show: false }
+        yAxis3D: {
+          type: "value",
+          name: "Tag score²",
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
+        },
+        zAxis3D: {
+          type: "value",
+          name: "€",
+          min: 0,
+          max: 60,
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
+        },
+        grid3D: {
+          top: 56,
+          bottom: 24,
+          left: 8,
+          right: 8,
+          boxWidth: 100,
+          boxDepth: 80,
+          boxHeight: 64,
+          environment: "#1a2438",
+          axisPointer: { lineStyle: { color: "#d4af37" } },
+          splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.35)" } },
+          axisLine: { lineStyle: { color: "#94a3b8" } },
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 12 },
+          viewControl: { projection: "perspective", distance: 260, alpha: 22, beta: 42, minAlpha: -90, maxAlpha: 90, minDistance: 80, maxDistance: 420 }
         },
         series: [
-          {
-            name: "No AI disclosure",
-            type: "bar",
-            data: rows.map((row) => row.non),
-            itemStyle: { color: "#22d3ee", borderRadius: [0, 3, 3, 0] },
-            barMaxWidth: 12
-          },
-          {
-            name: "AI disclosure",
-            type: "bar",
-            data: rows.map((row) => row.ai),
-            itemStyle: { color: "#d4af37", borderRadius: [0, 3, 3, 0] },
-            barMaxWidth: 12
-          }
+          seriesFor("No AI disclosure", payload.other || [], "#22d3ee"),
+          seriesFor("AI disclosure", payload.ai || [], "#d4af37")
         ]
       }, { notMerge: true });
+      const profileViews = {
+        xy: { alpha: 90, beta: 0 },
+        xz: { alpha: 0, beta: 0 },
+        yz: { alpha: 0, beta: 90 }
+      };
+      document.querySelectorAll("[data-profile-view]").forEach((button) => {
+        if (button.dataset.bound) return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          const view = profileViews[button.getAttribute("data-profile-view")];
+          if (!view || !charts.profile) return;
+          document.querySelectorAll("[data-profile-view]").forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          charts.profile.setOption({
+            grid3D: {
+              viewControl: {
+                projection: "orthographic",
+                alpha: view.alpha,
+                beta: view.beta,
+                minAlpha: -90,
+                maxAlpha: 90,
+                distance: 260,
+                orthographicSize: 280,
+                minOrthographicSize: 40,
+                maxOrthographicSize: 900,
+                rotateSensitivity: 1,
+                zoomSensitivity: 1,
+                panSensitivity: 1,
+                animationDurationUpdate: 500
+              }
+            }
+          });
+        });
+      });
     }
 
     renderReviewBands();
-    renderReviewProfile();
+    fetch("/blog/critical-mass-profile3d.json").then((response) => response.json()).then(renderReviewProfile).catch(() => null);
 
     function showWindow(key) {
       current = buildCurrent(key);

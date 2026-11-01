@@ -240,7 +240,7 @@ export default {
       resolving.value = true
       essaySrc.value = ''
       try {
-        const posts = await loadBlogSummaries()
+        const posts = await loadBlogSummaries({ includeDrafts: true })
         const match = posts.find((item) => item.slug === slug && item.file)
         if (match) {
           essaySrc.value = match.file

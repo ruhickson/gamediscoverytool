@@ -7,11 +7,13 @@ const POSTS = [
   {
     slug: '2026-10-28-farewell-bioware-the-impact-of-mass-effect',
     publishedAt: '2026-10-28',
+    draft: true,
     file: '/blog/2026-10-28-farewell-bioware-the-impact-of-mass-effect.html'
   },
   {
     slug: '2026-10-28-critical-mass-ais-takeover-of-steam',
     publishedAt: '2026-10-28',
+    draft: true,
     file: '/blog/2026-10-28-critical-mass-ais-takeover-of-steam.html'
   }
 ]
@@ -20,8 +22,9 @@ function textOf(node) {
   return (node?.textContent || '').replace(/\s+/g, ' ').trim()
 }
 
-export async function loadBlogSummaries() {
-  const summaries = await Promise.all(POSTS.map(async (post) => {
+export async function loadBlogSummaries({ includeDrafts = false } = {}) {
+  const posts = includeDrafts ? POSTS : POSTS.filter((post) => !post.draft)
+  const summaries = await Promise.all(posts.map(async (post) => {
     const response = await fetch(post.file)
     if (!response.ok) throw new Error(`Failed to load ${post.file}`)
     const html = await response.text()

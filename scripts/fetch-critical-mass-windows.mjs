@@ -25,7 +25,7 @@ const TYPE = { member: 'Games.type', operator: 'equals', values: ['game'] }
 const REVIEW_ORDER = [
   'Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Positive', 'Mixed',
   'Mostly Negative', 'Negative', 'Very Negative', 'Overwhelmingly Negative',
-  '1–9 reviews', 'No user reviews', 'No score recorded'
+  '1–9 reviews', 'No user reviews'
 ]
 const TITLE_STOP = new Set('a an the of and or to in on for with from by at vs into your you my our its it is be as not no nor but if we they them their this that these those game games'.split(' '))
 const DISCLOSURE_STOP = new Set(`${[...TITLE_STOP].join(' ')} was were are been has have had some any all other such during which who what when where than then also only own can may will would could should about over under out up per via being both each more most less very just so do does did done there here how whom whose while after before between within without through across against because since until onto off including`.split(/\s+/))
@@ -35,8 +35,8 @@ function isTrue(value) {
 }
 
 function reviewLabel(score) {
-  const text = score || ''
-  if (!text) return 'No score recorded'
+  const text = String(score || '').trim()
+  if (!text) return ''
   if (/^[1-9] user reviews$/.test(text)) return '1–9 reviews'
   return text
 }
@@ -191,7 +191,8 @@ for (const [key, range] of Object.entries(WINDOWS)) {
   const aiReviews = blankReviews()
   let unscored = 0
   for (const game of games) {
-    aiReviews[reviewLabel(game.score)] += 1
+    const label = reviewLabel(game.score)
+    if (label) aiReviews[label] += 1
     const total = (game.positive || 0) + (game.negative || 0)
     if (total <= 0) unscored += 1
   }
@@ -227,6 +228,7 @@ for (const [key, range] of Object.entries(WINDOWS)) {
   for (const row of reviewRows) {
     if (isTrue(row['Games.madeWithAi'])) continue
     const label = reviewLabel(row['Games.reviewScoreDesc'])
+    if (!label) continue
     if (otherReviews[label] == null) otherReviews[label] = 0
     otherReviews[label] += Number(row['Games.count']) || 0
   }

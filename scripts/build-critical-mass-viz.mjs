@@ -296,7 +296,6 @@ const streamSeries = BANDS.map((_, index) => months.map((month) => {
 
 const SCORE_ORDER = [
   '10 or fewer reviews',
-  'No score recorded',
   'Overwhelmingly Negative',
   'Very Negative',
   'Negative',
@@ -313,9 +312,10 @@ for (const game of aiGames) {
   const year = game.date.slice(0, 4)
   if (!year) continue
   const reviews = reviewTotal(game)
-  let label = 'No score recorded'
+  let label = ''
   if (reviews == null || reviews <= 10) label = '10 or fewer reviews'
   else if (game.score) label = game.score
+  if (!label) continue
   if (!polar[label]) polar[label] = {}
   polar[label][year] = (polar[label][year] || 0) + 1
 }
