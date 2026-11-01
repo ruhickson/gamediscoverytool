@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <script>
     if (window.top === window.self) {
-      window.location.replace("/blog/2026-10-28-critical-mass-ais-takeover-of-steam");
+      window.location.replace("/blog/2026-11-01-diclosure-day-ais-takeover-of-steam");
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Critical Mass - AI's takeover of Steam</title>
+  <title>Disclosure Day - AI's takeover of Steam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -344,7 +344,7 @@
       <section class="figure">
         <div class="figure-meta">
           <p class="eyebrow"></p>
-          <h2>Where tags sit, AI disclosure and no AI disclosure</h2>
+          <h2>Tags across the AI divide</h2>
           <p class="cap" id="cap-scatter">Each point is one of the hundred tags attached to the most games with an AI disclosure. Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.</p>
           <div class="axis-switch" role="group" aria-label="Scatter chart scale">
             <button type="button" id="scatter-count" class="axis-switch-option" aria-pressed="false">Count</button>
@@ -1965,7 +1965,13 @@
     }
 
     renderReviewBands();
-    fetch("/blog/critical-mass-profile3d.json").then((response) => response.json()).then(renderReviewProfile).catch(() => null);
+    fetch("/blog/critical-mass-profile3d.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status} loading 3D profile data`);
+        return response.json();
+      })
+      .then(renderReviewProfile)
+      .catch((error) => console.error("Failed to load 3D review profile:", error));
 
     function showWindow(key) {
       current = buildCurrent(key);
