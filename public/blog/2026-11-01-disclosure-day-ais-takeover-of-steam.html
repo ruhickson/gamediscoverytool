@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <script>
+    if (window.top === window.self) {
+      window.location.replace("/blog/2026-10-28-critical-mass-ais-takeover-of-steam");
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Critical Mass - AI's takeover of Steam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/essay.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <style>
+    .chart { width: 100%; height: 360px; margin-top: 12px; }
+    .chart.tall { height: 480px; }
+    .chart.tags { height: 1480px; }
+    .chart.bars { height: 560px; }
+    .chart.bands { height: 820px; }
+    .chart.profile { height: 820px; }
+    .chart.stream { height: 440px; position: relative; }
+    .stream-tip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      background: #1a2438;
+      border: 1px solid #3d4a5c;
+      color: #e8eef7;
+      font-family: Figtree, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 8px 10px;
+      border-radius: 6px;
+      z-index: 2;
+    }
+    .chart.scatter { height: 680px; }
+    .review-roll { margin-top: 18px; }
+    .review-roll .cap { margin: 4px 0 10px; }
+    .review-scroll {
+      max-height: 520px;
+      overflow: auto;
+      margin-top: 12px;
+      border: 1px solid #3d4a5c;
+      border-radius: 8px;
+    }
+    .review-roll table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .review-roll th {
+      position: sticky;
+      top: 0;
+      background: #1a2438;
+      color: #94a3b8;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      border-bottom: 1px solid #3d4a5c;
+    }
+    .review-roll td {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(61, 74, 92, 0.55);
+      color: #e8eef7;
+      vertical-align: baseline;
+    }
+    .review-roll td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .review-roll th.num { text-align: right; }
+    .review-roll a { color: #d4af37; text-decoration: none; }
+    .review-roll a:hover { text-decoration: underline; }
+    .review-roll td.side { white-space: nowrap; }
+    .review-roll tr[data-side="ai"] td.side { color: #d4af37; }
+    .review-roll tr[data-side="other"] td.side { color: #22d3ee; }
+    .review-roll tbody tr:hover td { background: rgba(212, 175, 55, 0.08); }
+    .label-toggle {
+      margin-top: 12px;
+      background: transparent;
+      color: #e8eef7;
+      border: 1px solid #d4af37;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .label-toggle[aria-pressed="false"] {
+      border-color: #3d4a5c;
+      color: #94a3b8;
+    }
+    .axis-switch {
+      display: inline-flex;
+      margin-top: 12px;
+      border: 1px solid #3d4a5c;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .axis-switch-option {
+      background: transparent;
+      color: #94a3b8;
+      border: 0;
+      padding: 6px 14px;
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .axis-switch-option[aria-pressed="true"] {
+      background: #d4af37;
+      color: #121a2b;
+    }
+    .axis-switch + .axis-switch,
+    .axis-switch + .label-toggle {
+      margin-left: 8px;
+    }
+    .axis-switch.views {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+    }
+    .axis-switch.views .axis-switch-option {
+      border: 1px solid #3d4a5c;
+      border-radius: 999px;
+    }
+    .axis-switch.views .axis-switch-option[aria-pressed="true"] {
+      border-color: #d4af37;
+    }
+    .chart.cloud { height: 520px; }
+    .window-filter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 18px;
+    }
+    .window-filter label {
+      font: 600 12px Figtree, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .window-filter select {
+      background: #121a2b;
+      color: #e8eef7;
+      border: 1px solid #d4af37;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: 600 14px Figtree, sans-serif;
+      cursor: pointer;
+    }
+    .window-filter select:disabled { opacity: 0.55; cursor: wait; }
+    .copy {
+      max-width: 68ch;
+      margin: 0 0 28px;
+      color: var(--ink);
+      font-size: 1.02rem;
+      line-height: 1.6;
+    }
+    .copy p { margin: 0 0 0.9em; }
+    .copy p:last-child { margin-bottom: 0; }
+    .copy.closing { margin-top: 40px; min-height: 16em; }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <div class="kicker">
+      <span>Ru Hickson</span>
+      <span>Games released Jan 2020 – Oct 2026</span>
+    </div>
+
+    <h1>Disclosure Day - AI's takeover of Steam</h1>
+    <p class="lede">Steam games released from January 2020 through 29 October 2026, split by AI disclosure or no AI disclosure on the store page.</p>
+    <div class="copy">
+      <p>Like I mentioned in the previous article on <a href="https://gamediscoverytool.com/blog/2026-10-22-four-years-after-vampire-survivors">Vampire Survivors</a> and its clones, the recent high profile issue of <a href="https://kotaku.com/the-proliferation-of-copycats-on-steam-makes-discovering-original-games-like-finding-a-needle-in-a-haystack-2000734794">Needle in a Haystack Simulator</a> being cloned using AI to steal territory is a growing problem on Steam. A major complaint with <a href="https://www.youtube.com/live/0P5Ef00RP3o?si=fpFvyDbb9qe-Xl__"></a>Steam Next Fest</a> was AI-generated copies of many games in the event were being promoted the same as the games they were based on, with the customer left to do the homework on whether or not the one they're looking at is the original.</p>
+      <p>This is a problem that is only growing, and Valve's stance on the matter so far is to remain somewhat hands-off, though they have indicated they are aware of it. Whether or not this is the right approach won't be debated here, but the trend is highly likely to accelerate until something changes. As a temporary measure, Valve ask developers to put in a voluntary disclosure over whether or not AI was used in the development of your game.</p>
+      <p><a href="https://store.steampowered.com/news/group/4145017/view/3862463747997849618"></a>This disclosure</a> is required simply for two categories: Pre-generated content (art/code/sound/etc) created with the help of AI tools during development and Live-Generated content (AI-generated content provided while playing the game). Which tools are used is not required. The generalised nature of this disclosure means it's impossible to discriminate between a game that was developed with AI used as a minor part of one of its workflows versus a game that was entirely generated with AI. Both will be flagged just the same.</p>
+      <p>I would like to start by saying this is purely an analysis of the growing trend of games on Steam where AI-generated content was used in development. There is a meatier piece of text at the end that will open things up for discussion, but in the interests of getting to the data first, I wanted to kick off with a single idea and take it from there.</p>
+      <br />
+      <b><p>AI is going nowhere.</p></b>
+      <br />
+      <p>We do hear about the imminent AI bubble bursting all the time, but this is in relation to the big AI companies that are pushing it everywhere they can. The truth is the technology is now so deeply integrated with everything in the world that, even if a bunch of these trillion-dollar companies collapse and fail, AI is here to stay. That's something we have to figure out how to navigate in the future.</p>
+      <p>But for the moment, let's talk about some games, shall we?</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="stat-total">—</div><div class="l">AI disclosure since Jan 2020</div></div>
+      <div class="stat"><div class="n" id="stat-share">—</div><div class="l">AI disclosure share since Jan 2020</div></div>
+      <div class="stat"><div class="n" id="stat-month">—</div><div class="l">AI disclosure in Oct 2026</div></div>
+      <div class="stat"><div class="n" id="stat-month-share">—</div><div class="l">AI disclosure share in Oct 2026</div></div>
+    </div>
+
+    <div class="window-filter">
+      <label for="window">Release window</label>
+      <select id="window" disabled>
+        <option value="all">Since January 2020</option>
+        <option value="y2026">Just 2026</option>
+        <option value="oct">October 2026</option>
+      </select>
+    </div>
+
+    <div class="figures">
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2 id="share-title">Share of releases with an AI disclosure by month</h2>
+          <p class="cap"></p>
+          <div class="axis-switch" role="group" aria-label="Time grain">
+            <button type="button" class="axis-switch-option" data-grain="year" aria-pressed="false">Year</button>
+            <button type="button" class="axis-switch-option" data-grain="month" aria-pressed="true">Month</button>
+            <button type="button" class="axis-switch-option" data-grain="day" aria-pressed="false">Day</button>
+          </div>
+        </div>
+        <div id="chart-share" class="chart"></div>
+        <div class="commentary">
+          <p>Back in June 2024 was when Valve began requiring developers to voluntarily disclose whether or not AI was used in the making of games. There were some games before that point that did disclose this information, but you can see immediate jump in the trend and the gradual linear increase. By June, more than 10% of games had an AI disclosure.</p>
+          <p>October 2026 is when the "flippening" happened, a point by which more new releases than not are disclosing AI use in development (54.3%). It's possible the true flip happened sooner, given that some developers likely do not disclose AI use.</p>
+          <p><i>It was highlighted on a recent <a href="https://aftermath.site">Aftermath</a> podcast that the consequence of not declaring AI usage and later being discovered to have done so allows Valve to forcefully refund buyers.</i></p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2 id="count-title">Count of releases with AI disclosure</h2>
+          <p class="cap" id="cap-count">Bars are games released that month with an AI disclosure. The line is the running total.</p>
+          <div class="axis-switch" role="group" aria-label="Time grain">
+            <button type="button" class="axis-switch-option" data-grain="year" aria-pressed="false">Year</button>
+            <button type="button" class="axis-switch-option" data-grain="month" aria-pressed="true">Month</button>
+            <button type="button" class="axis-switch-option" data-grain="day" aria-pressed="false">Day</button>
+          </div>
+        </div>
+        <div id="chart-count" class="chart"></div>
+        <div class="commentary">
+          <p>Looking at the trendline of counts over time, you can see that the growth in releases with AI disclosures is becoming exponential. It is worth noting that, with the upcoming release of Grand Theft Auto Six in mid-November, most games were shunted into the September and October release window to avoid clashing with what's likely to be the biggest-selling game of all-time. We'll revisit this chart in a couple of months to see if it's a flash in the pan, or an indicator of what's to come.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Free vs. Paid</h2>
+          <p class="cap" id="cap-free">p>
+        </div>
+        <div id="chart-free" class="chart"></div>
+        <div class="commentary">
+          <p>There are essentially two kinds of free games on Steam - the passion projects and art games folk want to make because it's important to them, and the games that allow you no barrier to entry, but have microtransactions. What's interesting about this chart is it tells us developers who use AI are <i>more</i> interested in getting paid than ones who don't.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Games by initial price (€)</h2>
+          <p class="cap" id="cap-price"></p>
+          <div class="axis-switch" role="group" aria-label="Price chart scale">
+            <button type="button" id="price-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="price-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
+          </div>
+        </div>
+        <div id="chart-price" class="chart"></div>
+        <div class="commentary">
+          <p>As for the paid games, the ones with AI disclosure statements generally occupy the lower end of the price scale. Whether or not this translates to the lower end of the value scale is up for debate. What is definite is how the median price for an AI disclosure game is cheaper than its median non-AI counterpart by 20c (€4.99 vs €5.19)</p>
+          <p>Looking at the same data as a % of All Releases, it's clearer to see that the games with AI disclosure hover around multiples of 5 the same way the the AI Disclosure do. But as a percentage of the whole, AI disclosure games have spikes at every price point below and including €8. With the notable exception of €0, where you are less than half as likely to find one compared to games released in the non-AI disclosure category</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Top 100 tags on games with an AI disclosure</h2>
+          <p class="cap" id="cap-tags"></p>
+          <div class="axis-switch" role="group" aria-label="Tag chart scale">
+            <button type="button" id="tags-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="tags-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Tag chart sort">
+            <button type="button" id="tags-sort-common" class="axis-switch-option" aria-pressed="true">Most common</button>
+            <button type="button" id="tags-sort-gap" class="axis-switch-option" aria-pressed="false">Biggest difference in % of all releases</button>
+          </div>
+        </div>
+        <div id="chart-tags" class="chart tags"></div>
+        <div class="commentary">
+          <p>Above is a list of the most common tags attached to the games with an AI disclosure. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual have all been removed as they are common and nearly ubiquitous to both categories.</p>
+          <p>Looking at the biggest difference in % of all releases. There are notably more games tagged with Simulation, strategy, Management, Economy, Idler, and Incremental that have AI disclosure. A lot of these games feature complicated and nebulous systems where an AI can "close the circle" in terms of everything that's required to make the game complete.</p>
+          <p>There is an unsurprising large gap when it comes to Roguelites, since the genre by design often has somewhat restrained level design. Focusing less on the play area than the game's mechanics, putting players in a randomly generated arena based on a few templates is easier and faster to get a model to do than have a curated, hand-crafted series of levels.</p>
+          <p>Platformer is an outlier here, being the most common tag that favours non-AI disclosure. This is possibly down to the fact most game engines have a platformer template that developers can piggyback off to make their own game, and a large number of online game developer courses are of the ilk "make your own platformer". Along with the fact platformers are one of the simpler game types out there, some combination of these circumstances likely explains this anomaly.</p>  
+          <p>Though surprising at first glance, the relatively large difference when it comes to Immersive Sim and Choices Matter is probably explained by how these types of games (that normally require a large amount of curation) are given more room to "breathe" through the generation of on-the-fly outcomes. Normally these types of games would be highly curated in their design, but using AI-generated content to assist interactions could conceivably lower the barrier to making one of these.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Where tags sit, AI disclosure and no AI disclosure</h2>
+          <p class="cap" id="cap-scatter">Each point is one of the hundred tags attached to the most games with an AI disclosure. Across is the share of games with no AI disclosure that carry it. Up is the share of games with an AI disclosure that carry it. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual are left out. They are by far the most common tags.</p>
+          <div class="axis-switch" role="group" aria-label="Scatter chart scale">
+            <button type="button" id="scatter-count" class="axis-switch-option" aria-pressed="false">Count</button>
+            <button type="button" id="scatter-share" class="axis-switch-option" aria-pressed="true">% of All Releases</button>
+          </div>
+          <button type="button" id="scatter-labels" class="label-toggle" aria-pressed="true">Hide data labels</button>
+        </div>
+        <div id="chart-scatter" class="chart scatter"></div>
+        <div class="commentary">
+          <p>Another way of looking at the same tag data shows how far off the expected mean some of these tags are.</p>
+          <p>Searching for Simulation-Economy games in the last 3 years, the top game by review count is <a href="https://store.steampowered.com/app/4128580/BidKing/">BidKing</a>, which has mostly negative reviews, due to the large amount pf AI-generated content and unreliable servers, leading to a rarely-seen scale of disapproval on Steam.</p>
+          <p>Even some of the better reviewed titles in this category, like <a href="https://store.steampowered.com/app/4164790/Survival_Log/">Survival Log</a>, have reviews criticising its use of AI for generating dialogue and narrative text, as well as its soundtrack.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Words in titles of games with an AI disclosure</h2>
+          <p class="cap"></p>
+        </div>
+        <div id="chart-cloud" class="chart cloud"></div>
+        <div class="commentary">
+          <p>Looking at the most common words in the games made with AI disclosure, an uninspiring picture begins to form. Many of the words are generic placeholders that begin to explain why a Steam user might consider AI-developed games "slop". </p>
+          <p>You can take almost any two words from the cloud, plug them into Steam search, and discover a multitude of games that have 10 or fewer reviews, developed with AI, and are little more than a concept that has been pushed to the store. As an example, take <a href="https://store.steampowered.com/app/3436020/Idle_Clicker_Tower/">Idle Tower Clicker</a> and you'll see a game developed with AI, released at the tail end of October, with No user reviews, no community interaction, and has a price point under €5. This is prototypical of the kind of AI-associated growth that is encroaching on the platform.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Word Cloud of AI disclosure statements</h2>
+          <p class="cap" id="cap-disclosure"></p>
+        </div>
+        <div id="chart-disclosure" class="chart cloud"></div>
+        <div class="commentary">
+          <p>I don't actually think there's anything particularly surprising in this word cloud of words most commonly found in the disclosure statement, but I've added it in for redundancy and someone may find it interesting.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>But are AI-disclosed games any use?</h2>
+          <p class="cap" id="cap-reviews"></p>
+        </div>
+        <div id="chart-reviews" class="chart bars"></div>
+        <div class="commentary">
+          <p>The trillion-dollar question. On a recent Game Business podcast interview with Romy Halfweeg of Poki, Halfweeg and host Christopher Dring discussed the idea that <a href="https://youtu.be/sA6M3isZFIc?si=wpaTaLKCbCULK4SC">just because a game is made with or without AI doesn't actually determine whether a game is good</a>. It's possible to make a good game using AI and also to make a terrible game organically and by hand-crafting every single element. There is no absolute.</p>
+          <p>However, just because it is not absolute fact doesn't mean it's uncommon, something that becomes plainly obvious when looking at the overall share of review scores. Putting aside the low/no scores for a moment, Games with no AI-disclosure outperform games with AI disclosure in every neutral-to-positive category.</p>
+          <p>Negative reviews do take up a larger share on the No AI disclosure side too, though these are somewhat marginal in the grand scheme of things, taking up < 1.5% of all games released in either category. While negative reviews are not a rarity on Steam, pile ons are indeed rarer than one might expect.</p>
+          <p>Of course, the most damning thing here is that over 2/3rds (67% at the time of writing) of all games with AI disclosures have 10 or fewer reviews. That is a quite astonishing amount of abandonware, junk, slop, or whatever you want to call it. These games are being sent out to die. Or perhaps just occupy server space. The vast majority of them have zero engagement with a community, Steam as a whole, or the Internet in general. They appear to have no purpose, and it is now having a non-negligible having an effect on the platform.</p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow">Review percentage</p>
+          <h2>Positive <ruby></ruby>eview score percentage of games with an AI disclosure, by month</h2>
+          <p class="cap" id="cap-stream">Stream graph of games with an AI disclosure, by review percentage. Ribbons are counts, displaced around the center of the axis.</p>
+          <div class="axis-switch" role="group" aria-label="Ribbon chart layout">
+            <button type="button" id="stream-ribbon" class="axis-switch-option" aria-pressed="true">Stream</button>
+            <button type="button" id="stream-stacked" class="axis-switch-option" aria-pressed="false">100% stacked</button>
+          </div>
+        </div>
+        <div id="chart-stream" class="chart stream"></div>
+        <div class="commentary">
+          <p>This chart doesn't actually use Steam's pre-defined categories, instead it delivers a percentage score for each game based on the number of positive reviews divided by the total number of reviews. Finally, we see the problem laid bare. AI-assisted games are taking up a large and growing amount of real estate in gaming's premier marketplace. Users are pretty good at identifying these games, hence the reason the majority of them come with 10 or fewer reviews.</p>
+          <p>What this shows is customers are pretty smart at identifying low-effort games, and these are the games where most people don't even both to play or review, yet the numbers of these games are still increasing at an incredible rate.</p>
+          <p>The interesting thing I find here is how the number of games with AI disclosures that score well (or indeed <i>very</i> well) are not rapidly increasing over time. If you take any point from January 2025 onward, you generally get between 100-150 games scoring 70% or better, with one or two exceptions.</p>
+          <p>The problem here is the barrier to entry has been completely smashed and, when that happens, the market gets saturated by games are more than just low-effort, they have no sense of community or legacy.</p> 
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Review scores bucketed into bands of 1,000 reviews</h2>
+          <p class="cap" id="cap-bands"></p>
+          <div class="axis-switch" role="group" aria-label="Review mix scale">
+            <button type="button" id="bands-count" class="axis-switch-option" aria-pressed="true">Count</button>
+            <button type="button" id="bands-share" class="axis-switch-option" aria-pressed="false">% of all</button>
+          </div>
+        </div>
+        <div id="chart-bands" class="chart bands"></div>
+        <div class="commentary">
+          <p>Of the ~4,100 games to be released with an AI disclosure, only 200 or so have more than 1,000 reviews, and only 37 have more than 10,000 reviews each. Those have been listed in a table below.</p>
+
+        </div>
+        <div class="review-roll">
+          <p class="cap"><i></i>Games with an AI disclosure released from 1 January 2020 through 31st October 2026 with >10,000 reviews.</i></p>
+          <div class="review-scroll">
+            <table>
+              <thead>
+                <tr><th>Game</th><th class="num">Reviews</th><th>Score</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><a href="https://store.steampowered.com/app/1938090" target="_blank" rel="noopener">Call of Duty®</a></td><td class="num">717,339</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2073850" target="_blank" rel="noopener">THE FINALS</a></td><td class="num">232,955</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1599340" target="_blank" rel="noopener">Lost Ark</a></td><td class="num">202,047</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1808500" target="_blank" rel="noopener">ARC Raiders</a></td><td class="num">138,785</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1868140" target="_blank" rel="noopener">DAVE THE DIVER</a></td><td class="num">129,831</td><td>Overwhelmingly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3405690" target="_blank" rel="noopener">EA SPORTS FC™ 26</a></td><td class="num">109,007</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/516750" target="_blank" rel="noopener">My Summer Car</a></td><td class="num">91,721</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2923300" target="_blank" rel="noopener">Banana</a></td><td class="num">89,933</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3564740" target="_blank" rel="noopener">Where Winds Meet</a></td><td class="num">74,767</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1304930" target="_blank" rel="noopener">The Outlast Trials</a></td><td class="num">67,793</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2429640" target="_blank" rel="noopener">THRONE AND LIBERTY</a></td><td class="num">63,768</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3321460" target="_blank" rel="noopener">Crimson Desert</a></td><td class="num">63,732</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3097560" target="_blank" rel="noopener">Liar&#x27;s Bar</a></td><td class="num">48,745</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3350200" target="_blank" rel="noopener">捞女游戏</a></td><td class="num">47,110</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1962663" target="_blank" rel="noopener">Call of Duty®: Warzone™</a></td><td class="num">45,213</td><td>Mostly Negative</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1987080" target="_blank" rel="noopener">Inside the Backrooms</a></td><td class="num">45,064</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2524890" target="_blank" rel="noopener">Pixel Gun 3D: PC Edition</a></td><td class="num">38,980</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3393110" target="_blank" rel="noopener">AION 2</a></td><td class="num">37,373</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1268750" target="_blank" rel="noopener">Starship Troopers: Extermination</a></td><td class="num">31,063</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4197610" target="_blank" rel="noopener">Librarian: Tidy Up the Arcane Library!</a></td><td class="num">26,718</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4128580" target="_blank" rel="noopener">BidKing</a></td><td class="num">23,499</td><td>Mostly Negative</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1040200" target="_blank" rel="noopener">Crime Scene Cleaner</a></td><td class="num">22,276</td><td>Overwhelmingly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2456740" target="_blank" rel="noopener">inZOI</a></td><td class="num">21,581</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1549250" target="_blank" rel="noopener">Undecember</a></td><td class="num">19,936</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4164420" target="_blank" rel="noopener">My Winter Car</a></td><td class="num">19,443</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/736590" target="_blank" rel="noopener">Operation: Harsh Doorstop</a></td><td class="num">18,487</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4384550" target="_blank" rel="noopener">Call of Duty®: Black Ops 6</a></td><td class="num">16,422</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4025700" target="_blank" rel="noopener">Heartopia</a></td><td class="num">16,090</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/3557620" target="_blank" rel="noopener">Blue Archive</a></td><td class="num">14,692</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1465460" target="_blank" rel="noopener">Infection Free Zone</a></td><td class="num">14,688</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2933620" target="_blank" rel="noopener">Call of Duty®: Black Ops 6 - Campaign</a></td><td class="num">14,000</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4570720" target="_blank" rel="noopener">DragonSword : Awakening</a></td><td class="num">13,302</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/2772750" target="_blank" rel="noopener">Age of History 3</a></td><td class="num">13,018</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1812450" target="_blank" rel="noopener">Bellwright</a></td><td class="num">12,234</td><td>Very Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/4080220" target="_blank" rel="noopener">EA SPORTS FC™ 27</a></td><td class="num">10,936</td><td>Mixed</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1114150" target="_blank" rel="noopener">CarX Street</a></td><td class="num">10,774</td><td>Mostly Positive</td></tr>
+                <tr><td><a href="https://store.steampowered.com/app/1331550" target="_blank" rel="noopener">Big Ambitions</a></td><td class="num">10,771</td><td>Very Positive</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="figure-meta">
+          <p class="eyebrow"></p>
+          <h2>Putting it all together</h2>
+          <p class="cap" id="cap-profile">Each point is a game with more than 10 positive reviews and a known list price. Gold is a title with AI disclosure, Cyan is no disclosure. The three axes are Tag-score (the likelihood that a game is AI-developed based on its tags), List price (the price the game was initially listed for in €), and Count of Positive Reviews.</p>
+          <div class="axis-switch views" role="group" aria-label="Axis view">
+            <button type="button" class="axis-switch-option" data-profile-view="xy" aria-pressed="false">Positive reviews x Tag score²</button>
+            <button type="button" class="axis-switch-option" data-profile-view="xz" aria-pressed="false">Positive reviews x €</button>
+            <button type="button" class="axis-switch-option" data-profile-view="yz" aria-pressed="false">Tag score² x €</button>
+          </div>
+        </div>
+        <div id="chart-profile" class="chart profile"></div>
+        <div class="commentary">
+          <p>Here we really see the whole picture, and it shows the AI games tend to cluster toward the octant closest to the origin.</p>
+          <p>The Tag-Score axis assigned a likelihood score of a game being AI-developed based on the tags used in the store page.</p>
+          <p>The tags from the chart above survive the 10-review cutoff. Simulation is on 41.1% of disclosed games with more than 10 reviews and 22.7% of the rest. Management, economy, idler, and incremental lean the same way. Platformer still leans the other way, 3.9% against 9.7%.</p>
+          <p>Shoutout to <a href="https://store.steampowered.com/app/1216540/Fishy2/">Fishy2</a> for being the game least likely to be AI generated in the entire Steam catalogue with a tag-score of -23.8.</p>
+          <p>Similarly: shoutout to <a href="https://store.steampowered.com/app/3406070/Bubble_Tea_Revolution/#app_reviews_hash">Bubble Tea Revolution</a> for being the game least likely to be AI generated in the entire Steam catalogue a score of 100, with its AI capsule art, AI in-game images and audio, AI translations, etc...</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Final thoughts -->
+    <div class="copy closing">
+      <p>As you probably guessed from the name of the site, I believe game discovery is a crucial and hard thing to accomplish, and has been for the last 10 years at least. What we're seeing here with the advent of low-effort AI-developed games spreading on Steam like some sort of zombie apocalypse is just another threat to that, and not one that's easy to solve.<br></p>
+      <p>I do not believe AI is fundamentally bad or evil as a technology. There are ethical issues around how models have been trained and how corporations wield it, but its capacity for good cannot be ignored. In the right hands, it can be a great tool for change, positivity, and utility.<br></p>
+      <p>Unfortunately for us, what we're seeing here is AI (mostly) in the wrong hands. We now live in an age where you can open any IDE with any LLM attached, type "Make me a game", and Claude, Gemini, or even Grok will give you a pretty basic working model of a game in any genre. And once it does that, there's not a huge amount between exporting the game from wherever you're building it and uploading it to a storefront.<br></p>
+      <p>One knock-on effect of this is games being submitted for review on Steam are now taking weeks to pass through their QA testing rather than days. I personally know one developer whose game's release date had to be pushed back from next week to early December because of the swathe of games currently being submitted. Bear in mind that Steam's QA process has nothing to do with the quality of the game, just that it can run and that it passes some security checks.<br></p>
+      <p>Also, Valve are unlikely to do anything about this if it doesn't affect their bottom line. Sure, it's a pain for users, and they are testing out things like the <a href="https://store.steampowered.com/personalcalendar">Personal Release Calendar</a>. But that won't preclude these low-score, low-effort, low-engagement games from being recommended at some point. And with Valve's gentle policy that they "don't want to be kingmakers", it seems unlikely they will do anything to prevent this growing influx of titles.<br></p>
+      <p>Worse still, as models get better, it'll become even easier for someone to prompt "Make me a copy of X game" and it will recreate it in full, allowing them to put their own branding on it and submit it to the store, as we've seen in the recent Needle in a Haystack Simulator affair.<br></p>
+      <p>However, there is room for optimism. One thing we've already established is how customers are savvy and, though a pain to navigate through this swamp, they will do it to get to the games that are worth their time. They will avoid games with no community, no marketing, no hype, no reviews. They will avoid the games with AI capsule art, even if it's not declared.<br></p>
+      <p>But they will also end up avoiding all games with an AI disclosure. There already exist mods for the store that will <a href="https://github.com/Suvitruf/steam-hide-ai">obfuscate or hide games from search results that have declared to have been developed with the assistance of AI</a>. This is regrettably deeply unfair to the developers who make quality games and are transparent in their AI usage who will get punished instead of the copycat developers who vibe-code their whole games and are too lazy to even bother putting in an AI disclosure.<br></p>
+      <p>Some people will avoid anything involved with AI on moral grounds, and that is a reasonable position to take, though it will become exponentially more difficult in the coming years. I suspect the vast majority won't care about it, as long as the product is decent. But really there must be a solution that works for everyone.<br></p>
+      <p>In the coming weeks and months, I hope to build something approaching that solution on <a href="https://gamediscoverytool.com">Game Discovery Tool</a>. I know this isn't something that will ever be "fixed", but now that the flood has begun, it's time to put out the sandbags.<br></p>
+      <p><br></p>
+      <p><br></p>
+      <p><br></p>
+      <p><br></p>
+      <p><br></p>
+    </div>
+
+    <footer class="note">
+      <p>
+        Thanks for reading. Please bookmark this site whenever you get bored and want to find new games. We try to keep it updated daily and plan to have a blog post once every two weeks.
+      </p>
+      <p>
+        Data for this analysis was collected from Steam's API, and complementary data that may or may not have been used comes from other publically-available sources including Is There Any Deal? and How Long To Beat. 
+      </p>
+      <p>
+        Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181,"other":60830},{"name":"Indie","ai":7746,"other":42133},{"name":"Casual","ai":6921,"other":38084},{"name":"2D","ai":5975,"other":33372},{"name":"3D","ai":4481,"other":26933},{"name":"Action","ai":4410,"other":34255},{"name":"Adventure","ai":4226,"other":32678},{"name":"Simulation","ai":4050,"other":17684},{"name":"Strategy","ai":3753,"other":17558},{"name":"Atmospheric","ai":3016,"other":18521},{"name":"Colorful","ai":2896,"other":19470},{"name":"First-Person","ai":2631,"other":14945},{"name":"RPG","ai":2589,"other":14729},{"name":"Exploration","ai":2402,"other":17032},{"name":"Early Access","ai":2380,"other":10427},{"name":"Puzzle","ai":2373,"other":17332},{"name":"Relaxing","ai":2358,"other":12398},{"name":"Cute","ai":2318,"other":16471},{"name":"Fantasy","ai":2246,"other":13776},{"name":"Pixel Graphics","ai":2048,"other":17171},{"name":"Combat","ai":1989,"other":11604},{"name":"Story Rich","ai":1987,"other":14333},{"name":"Arcade","ai":1923,"other":13993},{"name":"Stylized","ai":1912,"other":10998},{"name":"Multiplayer","ai":1831,"other":10610},{"name":"Top-Down","ai":1815,"other":10113},{"name":"Funny","ai":1660,"other":11188},{"name":"PvE","ai":1658,"other":7985},{"name":"Choices Matter","ai":1609,"other":7311},{"name":"Realistic","ai":1603,"other":7462},{"name":"Horror","ai":1601,"other":10603},{"name":"Action-Adventure","ai":1601,"other":12767},{"name":"Family Friendly","ai":1569,"other":10412},{"name":"Roguelite","ai":1470,"other":6107},{"name":"Roguelike","ai":1430,"other":6635},{"name":"Sci-fi","ai":1423,"other":9145},{"name":"Management","ai":1419,"other":5147},{"name":"Resource Management","ai":1395,"other":4403},{"name":"Free to Play","ai":1348,"other":8463},{"name":"Third Person","ai":1328,"other":8990},{"name":"PvP","ai":1311,"other":7108},{"name":"Dark","ai":1301,"other":7727},{"name":"Controller","ai":1285,"other":10074},{"name":"Shooter","ai":1249,"other":9936},{"name":"Mystery","ai":1236,"other":7718},{"name":"Multiple Endings","ai":1222,"other":6828},{"name":"Immersive Sim","ai":1208,"other":4620},{"name":"Retro","ai":1201,"other":10024},{"name":"Anime","ai":1177,"other":7578},{"name":"Psychological Horror","ai":1173,"other":7060},{"name":"Linear","ai":1167,"other":9428},{"name":"Physics","ai":1144,"other":7470},{"name":"Survival","ai":1113,"other":6823},{"name":"2D Platformer","ai":1071,"other":9118},{"name":"Cartoony","ai":1062,"other":8556},{"name":"Idler","ai":1030,"other":3063},{"name":"Visual Novel","ai":1030,"other":5869},{"name":"Economy","ai":979,"other":2493},{"name":"Comedy","ai":974,"other":6738},{"name":"Minimalist","ai":965,"other":7527},{"name":"Character Customization","ai":961,"other":5524},{"name":"Action Roguelike","ai":960,"other":4967},{"name":"Sandbox","ai":953,"other":5002},{"name":"Tactical","ai":944,"other":4639},{"name":"Turn-Based Tactics","ai":944,"other":4136},{"name":"Medieval","ai":923,"other":4431},{"name":"Card Game","ai":918,"other":2878},{"name":"Life Sim","ai":915,"other":2858},{"name":"Logic","ai":910,"other":5363},{"name":"Turn-Based Strategy","ai":910,"other":4077},{"name":"Point & Click","ai":894,"other":6070},{"name":"Text-Based","ai":883,"other":3115},{"name":"Online Co-Op","ai":843,"other":4012},{"name":"Co-op","ai":838,"other":5144},{"name":"Hidden Object","ai":831,"other":4959},{"name":"Dark Fantasy","ai":829,"other":3837},{"name":"Open World","ai":822,"other":5699},{"name":"Magic","ai":807,"other":5375},{"name":"Female Protagonist","ai":804,"other":7327},{"name":"Interactive Fiction","ai":793,"other":4301},{"name":"Action RPG","ai":776,"other":4853},{"name":"Procedural Generation","ai":773,"other":4428},{"name":"Building","ai":773,"other":4631},{"name":"Crafting","ai":772,"other":3894},{"name":"Choose Your Own Adventure","ai":758,"other":3979},{"name":"Walking Simulator","ai":756,"other":4217},{"name":"Space","ai":747,"other":4680},{"name":"Turn-Based Combat","ai":737,"other":3981},{"name":"Artificial Intelligence","ai":733,"other":1614},{"name":"3D Platformer","ai":730,"other":5735},{"name":"Platformer","ai":727,"other":9475},{"name":"Old School","ai":714,"other":5420},{"name":"Incremental","ai":714,"other":994},{"name":"FPS","ai":714,"other":5343},{"name":"Time Management","ai":714,"other":2527},{"name":"Score Attack","ai":711,"other":4247},{"name":"Futuristic","ai":698,"other":4605},{"name":"Cartoon","ai":682,"other":4986},{"name":"Deckbuilding","ai":675,"other":2094},{"name":"Emotional","ai":660,"other":4137}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,13],"Very Positive":[0,6,18,42,196,322,449],"Mostly Positive":[0,3,17,27,155,196,337],"Positive":[0,1,9,35,302,528,633],"Mixed":[0,1,20,12,195,281,375],"Mostly Negative":[0,0,3,0,34,31,70],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,4],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1737,3461],"No user reviews":[0,1,3,6,209,606,2221]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,149,122],"Very Positive":[1637,1792,1825,2113,2599,2519,1907],"Mostly Positive":[1169,1215,1274,1320,1398,1039,680],"Positive":[1404,1849,1995,2433,3214,3203,1637],"Mixed":[1466,1709,1639,1645,1512,993,609],"Mostly Negative":[185,217,224,212,172,109,71],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,4,2],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4505,5977,6456,4821],"No user reviews":[286,421,483,811,1358,2068,2068]}};
+
+    const omittedTags = new Set(["Singleplayer", "Indie", "Action", "Adventure", "2D", "3D", "Casual"]);
+    const axisText = { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 };
+    const tooltipBase = {
+      backgroundColor: "#1a2438",
+      borderColor: "#3d4a5c",
+      borderWidth: 1,
+      textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+      confine: true
+    };
+    const reviewColors = {
+      "Overwhelmingly Positive": "#059669",
+      "Very Positive": "#34d399",
+      "Mostly Positive": "#6ee7b7",
+      "Positive": "#a7f3d0",
+      "Mixed": "#d4af37",
+      "Mostly Negative": "#fb923c",
+      "Negative": "#f87171",
+      "Very Negative": "#ef4444",
+      "Overwhelmingly Negative": "#b91c1c",
+      "1–9 reviews": "#64748b",
+      "No user reviews": "#475569",
+    };
+
+    function sum(values) {
+      return values.reduce((total, value) => total + value, 0);
+    }
+
+    const totalDeclared = sum(DATA.declared);
+    const totalOther = sum(DATA.other);
+    const last = DATA.declared.length - 1;
+    const monthDeclared = DATA.declared[last];
+    const monthOther = DATA.other[last];
+    document.getElementById("stat-total").textContent = totalDeclared.toLocaleString("en-US");
+    document.getElementById("stat-share").textContent = (totalDeclared / (totalDeclared + totalOther) * 100).toFixed(1) + "%";
+    document.getElementById("stat-month").textContent = monthDeclared.toLocaleString("en-US");
+    document.getElementById("stat-month-share").textContent = (monthDeclared / (monthDeclared + monthOther) * 100).toFixed(1) + "%";
+
+    const WINDOW_META = {
+      all: { phrase: "since January 2020", totalName: "Total since Jan 2020", title: "Count of releases with an AI disclosure since January 2020", start: "2020-01", end: "2026-10" },
+      y2026: { phrase: "in 2026", totalName: "Total in 2026", title: "AI disclosure in 2026", start: "2026-01", end: "2026-10" },
+      oct: { phrase: "in October 2026", totalName: "October 2026", title: "AI disclosure in October 2026", start: "2026-10", end: "2026-10" }
+    };
+    let windowsExtra = null;
+    let vizPayload = null;
+    let dailyPayload = null;
+    let current = null;
+    let releaseGrain = "month";
+    const charts = {};
+
+    function monthIndexes(months, start, end) {
+      const indexes = [];
+      months.forEach((month, index) => {
+        if (month >= start && month <= end) indexes.push(index);
+      });
+      return indexes;
+    }
+
+    function summedReviews(table) {
+      const counts = {};
+      for (const label of DATA.reviewOrder) counts[label] = sum(table[label]);
+      return counts;
+    }
+
+    function sliceStream(stream, start, end, unscored) {
+      const indexes = monthIndexes(stream.months, start, end);
+      const counts = stream.counts.map((band) => indexes.map((index) => band[index]));
+      return {
+        months: indexes.map((index) => stream.months[index]),
+        bands: stream.bands,
+        counts,
+        scored: counts.reduce((total, band) => total + sum(band), 0),
+        unscored
+      };
+    }
+
+    function buildCurrent(key) {
+      const meta = WINDOW_META[key];
+      const indexes = monthIndexes(DATA.months, meta.start, meta.end);
+      const declared = indexes.map((index) => DATA.declared[index]);
+      const other = indexes.map((index) => DATA.other[index]);
+      const extra = key === "all"
+        ? {
+            tags: DATA.tags,
+            reviews: { ai: summedReviews(DATA.aiReviews), other: summedReviews(DATA.otherReviews) },
+            freePaid: vizPayload && vizPayload.freePaid,
+            words: vizPayload && vizPayload.words,
+            disclosureWords: vizPayload && vizPayload.disclosureWords,
+            disclosureStatements: vizPayload && vizPayload.disclosureStatements,
+            disclosureBlank: vizPayload && vizPayload.disclosureBlank,
+            clusters: vizPayload && vizPayload.clusters,
+            unscored: vizPayload ? vizPayload.stream.unscored : 0
+          }
+        : windowsExtra[key];
+      return {
+        key,
+        ...meta,
+        months: indexes.map((index) => DATA.months[index]),
+        declared,
+        other,
+        aiTotal: sum(declared),
+        otherTotal: sum(other),
+        stream: vizPayload ? sliceStream(vizPayload.stream, meta.start, meta.end, key === "all" ? vizPayload.stream.unscored : 0) : null,
+        ...extra,
+        price: key === "all" ? vizPayload && vizPayload.priceHist : extra.priceHist
+      };
+    }
+
+    current = buildCurrent("all");
+
+    function grainUnit() {
+      if (releaseGrain === "year") return "year";
+      if (releaseGrain === "day") return "day";
+      return "month";
+    }
+
+    function releaseSeries() {
+      if (releaseGrain === "year") {
+        const labels = [];
+        const declared = [];
+        const other = [];
+        current.months.forEach((month, index) => {
+          const year = month.slice(0, 4);
+          if (labels.at(-1) !== year) {
+            labels.push(year);
+            declared.push(0);
+            other.push(0);
+          }
+          declared[declared.length - 1] += current.declared[index];
+          other[other.length - 1] += current.other[index];
+        });
+        return { labels, declared, other };
+      }
+      if (releaseGrain === "day" && dailyPayload) {
+        const labels = [];
+        const declared = [];
+        const other = [];
+        dailyPayload.days.forEach((day, index) => {
+          const month = day.slice(0, 7);
+          if (month < current.start || month > current.end) return;
+          labels.push(day);
+          declared.push(dailyPayload.declared[index]);
+          other.push(dailyPayload.other[index]);
+        });
+        return { labels, declared, other };
+      }
+      return { labels: current.months, declared: current.declared, other: current.other };
+    }
+
+    function bucketLabel(value, index, labels) {
+      if (releaseGrain === "year") return value;
+      if (releaseGrain === "day") {
+        if (labels.length > 400) return value.slice(0, 4);
+        if (labels.length > 45) return value.slice(0, 7);
+        return value.slice(5);
+      }
+      if (labels.length <= 12) return value;
+      if (value.endsWith("-01") || index === labels.length - 1) return value;
+      return "";
+    }
+
+    function categoryAxis(labels, boundaryGap) {
+      const sparseDays = releaseGrain === "day" && labels.length > 45;
+      return {
+        type: "category",
+        data: labels,
+        boundaryGap,
+        axisLabel: {
+          ...axisText,
+          interval: sparseDays
+            ? (index, value) => labels.length > 400
+              ? value.endsWith("-01-01")
+              : value.endsWith("-01") || index === labels.length - 1
+            : 0,
+          rotate: releaseGrain === "month" && labels.length > 12 ? 40 : 0,
+          hideOverlap: true,
+          formatter: (value, index) => bucketLabel(value, index, labels)
+        },
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        axisTick: { alignWithLabel: true }
+      };
+    }
+
+    function syncGrainSwitches() {
+      document.querySelectorAll("[data-grain]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.grain === releaseGrain));
+        if (button.dataset.bound) return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          if (releaseGrain === button.dataset.grain) return;
+          releaseGrain = button.dataset.grain;
+          syncGrainSwitches();
+          renderShare();
+          renderCount();
+        });
+      });
+    }
+
+    charts.share = echarts.init(document.getElementById("chart-share"));
+    function renderShare() {
+      syncGrainSwitches();
+      const series = releaseSeries();
+      document.getElementById("share-title").textContent = `Share of releases with an AI disclosure by ${grainUnit()}`;
+      const declaredShare = series.labels.map((_, index) => {
+        const total = series.declared[index] + series.other[index];
+        return total ? (series.declared[index] / total) * 100 : 0;
+      });
+      const otherShare = declaredShare.map((value) => 100 - value);
+      const oneBucket = series.labels.length < 3;
+      charts.share.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        formatter(params) {
+          const index = params[0].dataIndex;
+          const declared = series.declared[index];
+          const other = series.other[index];
+          const total = declared + other;
+          const share = total ? (declared / total) * 100 : 0;
+          return `<b>${series.labels[index]}</b><br/>AI disclosure: <b>${declared.toLocaleString("en-US")}</b> (${share.toFixed(1)}%)<br/>No AI disclosure: <b>${other.toLocaleString("en-US")}</b> (${(100 - share).toFixed(1)}%)`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 48, right: 18, top: 36, bottom: 48 },
+      xAxis: categoryAxis(series.labels, oneBucket),
+      yAxis: {
+        type: "value",
+        min: 0,
+        max: 100,
+        axisLabel: { ...axisText, formatter: (value) => value + "%" },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+      },
+      series: [
+        {
+          name: "AI disclosure",
+          type: "line",
+          stack: "share",
+          data: declaredShare,
+          symbol: oneBucket ? "circle" : "none",
+          symbolSize: 8,
+          lineStyle: { width: 1.5, color: "#d4af37" },
+          itemStyle: { color: "#d4af37" },
+          areaStyle: { color: "rgba(212, 175, 55, 0.85)" }
+        },
+        {
+          name: "No AI disclosure",
+          type: "line",
+          stack: "share",
+          data: otherShare,
+          symbol: oneBucket ? "circle" : "none",
+          symbolSize: 8,
+          lineStyle: { width: 1.5, color: "#94a3b8" },
+          itemStyle: { color: "#64748b" },
+          areaStyle: { color: "#3d4d66" }
+        }
+      ]
+    }, { notMerge: true });
+    }
+
+    charts.count = echarts.init(document.getElementById("chart-count"));
+    function renderCount() {
+      syncGrainSwitches();
+      const series = releaseSeries();
+      const unit = grainUnit();
+      const cumulative = [];
+      series.declared.reduce((running, value) => {
+        const next = running + value;
+        cumulative.push(next);
+        return next;
+      }, 0);
+      document.getElementById("count-title").textContent = current.title;
+      document.getElementById("cap-count").textContent = ``;
+      charts.count.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        formatter(params) {
+          const index = params[0].dataIndex;
+          return `<b>${series.labels[index]}</b><br/>AI disclosure that ${unit}: <b>${series.declared[index].toLocaleString("en-US")}</b><br/>${current.totalName}: <b>${cumulative[index].toLocaleString("en-US")}</b>`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 52, right: 58, top: 36, bottom: 48 },
+      xAxis: { ...categoryAxis(series.labels, true), boundaryGap: true },
+      yAxis: [
+        {
+          type: "value",
+          name: `Games / ${unit}`,
+          nameTextStyle: { ...axisText, color: "#d4af37" },
+          axisLabel: { ...axisText, color: "#d4af37" },
+          axisLine: { show: true, lineStyle: { color: "#d4af37" } },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        {
+          type: "value",
+          nameTextStyle: { ...axisText, color: "#7dd3fc" },
+          axisLabel: { ...axisText, color: "#7dd3fc" },
+          axisLine: { show: true, lineStyle: { color: "#7dd3fc" } },
+          splitLine: { show: false }
+        }
+      ],
+      series: [
+        {
+          name: `AI disclosure that ${unit}`,
+          type: "bar",
+          data: series.declared,
+          itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+          barMaxWidth: unit === "year" ? 42 : unit === "day" ? 8 : 14
+        },
+        {
+          name: current.totalName,
+          type: "line",
+          yAxisIndex: 1,
+          data: cumulative,
+          symbol: series.labels.length < 3 ? "circle" : "none",
+          smooth: 0.15,
+          lineStyle: { width: 2.25, color: "#7dd3fc" },
+          itemStyle: { color: "#7dd3fc" }
+        }
+      ]
+    }, { notMerge: true });
+    }
+
+    renderShare();
+    renderCount();
+
+    charts.tags = echarts.init(document.getElementById("chart-tags"));
+    let tagsAsShare = false;
+    let tagsByGap = false;
+    let scatterAsShare = true;
+    let streamStacked = false;
+    const hiddenStreamBands = new Set();
+    function renderTags() {
+      const aiShare = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const otherShare = (count) => (current.otherTotal ? (count / current.otherTotal) * 100 : 0);
+      const shareGap = (row) => Math.abs(aiShare(row.ai) - otherShare(row.other || 0));
+      const tagRows = current.tags
+        .filter((row) => !omittedTags.has(row.name))
+        .sort((a, b) => tagsByGap
+          ? shareGap(b) - shareGap(a) || a.name.localeCompare(b.name)
+          : b.ai - a.ai || a.name.localeCompare(b.name))
+        .slice(0, 100);
+      const sizeScale = (counts) => {
+        const max = Math.max(...counts);
+        const min = Math.min(...counts);
+        return (value, params) => {
+          const count = params.data.count;
+          if (!count || max === min) return 12;
+          return 10 + ((count - min) / (max - min)) * 18;
+        };
+      };
+      const shownValue = (count, share) => tagsAsShare
+        ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+        : count.toLocaleString("en-US");
+      const host = document.getElementById("chart-tags");
+      host.style.height = `${Math.max(1480, tagRows.length * 32 + 80)}px`;
+      charts.tags.resize();
+      const omitted = "Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual";
+      const scope = ``;
+      const order = tagsByGap
+        ? ""
+        : "";
+      document.getElementById("cap-tags").textContent = tagsAsShare
+        ? ``
+        : ``;
+      charts.tags.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "item",
+        formatter(params) {
+          const row = tagRows.find((item) => item.name === params.data.name);
+          const other = row.other || 0;
+          const gap = aiShare(row.ai) - otherShare(other);
+          const ahead = gap >= 0 ? "AI disclosure" : "No AI disclosure";
+          return `<b>${row.name}</b><br/>No AI disclosure: <b>${shownValue(other, otherShare(other))}</b><br/>AI disclosure: <b>${shownValue(row.ai, aiShare(row.ai))}</b><br/>${ahead} is <b>${Math.abs(gap).toFixed(1)}</b> points higher`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 8, right: 28, top: 36, bottom: 36, containLabel: true },
+      xAxis: {
+        type: "value",
+        name: tagsAsShare ? "% of all releases" : "Games",
+        nameLocation: "middle",
+        nameGap: 26,
+        nameTextStyle: axisText,
+        axisLabel: tagsAsShare ? { ...axisText, formatter: (value) => value + "%" } : axisText,
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.45)" } }
+      },
+      yAxis: {
+        type: "category",
+        data: tagRows.map((row) => row.name),
+        inverse: true,
+        axisLabel: { ...axisText, color: "#e8eef7" },
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        splitLine: { show: true, lineStyle: { color: "rgba(61, 74, 92, 0.35)" } }
+      },
+      series: [
+        {
+          name: "No AI disclosure",
+          type: "scatter",
+          data: tagRows.map((row) => ({
+            name: row.name,
+            value: [tagsAsShare ? otherShare(row.other || 0) : (row.other || 0), row.name],
+            count: row.other || 0
+          })),
+          symbolSize: sizeScale(tagRows.map((row) => row.other || 0)),
+          itemStyle: { color: "#22d3ee", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+        },
+        {
+          name: "AI disclosure",
+          type: "scatter",
+          data: tagRows.map((row) => ({
+            name: row.name,
+            value: [tagsAsShare ? aiShare(row.ai) : row.ai, row.name],
+            count: row.ai
+          })),
+          symbolSize: sizeScale(tagRows.map((row) => row.ai)),
+          itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+        }
+      ]
+    }, { notMerge: true });
+      const tagsCount = document.getElementById("tags-count");
+      const tagsShare = document.getElementById("tags-share");
+      const tagsSortCommon = document.getElementById("tags-sort-common");
+      const tagsSortGap = document.getElementById("tags-sort-gap");
+      if (tagsCount && tagsShare) {
+        tagsCount.setAttribute("aria-pressed", String(!tagsAsShare));
+        tagsShare.setAttribute("aria-pressed", String(tagsAsShare));
+        if (!tagsCount.dataset.bound) {
+          tagsCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (tagsAsShare === share) return;
+            tagsAsShare = share;
+            renderTags();
+          };
+          tagsCount.addEventListener("click", () => choose(false));
+          tagsShare.addEventListener("click", () => choose(true));
+        }
+      }
+      if (tagsSortCommon && tagsSortGap) {
+        tagsSortCommon.setAttribute("aria-pressed", String(!tagsByGap));
+        tagsSortGap.setAttribute("aria-pressed", String(tagsByGap));
+        if (!tagsSortCommon.dataset.bound) {
+          tagsSortCommon.dataset.bound = "true";
+          const chooseSort = (byGap) => {
+            if (tagsByGap === byGap) return;
+            tagsByGap = byGap;
+            renderTags();
+          };
+          tagsSortCommon.addEventListener("click", () => chooseSort(false));
+          tagsSortGap.addEventListener("click", () => chooseSort(true));
+        }
+      }
+    }
+    renderTags();
+
+    function reviewShares(countsByLabel) {
+      const counts = DATA.reviewOrder.map((label) => countsByLabel[label] || 0);
+      const total = sum(counts);
+      return {
+        counts,
+        total,
+        shares: counts.map((count) => (total ? (count / total) * 100 : 0))
+      };
+    }
+
+    charts.reviews = echarts.init(document.getElementById("chart-reviews"));
+    function renderReviews() {
+      const aiReview = reviewShares(current.reviews.ai);
+      const otherReview = reviewShares(current.reviews.other);
+      const reviewMax = Math.max(...aiReview.shares, ...otherReview.shares, 1);
+      let reviewAxisMax = Math.max(50, Math.ceil(reviewMax / 5) * 5);
+      if (reviewMax > reviewAxisMax - 4) reviewAxisMax += 5;
+      const reviewPercentLabel = (value) => Math.abs(value) >= 0.05 ? Math.abs(value).toFixed(1) + "%" : "";
+      const labelCol = 140;
+      const chartWidth = charts.reviews.getWidth() || document.getElementById("chart-reviews").clientWidth || 640;
+      const side = Math.max(80, Math.floor((chartWidth - labelCol - 16) / 2));
+      document.getElementById("cap-reviews").textContent = ``;
+      charts.reviews.setOption({
+      animationDuration: 650,
+      tooltip: {
+        ...tooltipBase,
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter(params) {
+          const index = params[0].dataIndex;
+          const label = DATA.reviewOrder[index];
+          const otherCount = otherReview.counts[index];
+          const aiCount = aiReview.counts[index];
+          return `<b>${label}</b><br/>No AI disclosure: <b>${otherCount.toLocaleString("en-US")}</b> (${otherReview.shares[index].toFixed(1)}%)<br/>AI disclosure: <b>${aiCount.toLocaleString("en-US")}</b> (${aiReview.shares[index].toFixed(1)}%)`;
+        }
+      },
+      legend: { top: 0, textStyle: axisText },
+      grid: [
+        { left: 8, width: side, top: 36, bottom: 28 },
+        { left: 8 + side + labelCol, width: side, top: 36, bottom: 28 }
+      ],
+      xAxis: [
+        {
+          type: "value",
+          gridIndex: 0,
+          inverse: true,
+          min: 0,
+          max: reviewAxisMax,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        {
+          type: "value",
+          gridIndex: 1,
+          min: 0,
+          max: reviewAxisMax,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        }
+      ],
+      yAxis: [
+        {
+          type: "category",
+          gridIndex: 0,
+          data: DATA.reviewOrder,
+          inverse: true,
+          position: "right",
+          axisTick: { show: false },
+          axisLine: { show: false },
+          axisLabel: {
+            ...axisText,
+            color: "#e8eef7",
+            align: "center",
+            margin: labelCol / 2,
+            width: labelCol - 8,
+            overflow: "break"
+          }
+        },
+        {
+          type: "category",
+          gridIndex: 1,
+          data: DATA.reviewOrder,
+          inverse: true,
+          axisTick: { show: false },
+          axisLine: { show: false },
+          axisLabel: { show: false }
+        }
+      ],
+      series: [
+        {
+          name: "No AI disclosure",
+          type: "bar",
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: otherReview.shares,
+          itemStyle: { color: "#22d3ee", borderRadius: [3, 0, 0, 3] },
+          barMaxWidth: 18,
+          label: {
+            show: true,
+            position: "left",
+            formatter: (params) => reviewPercentLabel(params.value),
+            color: "#e8eef7",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 11
+          }
+        },
+        {
+          name: "AI disclosure",
+          type: "bar",
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: aiReview.shares,
+          itemStyle: { color: "#d4af37", borderRadius: [0, 3, 3, 0] },
+          barMaxWidth: 18,
+          label: {
+            show: true,
+            position: "right",
+            formatter: (params) => reviewPercentLabel(params.value),
+            color: "#e8eef7",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 11
+          }
+        }
+      ]
+    }, { notMerge: true });
+    }
+    renderReviews();
+
+    const bandColors = ["#059669", "#34d399", "#a7f3d0", "#fb923c", "#f87171", "#d4af37"];
+
+    function visibleStreamBands(stream) {
+      const visible = stream.bands.filter((band) => !hiddenStreamBands.has(band));
+      return visible.length ? visible : [stream.bands[0]];
+    }
+
+    function drawStream(el, stream) {
+      el.replaceChildren();
+      const visible = visibleStreamBands(stream);
+      const legend = document.createElement("div");
+      legend.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 4px 0";
+      stream.bands.forEach((band, index) => {
+        const on = visible.includes(band);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.setAttribute("aria-pressed", String(on));
+        item.title = on ? `Hide ${band}` : `Show ${band}`;
+        item.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:transparent;font:11px Figtree,sans-serif;cursor:pointer;color:${on ? "#e8eef7" : "#64748b"}`;
+        const swatch = document.createElement("span");
+        swatch.style.cssText = `display:inline-block;width:12px;height:12px;border-radius:2px;background:${on ? bandColors[index] : "transparent"};box-shadow:${on ? "none" : `inset 0 0 0 1.5px ${bandColors[index]}`}`;
+        item.append(swatch, document.createTextNode(band));
+          item.addEventListener("click", () => {
+          if (on) {
+            if (visible.length === 1) return;
+            hiddenStreamBands.add(band);
+          } else {
+            hiddenStreamBands.delete(band);
+          }
+          drawStream(el, stream);
+          writeStreamCaption();
+        });
+        legend.appendChild(item);
+      });
+      el.appendChild(legend);
+      const bandIndex = new Map(stream.bands.map((band, index) => [band, index]));
+      const countAt = (band, monthIndex) => stream.counts[bandIndex.get(band)][monthIndex] || 0;
+      if (stream.months.length < 2) {
+        const counts = visible.map((band) => countAt(band, 0));
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "display:flex;align-items:stretch;gap:18px;height:360px;padding:18px 8px 8px";
+        const bar = document.createElement("div");
+        bar.style.cssText = "display:flex;flex-direction:column;width:84px;border-radius:6px;overflow:hidden";
+        const list = document.createElement("div");
+        list.style.cssText = "display:flex;flex-direction:column;justify-content:center;gap:8px;font:13px Figtree,sans-serif;color:#e8eef7";
+        const monthTotal = counts.reduce((sum, count) => sum + count, 0);
+        visible.forEach((band, index) => {
+          const part = document.createElement("div");
+          part.style.flex = String(Math.max(counts[index], 0));
+          part.style.background = bandColors[bandIndex.get(band)];
+          bar.appendChild(part);
+          const share = monthTotal ? (counts[index] / monthTotal) * 100 : 0;
+          const shown = streamStacked
+            ? `${share.toFixed(1)}% (${counts[index].toLocaleString("en-US")})`
+            : counts[index].toLocaleString("en-US");
+          const row = document.createElement("div");
+          row.innerHTML = `<span style="color:${bandColors[bandIndex.get(band)]}">●</span> ${band}: <b>${shown}</b>`;
+          list.appendChild(row);
+        });
+        wrap.append(bar, list);
+        el.appendChild(wrap);
+        return;
+      }
+      const width = Math.max(el.clientWidth || 0, 320);
+      const height = Math.max((el.clientHeight || 440) - legend.offsetHeight, 280);
+      const margin = { top: 16, right: 12, bottom: 32, left: streamStacked ? 48 : 72 };
+      const rows = stream.months.map((month, index) => {
+        const row = { month };
+        const total = visible.reduce((sum, band) => sum + countAt(band, index), 0);
+        visible.forEach((band) => {
+          const count = countAt(band, index);
+          row[band] = streamStacked ? (total ? (count / total) * 100 : 0) : count;
+        });
+        return row;
+      });
+      const layers = d3.stack()
+        .keys([...visible].reverse())
+        .order(d3.stackOrderNone)
+        .offset(streamStacked ? d3.stackOffsetNone : d3.stackOffsetSilhouette)(rows);
+      const x = d3.scaleTime()
+        .domain(d3.extent(rows, (row) => new Date(`${row.month}-01`)))
+        .range([margin.left, width - margin.right]);
+      const y = d3.scaleLinear()
+        .domain(streamStacked
+          ? [0, 100]
+          : [
+            d3.min(layers, (layer) => d3.min(layer, (point) => point[0])),
+            d3.max(layers, (layer) => d3.max(layer, (point) => point[1]))
+          ])
+        .range([height - margin.bottom, margin.top]);
+      if (!streamStacked) y.nice();
+      const area = d3.area()
+        .x((point) => x(new Date(`${point.data.month}-01`)))
+        .y0((point) => y(point[0]))
+        .y1((point) => y(point[1]))
+        .curve(streamStacked ? d3.curveLinear : d3.curveMonotoneX);
+      const svg = d3.select(el).append("svg").attr("width", width).attr("height", height);
+      svg.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(streamStacked ? 5 : 6).tickFormat((value) => streamStacked
+          ? `${Math.round(value)}%`
+          : Math.abs(value).toLocaleString("en-US")))
+        .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
+        .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
+        .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
+      if (!streamStacked) {
+        svg.append("text")
+          .attr("transform", `translate(14,${(margin.top + height - margin.bottom) / 2}) rotate(-90)`)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#94a3b8")
+          .attr("font-family", "Figtree, sans-serif")
+          .attr("font-size", 11)
+          .text("Review count");
+      }
+      svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %Y")))
+        .call((group) => group.selectAll("text").attr("fill", "#94a3b8").attr("font-family", "Figtree, sans-serif").attr("font-size", 11))
+        .call((group) => group.selectAll("line").attr("stroke", "#3d4a5c"))
+        .call((group) => group.select(".domain").attr("stroke", "#3d4a5c"));
+      if (!streamStacked) {
+        svg.append("line")
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right)
+          .attr("y1", y(0))
+          .attr("y2", y(0))
+          .attr("stroke", "#94a3b8")
+          .attr("stroke-dasharray", "3 4");
+      }
+      svg.append("g")
+        .selectAll("path")
+        .data(layers)
+        .join("path")
+        .attr("fill", (layer) => bandColors[bandIndex.get(layer.key)])
+        .attr("fill-opacity", 0.92)
+        .attr("d", area);
+      const rule = svg.append("line")
+        .attr("y1", margin.top)
+        .attr("y2", height - margin.bottom)
+        .attr("stroke", "#e8eef7")
+        .attr("stroke-opacity", 0.45)
+        .style("display", "none");
+      const tip = document.createElement("div");
+      tip.className = "stream-tip";
+      el.appendChild(tip);
+      svg.append("rect")
+        .attr("x", margin.left)
+        .attr("y", margin.top)
+        .attr("width", width - margin.left - margin.right)
+        .attr("height", height - margin.top - margin.bottom)
+        .attr("fill", "transparent")
+        .on("mousemove", (event) => {
+          const [mx, my] = d3.pointer(event);
+          const date = x.invert(mx);
+          let nearest = 0;
+          let best = Infinity;
+          rows.forEach((row, index) => {
+            const distance = Math.abs(new Date(`${row.month}-01`) - date);
+            if (distance < best) {
+              best = distance;
+              nearest = index;
+            }
+          });
+          const month = rows[nearest].month;
+          const xPos = x(new Date(`${month}-01`));
+          rule.attr("x1", xPos).attr("x2", xPos).style("display", null);
+          const total = visible.reduce((sum, band) => sum + countAt(band, nearest), 0);
+          const lines = visible.map((band) => {
+            const count = countAt(band, nearest);
+            const share = total ? (count / total) * 100 : 0;
+            const shown = streamStacked
+              ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+              : count.toLocaleString("en-US");
+            return `<div><span style="color:${bandColors[bandIndex.get(band)]}">●</span> ${band}: <b>${shown}</b></div>`;
+          }).join("");
+          tip.innerHTML = `<b>${month}</b><div>${total.toLocaleString("en-US")} games</div>${lines}`;
+          tip.style.display = "block";
+          let left = xPos + 12;
+          if (left + tip.offsetWidth > width - 8) left = Math.max(8, xPos - tip.offsetWidth - 12);
+          tip.style.left = `${left}px`;
+          tip.style.top = `${Math.max(8, Math.min(my, height - tip.offsetHeight - 8))}px`;
+        })
+        .on("mouseleave", () => {
+          rule.style("display", "none");
+          tip.style.display = "none";
+        });
+    }
+
+    function renderFreePaid(free) {
+      const aiTotal = free.ai.free + free.ai.paid;
+      const otherTotal = free.other.free + free.other.paid;
+      const pct = (part, total) => (total ? (part / total) * 100 : 0);
+      const share = (part, total) => pct(part, total).toFixed(1);
+      const point = (part, total) => ({ value: pct(part, total), count: part });
+      document.getElementById("cap-free").textContent = ``;
+      const percentLabel = {
+        show: true,
+        position: "top",
+        color: "#e8eef7",
+        fontFamily: "Figtree, sans-serif",
+        fontSize: 12,
+        formatter: (params) => Number(params.value).toFixed(1) + "%"
+      };
+      if (!charts.free) charts.free = echarts.init(document.getElementById("chart-free"));
+      charts.free.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const lines = params.map((row) => `${row.marker}${row.seriesName}: <b>${row.data.count.toLocaleString("en-US")}</b> (${Number(row.value).toFixed(1)}%)`);
+            return [`<b>${params[0].axisValue}</b>`, ...lines].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 52, right: 16, top: 64, bottom: 28 },
+        xAxis: {
+          type: "category",
+          data: ["Free", "Paid"],
+          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 13 },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          max: 100,
+          axisLabel: { ...axisText, formatter: (value) => value + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: [point(free.other.free, otherTotal), point(free.other.paid, otherTotal)],
+            itemStyle: { color: "#22d3ee", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 56,
+            label: percentLabel
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: [point(free.ai.free, aiTotal), point(free.ai.paid, aiTotal)],
+            itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 56,
+            label: percentLabel
+          }
+        ]
+      }, { notMerge: true });
+    }
+
+    let priceAsShare = false;
+    let bandsAsShare = true;
+
+    function renderInitialPrice(spec) {
+      const cap = document.getElementById("cap-price");
+      const shareOf = (counts, total) => counts.map((count) => (total ? (count / total) * 100 : 0));
+      const otherData = priceAsShare ? shareOf(spec.other, spec.matchedOther) : spec.other;
+      const aiData = priceAsShare ? shareOf(spec.ai, spec.matchedAi) : spec.ai;
+      const priceNote = `The price is the store price overview’s initial price, divided by 100. The last bar is €60 or more. A few list prices are not in the cents of a major currency. ${spec.matchedAi.toLocaleString("en-US")} games with an AI disclosure and ${spec.matchedOther.toLocaleString("en-US")} with no AI disclosure have a price record. Games with none are left out.`;
+      cap.textContent = priceAsShare
+        ? ``
+        : ``;
+      const priceLabel = (value) => {
+        if (value === "60+") return "€60 or more";
+        if (value === "0") return "Under €1";
+        return `€${value}–€${value}.99`;
+      };
+      if (!charts.price) charts.price = echarts.init(document.getElementById("chart-price"));
+      charts.price.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const lines = params.map((row) => {
+              const count = row.seriesName === "AI disclosure" ? spec.ai[row.dataIndex] : spec.other[row.dataIndex];
+              const shown = priceAsShare
+                ? `${Number(row.value).toFixed(1)}% (${count.toLocaleString("en-US")})`
+                : Number(row.value).toLocaleString("en-US");
+              return `${row.marker}${row.seriesName}: <b>${shown}</b>`;
+            });
+            return [`<b>${priceLabel(params[0].axisValue)}</b>`, ...lines].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 56, right: 16, top: 36, bottom: 48 },
+        xAxis: {
+          type: "category",
+          name: "Initial price",
+          nameLocation: "middle",
+          nameGap: 32,
+          nameTextStyle: axisText,
+          data: spec.labels,
+          axisLabel: {
+            ...axisText,
+            interval: 0,
+            formatter: (value, index) => (index % 5 === 0 || value === "60+" ? (value === "60+" ? "€60+" : "€" + value) : "")
+          },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          name: priceAsShare ? "% of all releases" : "Games",
+          nameTextStyle: axisText,
+          axisLabel: priceAsShare ? { ...axisText, formatter: (value) => value + "%" } : axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: otherData,
+            itemStyle: { color: "#22d3ee" },
+            barMaxWidth: 7
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: aiData,
+            itemStyle: { color: "#d4af37" },
+            barMaxWidth: 7
+          }
+        ]
+      }, { notMerge: true });
+      const priceCount = document.getElementById("price-count");
+      const priceShare = document.getElementById("price-share");
+      if (priceCount && priceShare) {
+        priceCount.setAttribute("aria-pressed", String(!priceAsShare));
+        priceShare.setAttribute("aria-pressed", String(priceAsShare));
+        if (!priceCount.dataset.bound) {
+          priceCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (priceAsShare === share) return;
+            priceAsShare = share;
+            if (current && current.price) renderInitialPrice(current.price);
+          };
+          priceCount.addEventListener("click", () => choose(false));
+          priceShare.addEventListener("click", () => choose(true));
+        }
+      }
+    }
+
+    function renderScatter() {
+      if (!current || !current.tags) return;
+      if (!charts.scatter) charts.scatter = echarts.init(document.getElementById("chart-scatter"));
+      const labelsOn = document.getElementById("scatter-labels").getAttribute("aria-pressed") === "true";
+      const aiShareOf = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const otherShareOf = (count) => (current.otherTotal ? ((count || 0) / current.otherTotal) * 100 : 0);
+      const points = current.tags.filter((tag) => !omittedTags.has(tag.name)).map((tag) => {
+        const xShare = otherShareOf(tag.other);
+        const yShare = aiShareOf(tag.ai);
+        return {
+          name: tag.name,
+          value: scatterAsShare ? [xShare, yShare] : [tag.other || 0, tag.ai],
+          ai: tag.ai,
+          other: tag.other || 0,
+          xShare,
+          yShare
+        };
+      });
+      const across = scatterAsShare
+        ? ""
+        : "";
+      document.getElementById("cap-scatter").textContent = ``;
+      const axisLabel = scatterAsShare
+        ? { ...axisText, formatter: (value) => value + "%" }
+        : { ...axisText, formatter: (value) => Math.round(value).toLocaleString("en-US") };
+      const valueAxis = {
+        type: "value",
+        min: 0,
+        nameTextStyle: axisText,
+        axisLabel,
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } },
+        axisLine: { lineStyle: { color: "#3d4a5c" } }
+      };
+      const xMax = scatterAsShare ? 25 : 20000;
+      const yMax = scatterAsShare ? 33 : 4100;
+      const ratio = current.otherTotal ? current.aiTotal / current.otherTotal : 1;
+      const guideEnd = scatterAsShare
+        ? [xMax, Math.min(yMax, xMax)]
+        : [xMax, Math.min(yMax, xMax * ratio)];
+      charts.scatter.guideAnchors = scatterAsShare
+        ? [[1.2, 26], [7, 1.6]]
+        : [[xMax * 0.1, yMax * 0.78], [xMax * 0.62, yMax * 0.08]];
+      const shown = (share, count) => scatterAsShare
+        ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+        : count.toLocaleString("en-US");
+      charts.scatter.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "item",
+          formatter(params) {
+            const tag = params.data;
+            return `<b>${tag.name}</b><br/>AI disclosure: <b>${shown(tag.yShare, tag.ai)}</b><br/>No AI disclosure: <b>${shown(tag.xShare, tag.other)}</b>`;
+          }
+        },
+        grid: { left: scatterAsShare ? 72 : 86, right: 20, top: 16, bottom: 52 },
+        xAxis: {
+          ...valueAxis,
+          max: xMax,
+          name: "No AI disclosure",
+          nameLocation: "middle",
+          nameGap: 30
+        },
+        yAxis: {
+          ...valueAxis,
+          max: yMax,
+          name: "AI disclosure",
+          nameLocation: "middle",
+          nameGap: scatterAsShare ? 48 : 58
+        },
+        series: [
+          {
+            id: "tags",
+            type: "scatter",
+            data: points,
+            clip: true,
+            symbolSize: 11,
+            itemStyle: { color: "#d4af37", opacity: 0.95 },
+            label: {
+              show: labelsOn,
+              formatter: (params) => params.data.name,
+              position: "top",
+              color: "#e8eef7",
+              fontFamily: "Figtree, sans-serif",
+              fontSize: 10
+            },
+            labelLayout: { hideOverlap: true },
+            z: 3
+          },
+          {
+            id: "guide",
+            type: "line",
+            data: [[0, 0], guideEnd],
+            symbol: "none",
+            silent: true,
+            z: 2,
+            lineStyle: { color: "#22d3ee", width: 2 },
+            tooltip: { show: false }
+          }
+        ]
+      }, { notMerge: true });
+      function placeScatterGuide() {
+        const chart = charts.scatter;
+        const anchors = chart.guideAnchors || [[1.2, 26], [7, 1.6]];
+        const above = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, anchors[0]);
+        const below = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, anchors[1]);
+        if (!above || !below || !Number.isFinite(above[0]) || !Number.isFinite(below[0])) return;
+        const key = [...above, ...below].map((value) => Math.round(value)).join(",");
+        if (key === placeScatterGuide.key) return;
+        placeScatterGuide.key = key;
+        const style = {
+          fill: "#22d3ee",
+          stroke: "#121a2b",
+          lineWidth: 3,
+          font: "600 13px Figtree, sans-serif",
+          align: "left",
+          verticalAlign: "middle"
+        };
+        chart.setOption({
+          graphic: [
+            { id: "ai-side", type: "text", x: above[0], y: above[1], silent: true, style: { ...style, text: "More likely in games with AI disclosure" } },
+            { id: "other-side", type: "text", x: below[0], y: below[1], silent: true, style: { ...style, text: "More likely in games without AI disclosure" } }
+          ]
+        });
+      }
+      charts.scatter.placeGuide = placeScatterGuide;
+      placeScatterGuide.key = "";
+      if (!charts.scatter.__guideBound) {
+        charts.scatter.__guideBound = true;
+        charts.scatter.on("finished", () => charts.scatter.placeGuide());
+        const scatterLabels = document.getElementById("scatter-labels");
+        scatterLabels.addEventListener("click", () => {
+          const showing = scatterLabels.getAttribute("aria-pressed") !== "true";
+          scatterLabels.setAttribute("aria-pressed", String(showing));
+          scatterLabels.textContent = showing ? "Hide data labels" : "Show data labels";
+          charts.scatter.setOption({ series: [{ id: "tags", label: { show: showing } }] });
+        });
+        const scatterCount = document.getElementById("scatter-count");
+        const scatterShare = document.getElementById("scatter-share");
+        const chooseScale = (asShare) => {
+          if (scatterAsShare === asShare) return;
+          scatterAsShare = asShare;
+          renderScatter();
+        };
+        scatterCount.addEventListener("click", () => chooseScale(false));
+        scatterShare.addEventListener("click", () => chooseScale(true));
+      }
+      const scatterCount = document.getElementById("scatter-count");
+      const scatterShare = document.getElementById("scatter-share");
+      scatterCount.setAttribute("aria-pressed", String(!scatterAsShare));
+      scatterShare.setAttribute("aria-pressed", String(scatterAsShare));
+    }
+
+    function writeStreamCaption() {
+      const stream = current && current.stream;
+      const streamCap = document.getElementById("cap-stream");
+      if (!stream || !streamCap) return;
+      const single = stream.months.length < 2;
+      const fewIndex = stream.bands.indexOf("10 or fewer reviews");
+      const fewCount = fewIndex >= 0 ? sum(stream.counts[fewIndex]) : 0;
+      const focused = hiddenStreamBands.size > 0;
+      const lead = single
+        ? `One month, so the bands are a stacked bar rather than a stream.`
+        : streamStacked
+          ? ``
+          : ``;
+      const streamRibbon = document.getElementById("stream-ribbon");
+      const streamStackedButton = document.getElementById("stream-stacked");
+      if (streamRibbon && streamStackedButton) {
+        streamRibbon.setAttribute("aria-pressed", String(!streamStacked));
+        streamStackedButton.setAttribute("aria-pressed", String(streamStacked));
+        if (!streamRibbon.dataset.bound) {
+          streamRibbon.dataset.bound = "true";
+          const chooseLayout = (stacked) => {
+            if (streamStacked === stacked) return;
+            streamStacked = stacked;
+            renderStreamCharts();
+          };
+          streamRibbon.addEventListener("click", () => chooseLayout(false));
+          streamStackedButton.addEventListener("click", () => chooseLayout(true));
+        }
+      }
+      const heldOut = stream.unscored
+        ? ` ${stream.unscored.toLocaleString("en-US")} games have more than 10 reviews but no positive and negative split, so they are not in the chart.`
+        : "";
+      streamCap.textContent = `${lead} Click a band to leave it out. Games with 10 or fewer reviews are the gold ribbon: ${fewCount.toLocaleString("en-US")} in this window. Every other ribbon is the review percentage of games with more than 10 reviews, positive reviews divided by positive plus negative reviews.${heldOut}`;
+    }
+
+    function renderStreamCharts() {
+      writeStreamCaption();
+      const stream = current.stream;
+      drawStream(document.getElementById("chart-stream"), stream);
+      renderFreePaid(current.freePaid);
+      renderInitialPrice(current.price);
+
+      renderScatter();
+
+      if (!charts.cloud) charts.cloud = echarts.init(document.getElementById("chart-cloud"));
+      charts.cloud.setOption({
+        tooltip: {
+          ...tooltipBase,
+          formatter(params) { return `<b>${params.name}</b><br/>Titles: <b>${params.value.toLocaleString("en-US")}</b>`; }
+        },
+        series: [{
+          type: "wordCloud",
+          shape: "circle",
+          sizeRange: [14, 72],
+          rotationRange: [0, 0],
+          gridSize: 8,
+          textStyle: {
+            color(params) {
+              const rank = params.dataIndex;
+              if (rank < 8) return "#d4af37";
+              if (rank < 24) return "#7dd3fc";
+              return "#94a3b8";
+            }
+          },
+          data: current.words
+        }]
+      }, { notMerge: true });
+
+      const disclosureCap = document.getElementById("cap-disclosure");
+      disclosureCap.textContent = ``;
+      if (!charts.disclosure) charts.disclosure = echarts.init(document.getElementById("chart-disclosure"));
+      charts.disclosure.setOption({
+        tooltip: {
+          ...tooltipBase,
+          formatter(params) { return `<b>${params.name}</b><br/>Statements: <b>${params.value.toLocaleString("en-US")}</b>`; }
+        },
+        series: [{
+          type: "wordCloud",
+          shape: "circle",
+          sizeRange: [14, 72],
+          rotationRange: [0, 0],
+          gridSize: 8,
+          textStyle: {
+            color(params) {
+              const rank = params.dataIndex;
+              if (rank < 8) return "#d4af37";
+              if (rank < 24) return "#7dd3fc";
+              return "#94a3b8";
+            }
+          },
+          data: current.disclosureWords
+        }]
+      }, { notMerge: true });
+    }
+
+
+    const REVIEW_CUT = {"order":["Overwhelmingly Negative","Very Negative","Negative","Mostly Negative","Mixed","Mostly Positive","Positive","Very Positive","Overwhelmingly Positive"],"buckets":[{"label":"11\u20131,000","ai":{"g":3927,"r":350380,"s":[0.0,0.1,0.1,2.1,17.6,21.2,8.8,47.0,3.1]},"non":{"g":44153,"r":4817779,"s":[0.0,0.0,0.1,1.2,16.5,19.4,7.1,51.2,4.5]}},{"label":"1,001\u20132,000","ai":{"g":94,"r":131562,"s":[0.0,0.0,0.0,2.4,15.7,16.8,0.0,52.7,12.4]},"non":{"g":1598,"r":2274240,"s":[0.1,0.0,0.0,0.8,13.1,17.3,0.0,52.4,16.3]}},{"label":"2,001\u20133,000","ai":{"g":27,"r":66456,"s":[0.0,0.0,0.0,0.0,14.0,16.7,0.0,61.4,7.9]},"non":{"g":663,"r":1633098,"s":[0.3,0.0,0.0,0.3,12.1,16.9,0.0,53.4,17.0]}},{"label":"3,001\u20134,000","ai":{"g":13,"r":46827,"s":[0.0,0.0,0.0,0.0,31.1,7.4,0.0,54.5,7.0]},"non":{"g":380,"r":1322445,"s":[0.0,0.0,0.0,0.9,11.2,17.5,0.0,52.6,17.8]}},{"label":"4,001\u20135,000","ai":{"g":8,"r":36112,"s":[0.0,0.0,0.0,0.0,12.2,36.7,0.0,26.4,24.7]},"non":{"g":266,"r":1189961,"s":[0.0,0.0,0.0,0.8,12.3,11.1,0.0,54.6,21.2]}},{"label":"5,001\u20136,000","ai":{"g":3,"r":16476,"s":[0.0,0.0,0.0,0.0,0.0,32.7,0.0,36.1,31.2]},"non":{"g":164,"r":901696,"s":[0.0,0.0,0.0,1.9,9.0,15.7,0.0,50.6,22.8]}},{"label":"6,001\u20137,000","ai":{"g":9,"r":58348,"s":[0.0,0.0,0.0,0.0,11.0,0.0,0.0,89.0,0.0]},"non":{"g":152,"r":984332,"s":[0.0,0.0,0.0,0.7,15.2,7.8,0.0,54.4,21.9]}},{"label":"7,001\u20138,000","ai":{"g":7,"r":52276,"s":[0.0,0.0,0.0,0.0,28.1,13.7,0.0,58.2,0.0]},"non":{"g":111,"r":823338,"s":[0.0,0.0,0.0,1.9,15.3,14.5,0.0,45.2,23.1]}},{"label":"8,001\u20139,000","ai":{"g":2,"r":16562,"s":[0.0,0.0,0.0,0.0,0.0,49.7,0.0,50.3,0.0]},"non":{"g":100,"r":852086,"s":[0.0,0.0,0.0,1.1,4.9,14.2,0.0,60.8,19.0]}},{"label":"9,001\u201310,000","ai":{"g":0,"r":0,"s":null},"non":{"g":66,"r":624113,"s":[0.0,0.0,0.0,0.0,12.1,15.0,0.0,57.6,15.3]}},{"label":"10,001\u201311,000","ai":{"g":3,"r":32481,"s":[0.0,0.0,0.0,0.0,33.6,33.2,0.0,33.2,0.0]},"non":{"g":49,"r":514553,"s":[0.0,0.0,0.0,0.0,10.2,12.2,0.0,53.1,24.5]}},{"label":"11,001\u201312,000","ai":{"g":0,"r":0,"s":null},"non":{"g":46,"r":529772,"s":[0.0,0.0,0.0,0.0,15.0,11.0,0.0,52.2,21.8]}},{"label":"12,001\u201313,000","ai":{"g":1,"r":12234,"s":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0]},"non":{"g":38,"r":475366,"s":[0.0,0.0,0.0,0.0,15.9,15.8,0.0,47.4,20.9]}},{"label":"13,001\u201314,000","ai":{"g":3,"r":40320,"s":[0.0,0.0,0.0,0.0,34.7,0.0,0.0,65.3,0.0]},"non":{"g":36,"r":485118,"s":[0.0,0.0,0.0,5.5,8.2,8.2,0.0,61.4,16.7]}},{"label":"14,001\u201315,000","ai":{"g":2,"r":29380,"s":[0.0,0.0,0.0,0.0,0.0,50.0,0.0,50.0,0.0]},"non":{"g":33,"r":475428,"s":[0.0,0.0,0.0,0.0,15.1,6.0,0.0,57.7,21.2]}},{"label":"15,001\u201316,000","ai":{"g":0,"r":0,"s":null},"non":{"g":38,"r":586399,"s":[0.0,0.0,0.0,2.7,7.9,15.9,0.0,55.0,18.5]}},{"label":"16,001\u201317,000","ai":{"g":2,"r":32512,"s":[0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,0.0]},"non":{"g":27,"r":444814,"s":[0.0,0.0,0.0,0.0,22.3,22.3,0.0,36.9,18.5]}},{"label":"17,001\u201318,000","ai":{"g":0,"r":0,"s":null},"non":{"g":19,"r":332381,"s":[0.0,0.0,0.0,0.0,5.2,10.5,0.0,57.8,26.5]}},{"label":"18,001\u201319,000","ai":{"g":1,"r":18487,"s":[0.0,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0]},"non":{"g":21,"r":388010,"s":[0.0,0.0,0.0,0.0,4.6,9.5,0.0,66.8,19.1]}},{"label":"19,001\u201320,000","ai":{"g":2,"r":39379,"s":[0.0,0.0,0.0,0.0,50.6,0.0,0.0,49.4,0.0]},"non":{"g":32,"r":625447,"s":[0.0,0.0,0.0,3.1,12.5,18.8,0.0,53.0,12.6]}},{"label":"20,001\u201321,000","ai":{"g":0,"r":0,"s":null},"non":{"g":21,"r":431684,"s":[0.0,0.0,0.0,4.7,4.7,9.6,0.0,57.0,24.0]}}],"profile":[{"group":"Review percentage","label":"Weighted by reviews","ai":74.3,"non":84.2,"unit":"positive"},{"group":"Review percentage","label":"Average game","ai":79.5,"non":80.9,"unit":"positive"},{"group":"Review score","label":"Overwhelmingly Positive","ai":6.0,"non":24.0,"aiN":36,"nonN":1101,"unit":"of reviews"},{"group":"Review score","label":"Very Positive","ai":34.9,"non":47.3,"aiN":1013,"nonN":14340,"unit":"of reviews"},{"group":"Review score","label":"Positive","ai":0.9,"non":0.6,"aiN":1378,"nonN":14599,"unit":"of reviews"},{"group":"Review score","label":"Mostly Positive","ai":20.7,"non":13.0,"aiN":704,"nonN":7883,"unit":"of reviews"},{"group":"Review score","label":"Mixed","ai":35.1,"non":13.7,"aiN":847,"nonN":9286,"unit":"of reviews"},{"group":"Review score","label":"Mostly Negative","ai":2.4,"non":1.3,"aiN":131,"nonN":1107,"unit":"of reviews"},{"group":"Review score","label":"Negative or worse","ai":0.0,"non":0.1,"aiN":18,"nonN":166,"unit":"of reviews"},{"group":"List price","label":"Under \u20ac1","ai":4.8,"non":9.9,"aiN":497,"nonN":6882,"unit":"of priced games"},{"group":"List price","label":"\u20ac1\u2013\u20ac4.99","ai":43.5,"non":39.9,"aiN":4520,"nonN":27868,"unit":"of priced games"},{"group":"List price","label":"\u20ac5\u2013\u20ac9.99","ai":32.1,"non":26.1,"aiN":3339,"nonN":18233,"unit":"of priced games"},{"group":"List price","label":"\u20ac10\u2013\u20ac19.99","ai":15.2,"non":17.2,"aiN":1578,"nonN":12021,"unit":"of priced games"},{"group":"List price","label":"\u20ac20\u2013\u20ac59.99","ai":3.4,"non":6.0,"aiN":349,"nonN":4185,"unit":"of priced games"},{"group":"List price","label":"\u20ac60 or more","ai":1.1,"non":0.9,"aiN":113,"nonN":630,"unit":"of priced games"},{"group":"Tag","label":"Simulation","ai":41.1,"non":22.7,"aiN":1696,"nonN":10984,"unit":"of games carry this tag"},{"group":"Tag","label":"Strategy","ai":27.1,"non":19.5,"aiN":1120,"nonN":9471,"unit":"of games carry this tag"},{"group":"Tag","label":"Management","ai":16.7,"non":7.1,"aiN":691,"nonN":3425,"unit":"of games carry this tag"},{"group":"Tag","label":"Economy","ai":10.9,"non":3.5,"aiN":449,"nonN":1720,"unit":"of games carry this tag"},{"group":"Tag","label":"Idler","ai":10.7,"non":3.8,"aiN":440,"nonN":1841,"unit":"of games carry this tag"},{"group":"Tag","label":"Incremental","ai":6.1,"non":1.0,"aiN":253,"nonN":479,"unit":"of games carry this tag"},{"group":"Tag","label":"Platformer","ai":3.9,"non":9.7,"aiN":162,"nonN":4706,"unit":"of games carry this tag"}],"aiGames":4127,"nonGames":48482,"aiReviews":3349092,"nonReviews":60798684,"tailAiGames":23,"tailNonGames":469,"firstAiGames":3927,"firstAiVp":47.0,"firstNonVp":51.2};
+
+    function renderReviewBands() {
+      const host = document.getElementById("chart-bands");
+      if (!host) return;
+      if (!charts.bands) charts.bands = echarts.init(host);
+      const labels = REVIEW_CUT.buckets.map((bucket) => bucket.label);
+      const bands = REVIEW_CUT.order;
+      function seriesFor(side, stack, axisIndex) {
+        return bands.map((name, index) => ({
+          name,
+          type: "bar",
+          stack,
+          xAxisIndex: axisIndex,
+          yAxisIndex: axisIndex,
+          cursor: "default",
+          barMaxWidth: 18,
+          itemStyle: { color: reviewColors[name] },
+          data: REVIEW_CUT.buckets.map((bucket) => {
+            const pack = bucket[side];
+            if (!pack.s) return { value: null };
+            const share = pack.s[index];
+            const count = Math.round(pack.r * share / 100);
+            return { value: bandsAsShare ? share : count, games: pack.g, reviews: pack.r, share, count };
+          })
+        }));
+      }
+      function tip(params) {
+        const row = Array.isArray(params) ? params[0] : params;
+        if (!row || row.data == null || row.data.value == null) return "";
+        const bucket = REVIEW_CUT.buckets[row.dataIndex];
+        const side = row.seriesIndex < bands.length ? "non" : "ai";
+        const pack = bucket[side];
+        const who = side === "ai" ? "AI disclosure" : "No AI disclosure";
+        const lines = bands.map((name, index) => {
+          const share = pack.s[index];
+          if (!share) return "";
+          const count = Math.round(pack.r * share / 100);
+          const weight = name === row.seriesName ? "700" : "500";
+          const shown = bandsAsShare
+            ? `${share.toFixed(1)}%`
+            : `${count.toLocaleString("en-US")} · ${share.toFixed(1)}%`;
+          return `<div style="font-weight:${weight}">${name}: <b>${shown}</b></div>`;
+        }).filter(Boolean).join("");
+        return `<div style="margin-bottom:4px"><b>${bucket.label}</b><br/>${who}</div>`
+          + `<div style="margin-bottom:6px">${pack.g.toLocaleString("en-US")} games · ${pack.r.toLocaleString("en-US")} reviews</div>`
+          + lines;
+      }
+      const categoryAxis = (gridIndex) => ({
+        type: "category",
+        gridIndex,
+        data: labels,
+        axisLabel: gridIndex === 0
+          ? { show: false }
+          : { ...axisText, fontSize: 10, rotate: 50, interval: 0, margin: 14 },
+        axisLine: { lineStyle: { color: "#3d4a5c" } },
+        axisTick: { show: true, alignWithLabel: true }
+      });
+      const valueAxis = (gridIndex) => ({
+        type: "value",
+        gridIndex,
+        min: 0,
+        max: bandsAsShare ? 100 : null,
+        name: "",
+        axisLabel: {
+          ...axisText,
+          formatter: bandsAsShare
+            ? (value) => value + "%"
+            : (value) => {
+                if (value >= 1e6) return `${(value / 1e6).toFixed(value >= 1e7 ? 0 : 1)}m`;
+                if (value >= 1e3) return `${Math.round(value / 1e3)}k`;
+                return String(value);
+              }
+        },
+        splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+      });
+      charts.bands.setOption({
+        animationDuration: 650,
+        title: [
+          { text: "No AI disclosure", left: 0, top: 36, textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13, fontWeight: 600 } },
+          { text: "AI disclosure", left: 0, top: 400, textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13, fontWeight: 600 } }
+        ],
+        legend: {
+          top: 0,
+          type: "scroll",
+          data: bands.slice().reverse(),
+          textStyle: axisText
+        },
+        tooltip: { ...tooltipBase, trigger: "item", formatter: tip },
+        grid: [
+          { left: 56, right: 16, top: 68, height: 300 },
+          { left: 56, right: 16, top: 434, height: 268 }
+        ],
+        xAxis: [categoryAxis(0), categoryAxis(1)],
+        yAxis: [valueAxis(0), valueAxis(1)],
+        series: [...seriesFor("non", "non", 0), ...seriesFor("ai", "ai", 1)]
+      }, { notMerge: true });
+      const cap = document.getElementById("cap-bands");
+      if (cap) {
+        cap.textContent = bandsAsShare
+          ? ""
+          : "";
+      }
+      const bandsCount = document.getElementById("bands-count");
+      const bandsShare = document.getElementById("bands-share");
+      if (bandsCount && bandsShare) {
+        bandsCount.setAttribute("aria-pressed", String(!bandsAsShare));
+        bandsShare.setAttribute("aria-pressed", String(bandsAsShare));
+        if (!bandsCount.dataset.bound) {
+          bandsCount.dataset.bound = "true";
+          const choose = (share) => {
+            if (bandsAsShare === share) return;
+            bandsAsShare = share;
+            renderReviewBands();
+          };
+          bandsCount.addEventListener("click", () => choose(false));
+          bandsShare.addEventListener("click", () => choose(true));
+        }
+      }
+    }
+
+    function priceBandLabel(band) {
+      if (band <= 0) return "Under €1";
+      if (band >= 60) return "€60 or more";
+      return `€${band}–€${band}.99`;
+    }
+
+    function renderReviewProfile(payload) {
+      const host = document.getElementById("chart-profile");
+      if (!host || !payload) return;
+      if (!charts.profile) charts.profile = echarts.init(host);
+      const axisName = { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13 };
+      const signedSquare = (score) => {
+        const value = Number(score) || 0;
+        return Math.round(Math.sign(value) * value * value * 10) / 10;
+      };
+      const point = (row) => ({ name: row[3], score: row[1], value: [row[0], signedSquare(row[1]), row[2]] });
+      const seriesFor = (name, rows, color) => ({
+        name,
+        type: "scatter3D",
+        data: rows.map(point),
+        symbolSize: name === "AI disclosure" ? 6 : 3,
+        itemStyle: { color, opacity: name === "AI disclosure" ? 0.95 : 0.45 },
+        emphasis: { itemStyle: { opacity: 1 } }
+      });
+      charts.profile.setOption({
+        animationDuration: 650,
+        tooltip: {
+          ...tooltipBase,
+          formatter(item) {
+            const [positive, plotted, band] = item.value;
+            const score = Number(item.data.score);
+            const lean = score > 0 ? "more common on disclosed games" : score < 0 ? "more common on games with no disclosure" : "even";
+            return `<b>${item.name}</b><br/>${item.seriesName}<br/>${Number(positive).toLocaleString("en-US")} positive reviews<br/>Tag score <b>${score.toFixed(1)}</b> · plotted at <b>${Number(plotted).toLocaleString("en-US")}</b><br/>${lean}<br/>${priceBandLabel(band)}`;
+          }
+        },
+        legend: { top: 0, textStyle: axisText, data: ["No AI disclosure", "AI disclosure"] },
+        xAxis3D: {
+          type: "log",
+          name: "Positive reviews",
+          min: 10,
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11, formatter: (value) => Number(value).toLocaleString("en-US") },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
+        },
+        yAxis3D: {
+          type: "value",
+          name: "Tag score²",
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
+        },
+        zAxis3D: {
+          type: "value",
+          name: "€",
+          min: 0,
+          max: 60,
+          nameGap: 28,
+          nameTextStyle: axisName,
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+          axisLine: { lineStyle: { color: "#94a3b8" } }
+        },
+        grid3D: {
+          top: 56,
+          bottom: 24,
+          left: 8,
+          right: 8,
+          boxWidth: 100,
+          boxDepth: 80,
+          boxHeight: 64,
+          environment: "#1a2438",
+          axisPointer: { lineStyle: { color: "#d4af37" } },
+          splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.35)" } },
+          axisLine: { lineStyle: { color: "#94a3b8" } },
+          axisLabel: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 12 },
+          viewControl: { projection: "perspective", distance: 260, alpha: 22, beta: 42, minAlpha: -90, maxAlpha: 90, minDistance: 80, maxDistance: 420 }
+        },
+        series: [
+          seriesFor("No AI disclosure", payload.other || [], "#22d3ee"),
+          seriesFor("AI disclosure", payload.ai || [], "#d4af37")
+        ]
+      }, { notMerge: true });
+      const profileViews = {
+        xy: { alpha: 90, beta: 0 },
+        xz: { alpha: 0, beta: 0 },
+        yz: { alpha: 0, beta: 90 }
+      };
+      document.querySelectorAll("[data-profile-view]").forEach((button) => {
+        if (button.dataset.bound) return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          const view = profileViews[button.getAttribute("data-profile-view")];
+          if (!view || !charts.profile) return;
+          document.querySelectorAll("[data-profile-view]").forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          charts.profile.setOption({
+            grid3D: {
+              viewControl: {
+                projection: "orthographic",
+                alpha: view.alpha,
+                beta: view.beta,
+                minAlpha: -90,
+                maxAlpha: 90,
+                distance: 260,
+                orthographicSize: 280,
+                minOrthographicSize: 40,
+                maxOrthographicSize: 900,
+                rotateSensitivity: 1,
+                zoomSensitivity: 1,
+                panSensitivity: 1,
+                animationDurationUpdate: 500
+              }
+            }
+          });
+        });
+      });
+    }
+
+    renderReviewBands();
+    fetch("/blog/critical-mass-profile3d.json").then((response) => response.json()).then(renderReviewProfile).catch(() => null);
+
+    function showWindow(key) {
+      current = buildCurrent(key);
+      renderShare();
+      renderCount();
+      renderTags();
+      renderReviews();
+      if (current.stream) renderStreamCharts();
+    }
+
+    Promise.all([
+      fetch("/blog/critical-mass-viz.json").then((response) => response.json()),
+      fetch("/blog/critical-mass-windows.json").then((response) => response.json()),
+      fetch("/blog/critical-mass-daily.json").then((response) => response.json()).catch(() => null)
+    ]).then(([viz, windows, daily]) => {
+      dailyPayload = daily;
+      vizPayload = viz;
+      windowsExtra = windows;
+      const select = document.getElementById("window");
+      select.disabled = false;
+      select.addEventListener("change", () => showWindow(select.value));
+      showWindow("all");
+    }).catch((error) => {
+      console.error(error);
+      document.getElementById("cap-stream").textContent = "These charts are still loading.";
+    });
+
+    window.addEventListener("resize", () => {
+      Object.values(charts).forEach((chart) => chart.resize());
+      if (charts.reviews) renderReviews();
+      if (!current || !current.stream) return;
+      if (charts.scatter && charts.scatter.placeGuide) charts.scatter.placeGuide.key = "";
+      drawStream(document.getElementById("chart-stream"), current.stream);
+    });
+  </script>
+</body>
+</html>

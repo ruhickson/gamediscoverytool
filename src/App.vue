@@ -208,7 +208,7 @@ export default {
   },
   computed: {
     isEssayPage() {
-      return this.$route.params.slug === '2026-10-22-four-years-after-vampire-survivors'
+      return this.$route.name === 'BlogPost'
     }
   }
 }
