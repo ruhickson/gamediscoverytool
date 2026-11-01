@@ -18,6 +18,15 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <style>
+    .lede a:link {
+      color: #5efc82; 
+    }
+    .lede a:visited {
+      color: #10b981;
+    }
+    .lede a:hover {
+      color: #c8ffd9;
+    }
     .chart { width: 100%; height: 360px; margin-top: 12px; }
     .chart.tall { height: 480px; }
     .chart.tags { height: 1480px; }
@@ -25,6 +34,44 @@
     .chart.bands { height: 820px; }
     .chart.profile { height: 820px; }
     .chart.stream { height: 440px; position: relative; }
+    .commentary {
+      margin-top: 16px;
+      padding: 14px 16px 12px;
+      background: var(--panel-alt);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .commentary .label {
+      margin: 0 0 6px;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .commentary p { margin: 0 0 0.35em; color: var(--ink); }
+    .commentary a,
+    .commentary a.link {
+      color: #5efc82;
+    }
+    .commentary a:visited {
+      color: #10b981;
+    }
+    .commentary a:hover {
+      color: #c8ffd9;
+    }
+    .commentary ul { margin: 0; padding-left: 1.15em; }
+    .commentary li { margin: 0.2em 0; }
+    footer.note {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
     .stream-tip {
       position: absolute;
       pointer-events: none;
@@ -172,23 +219,22 @@
   <div class="site">
     <div class="kicker">
       <span>Ru Hickson</span>
-      <span>Games released Jan 2020 – Oct 2026</span>
     </div>
 
-    <h1>Disclosure Day - AI's takeover of Steam</h1>
-    <p class="lede">Steam games released from January 2020 through 29 October 2026, split by AI disclosure or no AI disclosure on the store page.</p>
-    <div class="copy">
-      <p>Like I mentioned in the previous article on <a href="https://gamediscoverytool.com/blog/2026-10-22-four-years-after-vampire-survivors">Vampire Survivors</a> and its clones, the recent high profile issue of <a href="https://kotaku.com/the-proliferation-of-copycats-on-steam-makes-discovering-original-games-like-finding-a-needle-in-a-haystack-2000734794">Needle in a Haystack Simulator</a> being cloned using AI to steal territory is a growing problem on Steam. A major complaint with <a href="https://www.youtube.com/live/0P5Ef00RP3o?si=fpFvyDbb9qe-Xl__"></a>Steam Next Fest</a> was AI-generated copies of many games in the event were being promoted the same as the games they were based on, with the customer left to do the homework on whether or not the one they're looking at is the original.</p>
-      <p>This is a problem that is only growing, and Valve's stance on the matter so far is to remain somewhat hands-off, though they have indicated they are aware of it. Whether or not this is the right approach won't be debated here, but the trend is highly likely to accelerate until something changes. As a temporary measure, Valve ask developers to put in a voluntary disclosure over whether or not AI was used in the development of your game.</p>
-      <p><a href="https://store.steampowered.com/news/group/4145017/view/3862463747997849618"></a>This disclosure</a> is required simply for two categories: Pre-generated content (art/code/sound/etc) created with the help of AI tools during development and Live-Generated content (AI-generated content provided while playing the game). Which tools are used is not required. The generalised nature of this disclosure means it's impossible to discriminate between a game that was developed with AI used as a minor part of one of its workflows versus a game that was entirely generated with AI. Both will be flagged just the same.</p>
-      <p>I would like to start by saying this is purely an analysis of the growing trend of games on Steam where AI-generated content was used in development. There is a meatier piece of text at the end that will open things up for discussion, but in the interests of getting to the data first, I wanted to kick off with a single idea and take it from there.</p>
+    <img class="hero" width="100%" src="/danie-franco-OF2Jr51vxiI-unsplash.jpg" alt="Vampire Survivors key art" />
+    <h1 class="fade-up">Disclosure Day - AI's takeover of Steam</h1>
+    <p class="lede fade-up">Like I mentioned in the previous article on <a href="https://gamediscoverytool.com/blog/2026-10-22-four-years-after-vampire-survivors">Vampire Survivors</a> and its clones, the recent high profile issue of <a href="https://kotaku.com/the-proliferation-of-copycats-on-steam-makes-discovering-original-games-like-finding-a-needle-in-a-haystack-2000734794">Needle in a Haystack Simulator</a> being cloned using AI to steal territory is a growing problem on Steam. A major complaint with <a href="https://www.youtube.com/live/0P5Ef00RP3o?si=fpFvyDbb9qe-Xl__"></a>Steam Next Fest</a> was AI-generated copies of many games in the event were being promoted the same as the games they were based on, with the customer left to do the homework on whether or not the one they're looking at is the original.</p>
+    <p class="lede fade-up" style="animation-delay:80ms">
+      This is a problem that is only growing, and Valve's stance on the matter so far is to remain somewhat hands-off, though they have indicated they are aware of it. Whether or not this is the right approach won't be debated here, but the trend is highly likely to accelerate until something changes. As a temporary measure, Valve ask developers to put in a voluntary disclosure over whether or not AI was used in the development of your game.
+    </p>
+    <p class="lede fade-up" style="animation-delay:80ms"><a href="https://store.steampowered.com/news/group/4145017/view/3862463747997849618">This disclosure</a> is required simply for two categories: Pre-generated content (art/code/sound/etc) created with the help of AI tools during development and Live-Generated content (AI-generated content provided while playing the game). Which tools are used is not required. The generalised nature of this disclosure means it's impossible to discriminate between a game that was developed with AI used as a minor part of one of its workflows versus a game that was entirely generated with AI. Both will be flagged just the same.</p>
+      <p class="lede fade-up" style="animation-delay:80ms">I would like to start by saying this is purely an analysis of the growing trend of games on Steam where AI-generated content was used in development. There is a meatier piece of text at the end that will open things up for discussion, but in the interests of getting to the data first, I wanted to kick off with a single idea and take it from there.</p>
       <br />
-      <b><p>AI is going nowhere.</p></b>
+      <b><p class="lede fade-up" style="animation-delay:80ms">AI is going nowhere.</p></b>
       <br />
-      <p>We do hear about the imminent AI bubble bursting all the time, but this is in relation to the big AI companies that are pushing it everywhere they can. The truth is the technology is now so deeply integrated with everything in the world that, even if a bunch of these trillion-dollar companies collapse and fail, AI is here to stay. That's something we have to figure out how to navigate in the future.</p>
-      <p>But for the moment, let's talk about some games, shall we?</p>
-    </div>
-
+      <p class="lede fade-up" style="animation-delay:80ms">We do hear about the imminent AI bubble bursting all the time, but this is in relation to the big AI companies that are pushing it everywhere they can. The truth is the technology is now so deeply integrated with everything in the world that, even if a bunch of these trillion-dollar companies collapse and fail, AI is here to stay. That's something we have to figure out how to navigate in the future.</p>
+      <p class="lede fade-up" style="animation-delay:80ms">But for the moment, let's talk about some games, shall we?</p>
+      
     <div class="stats">
       <div class="stat"><div class="n" id="stat-total">—</div><div class="l">AI disclosure since Jan 2020</div></div>
       <div class="stat"><div class="n" id="stat-share">—</div><div class="l">AI disclosure share since Jan 2020</div></div>
@@ -232,7 +278,7 @@
           <p class="cap" id="cap-count">Bars are games released that month with an AI disclosure. The line is the running total.</p>
           <div class="axis-switch" role="group" aria-label="Time grain">
             <button type="button" class="axis-switch-option" data-grain="year" aria-pressed="false">Year</button>
-            <button type="button" class="axis-switch-option" data-grain="month" aria-pressed="true">Month</button>
+            <button type="button" class="axis-.chartswitch-option" data-grain="month" aria-pressed="true">Month</button>
             <button type="button" class="axis-switch-option" data-grain="day" aria-pressed="false">Day</button>
           </div>
         </div>
