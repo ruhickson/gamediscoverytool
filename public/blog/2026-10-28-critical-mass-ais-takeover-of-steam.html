@@ -153,8 +153,13 @@
       <section class="figure">
         <div class="figure-meta">
           <p class="eyebrow"></p>
-          <h2>Share of releases with an AI disclosure by month</h2>
+          <h2 id="share-title">Share of releases with an AI disclosure by month</h2>
           <p class="cap"></p>
+          <div class="axis-switch" role="group" aria-label="Time grain">
+            <button type="button" class="axis-switch-option" data-grain="year" aria-pressed="false">Year</button>
+            <button type="button" class="axis-switch-option" data-grain="month" aria-pressed="true">Month</button>
+            <button type="button" class="axis-switch-option" data-grain="day" aria-pressed="false">Day</button>
+          </div>
         </div>
         <div id="chart-share" class="chart"></div>
         <div class="commentary">
@@ -169,6 +174,11 @@
           <p class="eyebrow"></p>
           <h2 id="count-title">Count of releases with AI disclosure</h2>
           <p class="cap" id="cap-count">Bars are games released that month with an AI disclosure. The line is the running total.</p>
+          <div class="axis-switch" role="group" aria-label="Time grain">
+            <button type="button" class="axis-switch-option" data-grain="year" aria-pressed="false">Year</button>
+            <button type="button" class="axis-switch-option" data-grain="month" aria-pressed="true">Month</button>
+            <button type="button" class="axis-switch-option" data-grain="day" aria-pressed="false">Day</button>
+          </div>
         </div>
         <div id="chart-count" class="chart"></div>
         <div class="commentary">
@@ -304,14 +314,24 @@
         </div>
         <div id="chart-stream" class="chart stream"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>This chart doesn't actually use Steam's pre-definied categories, instead it delivers a percentage score for each game based on the number of positive reviews divided by the total number of reviews. Finally, we see the problem laid bare. AI-assisted games are taking up a large and growing amount of real estate in gaming's premier marketplace. Users are pretty good at identifying these games, hence the reason the majority of them come with 10 or fewer reviews.</p>
+          <p>What this shows is customers are pretty smart at identifying low-effort games, and these are the games where most people don't even both to play or review, yet the numbers of these games are still increasing at an incredible rate.</p>
+          <p>The interesting thing I find here is how the number of games with AI disclosures that score well (or indeed <i>very</i> well) are not rapidly increasing over time. If you take any point from Januaray 2025 onward, you generally get between 100-150 games scoring 70% or better, with one or two exceptions.</p>
+          <p>The problem here is the barrier to entry has been completely smashed and, when that happens, the market gets saturated by games are more than just low-effort, they have no sense of community or legacy.</p> 
         </div>
       </section>
     </div>
 
     <footer class="note">
-      <p>Counts are from the Games cube on 29 October 2026. The AI disclosure total in this window is 13,137, the same figure the Trends page reports as all-time.</p>
-      <p>Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a></p>
+      <p>
+        Thanks for reading. Please bookmark this site whenever you get bored and want to find new games. We try to keep it updated daily and plan to have a blog post once every two weeks.
+      </p>
+      <p>
+        Data for this analysis was collected from Steam's API, and complementary data that may or may not have been used comes from other publically-available sources including Is There Any Deal? and How Long To Beat. 
+      </p>
+      <p>
+        Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank" rel="noopener noreferrer">@hotbottledog.com</a>
+      </p>
     </footer>
   </div>
 
@@ -363,7 +383,9 @@
     };
     let windowsExtra = null;
     let vizPayload = null;
+    let dailyPayload = null;
     let current = null;
+    let releaseGrain = "month";
     const charts = {};
 
     function monthIndexes(months, start, end) {
@@ -426,31 +448,105 @@
 
     current = buildCurrent("all");
 
-    function monthLabel(value, index) {
-      if (current.months.length <= 12) return value;
-      if (value.endsWith("-01") || index === current.months.length - 1) return value;
+    function grainUnit() {
+      if (releaseGrain === "year") return "year";
+      if (releaseGrain === "day") return "day";
+      return "month";
+    }
+
+    function releaseSeries() {
+      if (releaseGrain === "year") {
+        const labels = [];
+        const declared = [];
+        const other = [];
+        current.months.forEach((month, index) => {
+          const year = month.slice(0, 4);
+          if (labels.at(-1) !== year) {
+            labels.push(year);
+            declared.push(0);
+            other.push(0);
+          }
+          declared[declared.length - 1] += current.declared[index];
+          other[other.length - 1] += current.other[index];
+        });
+        return { labels, declared, other };
+      }
+      if (releaseGrain === "day" && dailyPayload) {
+        const labels = [];
+        const declared = [];
+        const other = [];
+        dailyPayload.days.forEach((day, index) => {
+          const month = day.slice(0, 7);
+          if (month < current.start || month > current.end) return;
+          labels.push(day);
+          declared.push(dailyPayload.declared[index]);
+          other.push(dailyPayload.other[index]);
+        });
+        return { labels, declared, other };
+      }
+      return { labels: current.months, declared: current.declared, other: current.other };
+    }
+
+    function bucketLabel(value, index, labels) {
+      if (releaseGrain === "year") return value;
+      if (releaseGrain === "day") {
+        if (labels.length > 400) return value.slice(0, 4);
+        if (labels.length > 45) return value.slice(0, 7);
+        return value.slice(5);
+      }
+      if (labels.length <= 12) return value;
+      if (value.endsWith("-01") || index === labels.length - 1) return value;
       return "";
     }
 
-    function categoryAxis(boundaryGap) {
+    function categoryAxis(labels, boundaryGap) {
+      const sparseDays = releaseGrain === "day" && labels.length > 45;
       return {
         type: "category",
-        data: current.months,
+        data: labels,
         boundaryGap,
-        axisLabel: { ...axisText, interval: 0, rotate: 40, formatter: monthLabel },
+        axisLabel: {
+          ...axisText,
+          interval: sparseDays
+            ? (index, value) => labels.length > 400
+              ? value.endsWith("-01-01")
+              : value.endsWith("-01") || index === labels.length - 1
+            : 0,
+          rotate: releaseGrain === "month" && labels.length > 12 ? 40 : 0,
+          hideOverlap: true,
+          formatter: (value, index) => bucketLabel(value, index, labels)
+        },
         axisLine: { lineStyle: { color: "#3d4a5c" } },
         axisTick: { alignWithLabel: true }
       };
     }
 
+    function syncGrainSwitches() {
+      document.querySelectorAll("[data-grain]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.grain === releaseGrain));
+        if (button.dataset.bound) return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          if (releaseGrain === button.dataset.grain) return;
+          releaseGrain = button.dataset.grain;
+          syncGrainSwitches();
+          renderShare();
+          renderCount();
+        });
+      });
+    }
+
     charts.share = echarts.init(document.getElementById("chart-share"));
     function renderShare() {
-      const declaredShare = current.months.map((_, index) => {
-        const total = current.declared[index] + current.other[index];
-        return total ? (current.declared[index] / total) * 100 : 0;
+      syncGrainSwitches();
+      const series = releaseSeries();
+      document.getElementById("share-title").textContent = `Share of releases with an AI disclosure by ${grainUnit()}`;
+      const declaredShare = series.labels.map((_, index) => {
+        const total = series.declared[index] + series.other[index];
+        return total ? (series.declared[index] / total) * 100 : 0;
       });
       const otherShare = declaredShare.map((value) => 100 - value);
-      const oneMonth = current.months.length < 3;
+      const oneBucket = series.labels.length < 3;
       charts.share.setOption({
       animationDuration: 650,
       tooltip: {
@@ -458,16 +554,16 @@
         trigger: "axis",
         formatter(params) {
           const index = params[0].dataIndex;
-          const declared = current.declared[index];
-          const other = current.other[index];
+          const declared = series.declared[index];
+          const other = series.other[index];
           const total = declared + other;
           const share = total ? (declared / total) * 100 : 0;
-          return `<b>${current.months[index]}</b><br/>AI disclosure: <b>${declared.toLocaleString("en-US")}</b> (${share.toFixed(1)}%)<br/>No AI disclosure: <b>${other.toLocaleString("en-US")}</b> (${(100 - share).toFixed(1)}%)`;
+          return `<b>${series.labels[index]}</b><br/>AI disclosure: <b>${declared.toLocaleString("en-US")}</b> (${share.toFixed(1)}%)<br/>No AI disclosure: <b>${other.toLocaleString("en-US")}</b> (${(100 - share).toFixed(1)}%)`;
         }
       },
       legend: { top: 0, textStyle: axisText },
       grid: { left: 48, right: 18, top: 36, bottom: 48 },
-      xAxis: categoryAxis(oneMonth),
+      xAxis: categoryAxis(series.labels, oneBucket),
       yAxis: {
         type: "value",
         min: 0,
@@ -481,7 +577,7 @@
           type: "line",
           stack: "share",
           data: declaredShare,
-          symbol: oneMonth ? "circle" : "none",
+          symbol: oneBucket ? "circle" : "none",
           symbolSize: 8,
           lineStyle: { width: 1.5, color: "#d4af37" },
           itemStyle: { color: "#d4af37" },
@@ -492,7 +588,7 @@
           type: "line",
           stack: "share",
           data: otherShare,
-          symbol: oneMonth ? "circle" : "none",
+          symbol: oneBucket ? "circle" : "none",
           symbolSize: 8,
           lineStyle: { width: 1.5, color: "#94a3b8" },
           itemStyle: { color: "#64748b" },
@@ -504,14 +600,17 @@
 
     charts.count = echarts.init(document.getElementById("chart-count"));
     function renderCount() {
+      syncGrainSwitches();
+      const series = releaseSeries();
+      const unit = grainUnit();
       const cumulative = [];
-      current.declared.reduce((running, value) => {
+      series.declared.reduce((running, value) => {
         const next = running + value;
         cumulative.push(next);
         return next;
       }, 0);
       document.getElementById("count-title").textContent = current.title;
-      document.getElementById("cap-count").textContent = `Bars are games released that month with an AI disclosure. The line is the running total ${current.phrase}.`;
+      document.getElementById("cap-count").textContent = `Bars are games released that ${unit} with an AI disclosure. The line is the running total ${current.phrase}.`;
       charts.count.setOption({
       animationDuration: 650,
       tooltip: {
@@ -519,16 +618,16 @@
         trigger: "axis",
         formatter(params) {
           const index = params[0].dataIndex;
-          return `<b>${current.months[index]}</b><br/>AI disclosure that month: <b>${current.declared[index].toLocaleString("en-US")}</b><br/>${current.totalName}: <b>${cumulative[index].toLocaleString("en-US")}</b>`;
+          return `<b>${series.labels[index]}</b><br/>AI disclosure that ${unit}: <b>${series.declared[index].toLocaleString("en-US")}</b><br/>${current.totalName}: <b>${cumulative[index].toLocaleString("en-US")}</b>`;
         }
       },
       legend: { top: 0, textStyle: axisText },
       grid: { left: 52, right: 58, top: 36, bottom: 48 },
-      xAxis: { ...categoryAxis(true), boundaryGap: true },
+      xAxis: { ...categoryAxis(series.labels, true), boundaryGap: true },
       yAxis: [
         {
           type: "value",
-          name: "Games / month",
+          name: `Games / ${unit}`,
           nameTextStyle: { ...axisText, color: "#d4af37" },
           axisLabel: { ...axisText, color: "#d4af37" },
           axisLine: { show: true, lineStyle: { color: "#d4af37" } },
@@ -544,18 +643,18 @@
       ],
       series: [
         {
-          name: "AI disclosure that month",
+          name: `AI disclosure that ${unit}`,
           type: "bar",
-          data: current.declared,
+          data: series.declared,
           itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
-          barMaxWidth: 14
+          barMaxWidth: unit === "year" ? 42 : unit === "day" ? 8 : 14
         },
         {
           name: current.totalName,
           type: "line",
           yAxisIndex: 1,
           data: cumulative,
-          symbol: current.months.length < 3 ? "circle" : "none",
+          symbol: series.labels.length < 3 ? "circle" : "none",
           smooth: 0.15,
           lineStyle: { width: 2.25, color: "#7dd3fc" },
           itemStyle: { color: "#7dd3fc" }
@@ -572,6 +671,7 @@
     let tagsByGap = false;
     let scatterAsShare = true;
     let streamStacked = false;
+    const hiddenStreamBands = new Set();
     function renderTags() {
       const aiShare = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
       const otherShare = (count) => (current.otherTotal ? (count / current.otherTotal) * 100 : 0);
@@ -829,18 +929,43 @@
 
     const bandColors = ["#059669", "#34d399", "#a7f3d0", "#fb923c", "#f87171", "#d4af37"];
 
+    function visibleStreamBands(stream) {
+      const visible = stream.bands.filter((band) => !hiddenStreamBands.has(band));
+      return visible.length ? visible : [stream.bands[0]];
+    }
+
     function drawStream(el, stream) {
       el.replaceChildren();
+      const visible = visibleStreamBands(stream);
       const legend = document.createElement("div");
-      legend.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 4px 0;font:11px Figtree,sans-serif;color:#94a3b8";
+      legend.style.cssText = "display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 4px 0";
       stream.bands.forEach((band, index) => {
-        const item = document.createElement("span");
-        item.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${bandColors[index]};margin-right:6px;vertical-align:-2px"></span>${band}`;
+        const on = visible.includes(band);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.setAttribute("aria-pressed", String(on));
+        item.title = on ? `Hide ${band}` : `Show ${band}`;
+        item.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:transparent;font:11px Figtree,sans-serif;cursor:pointer;color:${on ? "#e8eef7" : "#64748b"}`;
+        const swatch = document.createElement("span");
+        swatch.style.cssText = `display:inline-block;width:12px;height:12px;border-radius:2px;background:${on ? bandColors[index] : "transparent"};box-shadow:${on ? "none" : `inset 0 0 0 1.5px ${bandColors[index]}`}`;
+        item.append(swatch, document.createTextNode(band));
+          item.addEventListener("click", () => {
+          if (on) {
+            if (visible.length === 1) return;
+            hiddenStreamBands.add(band);
+          } else {
+            hiddenStreamBands.delete(band);
+          }
+          drawStream(el, stream);
+          writeStreamCaption();
+        });
         legend.appendChild(item);
       });
       el.appendChild(legend);
+      const bandIndex = new Map(stream.bands.map((band, index) => [band, index]));
+      const countAt = (band, monthIndex) => stream.counts[bandIndex.get(band)][monthIndex] || 0;
       if (stream.months.length < 2) {
-        const counts = stream.bands.map((_, index) => stream.counts[index][0] || 0);
+        const counts = visible.map((band) => countAt(band, 0));
         const wrap = document.createElement("div");
         wrap.style.cssText = "display:flex;align-items:stretch;gap:18px;height:360px;padding:18px 8px 8px";
         const bar = document.createElement("div");
@@ -848,17 +973,17 @@
         const list = document.createElement("div");
         list.style.cssText = "display:flex;flex-direction:column;justify-content:center;gap:8px;font:13px Figtree,sans-serif;color:#e8eef7";
         const monthTotal = counts.reduce((sum, count) => sum + count, 0);
-        stream.bands.forEach((band, index) => {
+        visible.forEach((band, index) => {
           const part = document.createElement("div");
           part.style.flex = String(Math.max(counts[index], 0));
-          part.style.background = bandColors[index];
+          part.style.background = bandColors[bandIndex.get(band)];
           bar.appendChild(part);
           const share = monthTotal ? (counts[index] / monthTotal) * 100 : 0;
           const shown = streamStacked
             ? `${share.toFixed(1)}% (${counts[index].toLocaleString("en-US")})`
             : counts[index].toLocaleString("en-US");
           const row = document.createElement("div");
-          row.innerHTML = `<span style="color:${bandColors[index]}">●</span> ${band}: <b>${shown}</b>`;
+          row.innerHTML = `<span style="color:${bandColors[bandIndex.get(band)]}">●</span> ${band}: <b>${shown}</b>`;
           list.appendChild(row);
         });
         wrap.append(bar, list);
@@ -870,15 +995,15 @@
       const margin = { top: 16, right: 12, bottom: 32, left: 48 };
       const rows = stream.months.map((month, index) => {
         const row = { month };
-        const total = stream.bands.reduce((sum, _, bandIndex) => sum + (stream.counts[bandIndex][index] || 0), 0);
-        stream.bands.forEach((band, bandIndex) => {
-          const count = stream.counts[bandIndex][index] || 0;
+        const total = visible.reduce((sum, band) => sum + countAt(band, index), 0);
+        visible.forEach((band) => {
+          const count = countAt(band, index);
           row[band] = streamStacked ? (total ? (count / total) * 100 : 0) : count;
         });
         return row;
       });
       const layers = d3.stack()
-        .keys([...stream.bands].reverse())
+        .keys([...visible].reverse())
         .order(d3.stackOrderNone)
         .offset(streamStacked ? d3.stackOffsetNone : d3.stackOffsetSilhouette)(rows);
       const x = d3.scaleTime()
@@ -926,7 +1051,7 @@
         .selectAll("path")
         .data(layers)
         .join("path")
-        .attr("fill", (layer) => bandColors[stream.bands.indexOf(layer.key)])
+        .attr("fill", (layer) => bandColors[bandIndex.get(layer.key)])
         .attr("fill-opacity", 0.92)
         .attr("d", area);
       const rule = svg.append("line")
@@ -959,14 +1084,14 @@
           const month = rows[nearest].month;
           const xPos = x(new Date(`${month}-01`));
           rule.attr("x1", xPos).attr("x2", xPos).style("display", null);
-          const total = stream.bands.reduce((sum, _, index) => sum + stream.counts[index][nearest], 0);
-          const lines = stream.bands.map((band, index) => {
-            const count = stream.counts[index][nearest];
+          const total = visible.reduce((sum, band) => sum + countAt(band, nearest), 0);
+          const lines = visible.map((band) => {
+            const count = countAt(band, nearest);
             const share = total ? (count / total) * 100 : 0;
             const shown = streamStacked
               ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
               : count.toLocaleString("en-US");
-            return `<div><span style="color:${bandColors[index]}">●</span> ${band}: <b>${shown}</b></div>`;
+            return `<div><span style="color:${bandColors[bandIndex.get(band)]}">●</span> ${band}: <b>${shown}</b></div>`;
           }).join("");
           tip.innerHTML = `<b>${month}</b><div>${total.toLocaleString("en-US")} games</div>${lines}`;
           tip.style.display = "block";
@@ -1288,17 +1413,19 @@
       scatterShare.setAttribute("aria-pressed", String(scatterAsShare));
     }
 
-    function renderStreamCharts() {
-      const stream = current.stream;
+    function writeStreamCaption() {
+      const stream = current && current.stream;
       const streamCap = document.getElementById("cap-stream");
+      if (!stream || !streamCap) return;
       const single = stream.months.length < 2;
       const fewIndex = stream.bands.indexOf("10 or fewer reviews");
       const fewCount = fewIndex >= 0 ? sum(stream.counts[fewIndex]) : 0;
+      const focused = hiddenStreamBands.size > 0;
       const lead = single
         ? `One month, so the bands are a stacked bar rather than a stream.`
         : streamStacked
-          ? `100% stacked. Each month’s ribbons sum to 100%. The 95–100% band is the top ribbon.`
-          : `Stream graph. Ribbons are counts, displaced around the center of the axis. The 95–100% band is the top ribbon.`;
+          ? `100% stacked. Each month’s ribbons sum to 100%${focused ? " of the bands still showing" : ""}. The 95–100% band is the top ribbon.`
+          : `Stream graph. Ribbons are counts, displaced around the center of the axis.${focused ? " The scale fits the bands still showing." : " The 95–100% band is the top ribbon."}`;
       const streamRibbon = document.getElementById("stream-ribbon");
       const streamStackedButton = document.getElementById("stream-stacked");
       if (streamRibbon && streamStackedButton) {
@@ -1318,7 +1445,12 @@
       const heldOut = stream.unscored
         ? ` ${stream.unscored.toLocaleString("en-US")} games have more than 10 reviews but no positive and negative split, so they are not in the chart.`
         : "";
-      streamCap.textContent = `${lead} Games with 10 or fewer reviews are the gold ribbon: ${fewCount.toLocaleString("en-US")} in this window. Every other ribbon is the review percentage of games with more than 10 reviews, positive reviews divided by positive plus negative reviews.${heldOut}`;
+      streamCap.textContent = `${lead} Click a band to leave it out. Games with 10 or fewer reviews are the gold ribbon: ${fewCount.toLocaleString("en-US")} in this window. Every other ribbon is the review percentage of games with more than 10 reviews, positive reviews divided by positive plus negative reviews.${heldOut}`;
+    }
+
+    function renderStreamCharts() {
+      writeStreamCaption();
+      const stream = current.stream;
       drawStream(document.getElementById("chart-stream"), stream);
       renderFreePaid(current.freePaid);
       renderInitialPrice(current.price);
@@ -1387,8 +1519,10 @@
 
     Promise.all([
       fetch("/blog/critical-mass-viz.json").then((response) => response.json()),
-      fetch("/blog/critical-mass-windows.json").then((response) => response.json())
-    ]).then(([viz, windows]) => {
+      fetch("/blog/critical-mass-windows.json").then((response) => response.json()),
+      fetch("/blog/critical-mass-daily.json").then((response) => response.json()).catch(() => null)
+    ]).then(([viz, windows, daily]) => {
+      dailyPayload = daily;
       vizPayload = viz;
       windowsExtra = windows;
       const select = document.getElementById("window");
