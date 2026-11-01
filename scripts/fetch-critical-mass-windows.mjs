@@ -242,6 +242,11 @@ for (const [key, range] of Object.entries(WINDOWS)) {
   ])
   const aiMap = new Map([...aiKnown, ...aiFilled])
   const otherMap = new Map([...otherKnown, ...otherFilled])
+  const missingChartOther = chartTags.map((tag) => tag.name).filter((name) => !otherMap.has(name))
+  if (missingChartOther.length) {
+    const filled = await tagCounts(false, range, missingChartOther)
+    for (const [name, count] of filled) otherMap.set(name, count)
+  }
   const clusters = names.map((name) => ({
     name,
     ai: aiMap.get(name) || 0,
@@ -253,7 +258,11 @@ for (const [key, range] of Object.entries(WINDOWS)) {
   const texts = await disclosures(range, `disclosures-${key}.json`)
   out[key] = {
     freePaid,
-    tags: chartTags.map((tag) => ({ name: tag.name, ai: tag.count })),
+    tags: chartTags.map((tag) => ({
+      name: tag.name,
+      ai: tag.count,
+      other: otherMap.get(tag.name) || 0
+    })),
     clusters,
     reviews: { ai: aiReviews, other: otherReviews },
     words: titleWords(games),

@@ -74,6 +74,9 @@
       background: #d4af37;
       color: #121a2b;
     }
+    .axis-switch + .axis-switch {
+      margin-left: 8px;
+    }
     .chart.cloud { height: 520px; }
     .window-filter {
       display: flex;
@@ -203,29 +206,38 @@
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">Tags</p>
+          <p class="eyebrow"></p>
           <h2>Top 100 tags on games with an AI disclosure</h2>
-          <p class="cap" id="cap-tags">The hundred tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.</p>
+          <p class="cap" id="cap-tags">The hundred tags attached to the most games with an AI disclosure since January 2020, except Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual. Those seven are by far the most common, so they are left out. Gold is games with an AI disclosure. Cyan is games with no AI disclosure. Distance to the right, and bubble size, are how many games in that group carry the tag.</p>
           <div class="axis-switch" role="group" aria-label="Tag chart scale">
             <button type="button" id="tags-count" class="axis-switch-option" aria-pressed="true">Count</button>
             <button type="button" id="tags-share" class="axis-switch-option" aria-pressed="false">% of All Releases</button>
           </div>
+          <div class="axis-switch" role="group" aria-label="Tag chart sort">
+            <button type="button" id="tags-sort-common" class="axis-switch-option" aria-pressed="true">Most common</button>
+            <button type="button" id="tags-sort-gap" class="axis-switch-option" aria-pressed="false">Biggest difference in % of all releases</button>
+          </div>
         </div>
         <div id="chart-tags" class="chart tags"></div>
         <div class="commentary">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p>Above is a list of the most common tags attached to the games with an AI disclosure. Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual have all been removed as they are common and nearly ubiquitous to both categories.</p>
+          <p>Looking at the biggest difference in % of all releases. There are notably more games tagged with Simulation, strategy, Management, Economy, Idler, and Incremental that have AI disclosure. A lot of these games feature complicated and nebulous systems where an AI can "close the circle" in terms of everything that's required to make the game complete.</p>
+          <p>There is an unsurprising large gap when it comes to Roguelites, since the genre by design often has somewhat restrained level design. Focusing less on the play area than the game's mechanics, putting players in a randomly generated arena based on a few templates is easier and faster to get a model to do than have a curated, hand-crafted series of levels.</p>
+          <p>Platformer is an outlier here, being the most common tag that favours non-AI disclosure. This is possibly down to the fact most game engines have a platformer template that developers can piggyback off to make their own game, and a large number of online game developer courses are of the ilk "make your own platformer". Along with the fact platformers are one of the simpler game types out there, some combination of these circumstances likely explains this anomaly.</p>  
+          <p>Though surprising at first glance, the relatively large difference when it comes to Immersive Sim and Choices Matter is probably explained by how these types of games (that normally require a large amount of curation) are given more room to "breathe" through the generation of on-the-fly outcomes. Normally these types of games would be highly curated in their design, but using AI-generated content to assist interactions could conceivably lower the barrier to making one of these.</p>
         </div>
       </section>
 
       <section class="figure">
         <div class="figure-meta">
-          <p class="eyebrow">Review labels</p>
-          <h2>Review score by AI disclosure</h2>
+          <p class="eyebrow"></p>
+          <h2>But are AI-disclosed games any use?</h2>
           <p class="cap" id="cap-reviews">Population pyramid. No AI disclosure extends left. AI disclosure extends right. A bar is that label’s share of its own group since January 2020, so each side sums to 100 percent.</p>
         </div>
         <div id="chart-reviews" class="chart bars"></div>
         <div class="commentary">
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <p></p>
         </div>
       </section>
 
@@ -286,7 +298,7 @@
   </div>
 
   <script>
-    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181},{"name":"Indie","ai":7746},{"name":"Casual","ai":6921},{"name":"2D","ai":5975},{"name":"3D","ai":4481},{"name":"Action","ai":4410},{"name":"Adventure","ai":4226},{"name":"Simulation","ai":4050},{"name":"Strategy","ai":3753},{"name":"Atmospheric","ai":3016},{"name":"Colorful","ai":2896},{"name":"First-Person","ai":2631},{"name":"RPG","ai":2589},{"name":"Exploration","ai":2402},{"name":"Early Access","ai":2380},{"name":"Puzzle","ai":2373},{"name":"Relaxing","ai":2358},{"name":"Cute","ai":2318},{"name":"Fantasy","ai":2246},{"name":"Pixel Graphics","ai":2048},{"name":"Combat","ai":1989},{"name":"Story Rich","ai":1987},{"name":"Arcade","ai":1923},{"name":"Stylized","ai":1912},{"name":"Multiplayer","ai":1831},{"name":"Top-Down","ai":1815},{"name":"Funny","ai":1660},{"name":"PvE","ai":1658},{"name":"Choices Matter","ai":1609},{"name":"Realistic","ai":1603},{"name":"Horror","ai":1601},{"name":"Action-Adventure","ai":1601},{"name":"Family Friendly","ai":1569},{"name":"Roguelite","ai":1470},{"name":"Roguelike","ai":1430},{"name":"Sci-fi","ai":1423},{"name":"Management","ai":1419},{"name":"Resource Management","ai":1395},{"name":"Free to Play","ai":1348},{"name":"Third Person","ai":1328},{"name":"PvP","ai":1311},{"name":"Dark","ai":1301},{"name":"Controller","ai":1285},{"name":"Shooter","ai":1249},{"name":"Mystery","ai":1236},{"name":"Multiple Endings","ai":1222},{"name":"Immersive Sim","ai":1208},{"name":"Retro","ai":1201},{"name":"Anime","ai":1177},{"name":"Psychological Horror","ai":1173},{"name":"Linear","ai":1167},{"name":"Physics","ai":1144},{"name":"Survival","ai":1113},{"name":"2D Platformer","ai":1071},{"name":"Cartoony","ai":1062},{"name":"Idler","ai":1030},{"name":"Visual Novel","ai":1030},{"name":"Economy","ai":979},{"name":"Comedy","ai":974},{"name":"Minimalist","ai":965},{"name":"Character Customization","ai":961},{"name":"Action Roguelike","ai":960},{"name":"Sandbox","ai":953},{"name":"Tactical","ai":944},{"name":"Turn-Based Tactics","ai":944},{"name":"Medieval","ai":923},{"name":"Card Game","ai":918},{"name":"Life Sim","ai":915},{"name":"Logic","ai":910},{"name":"Turn-Based Strategy","ai":910},{"name":"Point & Click","ai":894},{"name":"Text-Based","ai":883},{"name":"Online Co-Op","ai":843},{"name":"Co-op","ai":838},{"name":"Hidden Object","ai":831},{"name":"Dark Fantasy","ai":829},{"name":"Open World","ai":822},{"name":"Magic","ai":807},{"name":"Female Protagonist","ai":804},{"name":"Interactive Fiction","ai":793},{"name":"Action RPG","ai":776},{"name":"Procedural Generation","ai":773},{"name":"Building","ai":773},{"name":"Crafting","ai":772},{"name":"Choose Your Own Adventure","ai":758},{"name":"Walking Simulator","ai":756},{"name":"Space","ai":747},{"name":"Turn-Based Combat","ai":737},{"name":"Artificial Intelligence","ai":733},{"name":"3D Platformer","ai":730},{"name":"Platformer","ai":727},{"name":"Old School","ai":714},{"name":"Incremental","ai":714},{"name":"FPS","ai":714},{"name":"Time Management","ai":714},{"name":"Score Attack","ai":711},{"name":"Futuristic","ai":698},{"name":"Cartoon","ai":682},{"name":"Deckbuilding","ai":675},{"name":"Emotional","ai":660}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
+    const DATA = {"asOf":"2026-10-29","months":["2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"],"declared":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,8,9,9,12,1,6,2,2,9,6,13,9,8,11,13,14,8,6,16,14,16,12,18,20,16,14,97,123,115,149,151,180,187,181,219,239,253,219,222,301,279,341,287,265,351,292,376,412,367,357,311,621,600,553,641,826,993,1113,1240],"other":[632,659,593,683,736,679,780,776,746,895,798,812,683,794,865,827,847,834,872,875,923,1089,905,967,833,825,1007,795,987,702,874,930,974,1051,1047,977,924,1007,1157,1067,1098,1026,1046,1146,1115,1267,1203,1162,1176,1342,1241,1240,1415,1281,1398,1452,1291,1638,1600,1423,1315,1266,1651,1600,1469,1448,1053,1268,1251,1500,1514,1212,1043,852,1528,1431,1170,1012,1115,1231,1190,1043],"genres":[{"name":"Indie","ai":9577,"not":61917},{"name":"Casual","ai":6538,"not":40335},{"name":"Action","ai":4204,"not":34708},{"name":"Adventure","ai":4067,"not":34643},{"name":"Simulation","ai":3859,"not":19161},{"name":"Strategy","ai":3512,"not":17281},{"name":"RPG","ai":2528,"not":16110},{"name":"Early Access","ai":2303,"not":9461},{"name":"Free To Play","ai":1614,"not":10338},{"name":"Sports","ai":544,"not":3492}],"tags":[{"name":"Singleplayer","ai":10181,"other":60830},{"name":"Indie","ai":7746,"other":42133},{"name":"Casual","ai":6921,"other":38084},{"name":"2D","ai":5975,"other":33372},{"name":"3D","ai":4481,"other":26933},{"name":"Action","ai":4410,"other":34255},{"name":"Adventure","ai":4226,"other":32678},{"name":"Simulation","ai":4050,"other":17684},{"name":"Strategy","ai":3753,"other":17558},{"name":"Atmospheric","ai":3016,"other":18521},{"name":"Colorful","ai":2896,"other":19470},{"name":"First-Person","ai":2631,"other":14945},{"name":"RPG","ai":2589,"other":14729},{"name":"Exploration","ai":2402,"other":17032},{"name":"Early Access","ai":2380,"other":10427},{"name":"Puzzle","ai":2373,"other":17332},{"name":"Relaxing","ai":2358,"other":12398},{"name":"Cute","ai":2318,"other":16471},{"name":"Fantasy","ai":2246,"other":13776},{"name":"Pixel Graphics","ai":2048,"other":17171},{"name":"Combat","ai":1989,"other":11604},{"name":"Story Rich","ai":1987,"other":14333},{"name":"Arcade","ai":1923,"other":13993},{"name":"Stylized","ai":1912,"other":10998},{"name":"Multiplayer","ai":1831,"other":10610},{"name":"Top-Down","ai":1815,"other":10113},{"name":"Funny","ai":1660,"other":11188},{"name":"PvE","ai":1658,"other":7985},{"name":"Choices Matter","ai":1609,"other":7311},{"name":"Realistic","ai":1603,"other":7462},{"name":"Horror","ai":1601,"other":10603},{"name":"Action-Adventure","ai":1601,"other":12767},{"name":"Family Friendly","ai":1569,"other":10412},{"name":"Roguelite","ai":1470,"other":6107},{"name":"Roguelike","ai":1430,"other":6635},{"name":"Sci-fi","ai":1423,"other":9145},{"name":"Management","ai":1419,"other":5147},{"name":"Resource Management","ai":1395,"other":4403},{"name":"Free to Play","ai":1348,"other":8463},{"name":"Third Person","ai":1328,"other":8990},{"name":"PvP","ai":1311,"other":7108},{"name":"Dark","ai":1301,"other":7727},{"name":"Controller","ai":1285,"other":10074},{"name":"Shooter","ai":1249,"other":9936},{"name":"Mystery","ai":1236,"other":7718},{"name":"Multiple Endings","ai":1222,"other":6828},{"name":"Immersive Sim","ai":1208,"other":4620},{"name":"Retro","ai":1201,"other":10024},{"name":"Anime","ai":1177,"other":7578},{"name":"Psychological Horror","ai":1173,"other":7060},{"name":"Linear","ai":1167,"other":9428},{"name":"Physics","ai":1144,"other":7470},{"name":"Survival","ai":1113,"other":6823},{"name":"2D Platformer","ai":1071,"other":9118},{"name":"Cartoony","ai":1062,"other":8556},{"name":"Idler","ai":1030,"other":3063},{"name":"Visual Novel","ai":1030,"other":5869},{"name":"Economy","ai":979,"other":2493},{"name":"Comedy","ai":974,"other":6738},{"name":"Minimalist","ai":965,"other":7527},{"name":"Character Customization","ai":961,"other":5524},{"name":"Action Roguelike","ai":960,"other":4967},{"name":"Sandbox","ai":953,"other":5002},{"name":"Tactical","ai":944,"other":4639},{"name":"Turn-Based Tactics","ai":944,"other":4136},{"name":"Medieval","ai":923,"other":4431},{"name":"Card Game","ai":918,"other":2878},{"name":"Life Sim","ai":915,"other":2858},{"name":"Logic","ai":910,"other":5363},{"name":"Turn-Based Strategy","ai":910,"other":4077},{"name":"Point & Click","ai":894,"other":6070},{"name":"Text-Based","ai":883,"other":3115},{"name":"Online Co-Op","ai":843,"other":4012},{"name":"Co-op","ai":838,"other":5144},{"name":"Hidden Object","ai":831,"other":4959},{"name":"Dark Fantasy","ai":829,"other":3837},{"name":"Open World","ai":822,"other":5699},{"name":"Magic","ai":807,"other":5375},{"name":"Female Protagonist","ai":804,"other":7327},{"name":"Interactive Fiction","ai":793,"other":4301},{"name":"Action RPG","ai":776,"other":4853},{"name":"Procedural Generation","ai":773,"other":4428},{"name":"Building","ai":773,"other":4631},{"name":"Crafting","ai":772,"other":3894},{"name":"Choose Your Own Adventure","ai":758,"other":3979},{"name":"Walking Simulator","ai":756,"other":4217},{"name":"Space","ai":747,"other":4680},{"name":"Turn-Based Combat","ai":737,"other":3981},{"name":"Artificial Intelligence","ai":733,"other":1614},{"name":"3D Platformer","ai":730,"other":5735},{"name":"Platformer","ai":727,"other":9475},{"name":"Old School","ai":714,"other":5420},{"name":"Incremental","ai":714,"other":994},{"name":"FPS","ai":714,"other":5343},{"name":"Time Management","ai":714,"other":2527},{"name":"Score Attack","ai":711,"other":4247},{"name":"Futuristic","ai":698,"other":4605},{"name":"Cartoon","ai":682,"other":4986},{"name":"Deckbuilding","ai":675,"other":2094},{"name":"Emotional","ai":660,"other":4137}],"years":["2020","2021","2022","2023","2024","2025","2026"],"reviewOrder":["Overwhelmingly Positive","Very Positive","Mostly Positive","Positive","Mixed","Mostly Negative","Negative","Very Negative","Overwhelmingly Negative","1–9 reviews","No user reviews","No score recorded"],"aiReviews":{"Overwhelmingly Positive":[0,0,5,3,6,9,11],"Very Positive":[0,6,18,42,196,295,288],"Mostly Positive":[0,3,17,27,155,187,273],"Positive":[0,1,9,35,302,528,631],"Mixed":[0,1,20,12,195,259,312],"Mostly Negative":[0,0,3,0,34,30,60],"Negative":[0,0,0,0,5,2,9],"Very Negative":[0,0,0,0,0,0,3],"Overwhelmingly Negative":[0,0,0,0,0,0,0],"1–9 reviews":[0,0,11,39,806,1679,2867],"No user reviews":[0,1,3,6,209,585,2200],"No score recorded":[0,0,0,0,0,138,601]},"otherReviews":{"Overwhelmingly Positive":[137,156,148,155,234,146,75],"Very Positive":[1637,1792,1825,2111,2598,2312,1044],"Mostly Positive":[1169,1215,1274,1317,1397,1001,481],"Positive":[1404,1849,1995,2433,3214,3203,1636],"Mixed":[1466,1709,1639,1644,1512,948,444],"Mostly Negative":[185,217,224,212,172,107,54],"Negative":[41,38,26,20,28,7,2],"Very Negative":[1,1,1,4,3,3,1],"Overwhelmingly Negative":[0,1,1,0,2,0,2],"1–9 reviews":[2463,3082,3386,4500,5975,6297,3865],"No user reviews":[286,421,483,805,1357,1924,1854],"No score recorded":[0,0,0,17,5,599,2157]}};
 
     const omittedTags = new Set(["Singleplayer", "Indie", "Action", "Adventure", "2D", "3D", "Casual"]);
     const axisText = { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 };
@@ -539,44 +551,58 @@
 
     charts.tags = echarts.init(document.getElementById("chart-tags"));
     let tagsAsShare = false;
+    let tagsByGap = false;
     function renderTags() {
+      const aiShare = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const otherShare = (count) => (current.otherTotal ? (count / current.otherTotal) * 100 : 0);
+      const shareGap = (row) => Math.abs(aiShare(row.ai) - otherShare(row.other || 0));
       const tagRows = current.tags
         .filter((row) => !omittedTags.has(row.name))
-        .sort((a, b) => b.ai - a.ai || a.name.localeCompare(b.name))
+        .sort((a, b) => tagsByGap
+          ? shareGap(b) - shareGap(a) || a.name.localeCompare(b.name)
+          : b.ai - a.ai || a.name.localeCompare(b.name))
         .slice(0, 100);
-      const tagMax = Math.max(...tagRows.map((row) => row.ai));
-      const tagMin = Math.min(...tagRows.map((row) => row.ai));
-      const tagSize = (count) => {
-        if (!count || tagMax === tagMin) return 12;
-        const t = (count - tagMin) / (tagMax - tagMin);
-        return 10 + t * 18;
+      const sizeScale = (counts) => {
+        const max = Math.max(...counts);
+        const min = Math.min(...counts);
+        return (value, params) => {
+          const count = params.data.count;
+          if (!count || max === min) return 12;
+          return 10 + ((count - min) / (max - min)) * 18;
+        };
       };
-      const shareOf = (count) => (current.aiTotal ? (count / current.aiTotal) * 100 : 0);
+      const shownValue = (count, share) => tagsAsShare
+        ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
+        : count.toLocaleString("en-US");
       const host = document.getElementById("chart-tags");
-      host.style.height = `${Math.max(1480, tagRows.length * 32 + 72)}px`;
+      host.style.height = `${Math.max(1480, tagRows.length * 32 + 80)}px`;
       charts.tags.resize();
       const omitted = "Singleplayer, Indie, Action, Adventure, 2D, 3D, and Casual";
+      const scope = `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Gold is an AI disclosure. Cyan is no AI disclosure.`;
+      const order = tagsByGap
+        ? " Ordered by the biggest difference in % of all releases between the two groups."
+        : "";
       document.getElementById("cap-tags").textContent = tagsAsShare
-        ? `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Distance to the right is that tag’s share of all releases with an AI disclosure. Bubble size is the count.`
-        : `The hundred tags attached to the most games with an AI disclosure ${current.phrase}, except ${omitted}. Those seven are by far the most common, so they are left out. Distance to the right, and bubble size, are the number of those games carrying that tag.`;
+        ? `${scope}${order} Distance to the right is that tag’s share of all releases in its own group. The two groups are scaled separately. Bubble size is the count.`
+        : `${scope}${order} Distance to the right, and bubble size, are how many games in that group carry the tag.`;
       charts.tags.setOption({
       animationDuration: 650,
       tooltip: {
         ...tooltipBase,
         trigger: "item",
         formatter(params) {
-          const count = params.data.count;
-          const share = shareOf(count);
-          const shown = tagsAsShare
-            ? `${share.toFixed(1)}% (${count.toLocaleString("en-US")})`
-            : count.toLocaleString("en-US");
-          return `<b>${params.data.name}</b><br/>AI disclosure: <b>${shown}</b>`;
+          const row = tagRows.find((item) => item.name === params.data.name);
+          const other = row.other || 0;
+          const gap = aiShare(row.ai) - otherShare(other);
+          const ahead = gap >= 0 ? "AI disclosure" : "No AI disclosure";
+          return `<b>${row.name}</b><br/>No AI disclosure: <b>${shownValue(other, otherShare(other))}</b><br/>AI disclosure: <b>${shownValue(row.ai, aiShare(row.ai))}</b><br/>${ahead} is <b>${Math.abs(gap).toFixed(1)}</b> points higher`;
         }
       },
-      grid: { left: 8, right: 28, top: 12, bottom: 36, containLabel: true },
+      legend: { top: 0, textStyle: axisText },
+      grid: { left: 8, right: 28, top: 36, bottom: 36, containLabel: true },
       xAxis: {
         type: "value",
-        name: tagsAsShare ? "% of all releases" : "AI disclosure",
+        name: tagsAsShare ? "% of all releases" : "Games",
         nameLocation: "middle",
         nameGap: 26,
         nameTextStyle: axisText,
@@ -592,20 +618,35 @@
         axisLine: { lineStyle: { color: "#3d4a5c" } },
         splitLine: { show: true, lineStyle: { color: "rgba(61, 74, 92, 0.35)" } }
       },
-      series: [{
-        name: "AI disclosure",
-        type: "scatter",
-        data: tagRows.map((row) => ({
-          name: row.name,
-          value: [tagsAsShare ? shareOf(row.ai) : row.ai, row.name],
-          count: row.ai
-        })),
-        symbolSize: (value, params) => tagSize(params.data.count),
-        itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
-      }]
+      series: [
+        {
+          name: "No AI disclosure",
+          type: "scatter",
+          data: tagRows.map((row) => ({
+            name: row.name,
+            value: [tagsAsShare ? otherShare(row.other || 0) : (row.other || 0), row.name],
+            count: row.other || 0
+          })),
+          symbolSize: sizeScale(tagRows.map((row) => row.other || 0)),
+          itemStyle: { color: "#22d3ee", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+        },
+        {
+          name: "AI disclosure",
+          type: "scatter",
+          data: tagRows.map((row) => ({
+            name: row.name,
+            value: [tagsAsShare ? aiShare(row.ai) : row.ai, row.name],
+            count: row.ai
+          })),
+          symbolSize: sizeScale(tagRows.map((row) => row.ai)),
+          itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+        }
+      ]
     }, { notMerge: true });
       const tagsCount = document.getElementById("tags-count");
       const tagsShare = document.getElementById("tags-share");
+      const tagsSortCommon = document.getElementById("tags-sort-common");
+      const tagsSortGap = document.getElementById("tags-sort-gap");
       if (tagsCount && tagsShare) {
         tagsCount.setAttribute("aria-pressed", String(!tagsAsShare));
         tagsShare.setAttribute("aria-pressed", String(tagsAsShare));
@@ -618,6 +659,20 @@
           };
           tagsCount.addEventListener("click", () => choose(false));
           tagsShare.addEventListener("click", () => choose(true));
+        }
+      }
+      if (tagsSortCommon && tagsSortGap) {
+        tagsSortCommon.setAttribute("aria-pressed", String(!tagsByGap));
+        tagsSortGap.setAttribute("aria-pressed", String(tagsByGap));
+        if (!tagsSortCommon.dataset.bound) {
+          tagsSortCommon.dataset.bound = "true";
+          const chooseSort = (byGap) => {
+            if (tagsByGap === byGap) return;
+            tagsByGap = byGap;
+            renderTags();
+          };
+          tagsSortCommon.addEventListener("click", () => chooseSort(false));
+          tagsSortGap.addEventListener("click", () => chooseSort(true));
         }
       }
     }
