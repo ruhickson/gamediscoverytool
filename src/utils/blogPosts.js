@@ -1,5 +1,11 @@
 const POSTS = [
   {
+    slug: '2026-11-01-diclosure-day-ais-takeover-of-steam',
+    publishedAt: '2026-11-01',
+    draft: false,
+    file: '/blog/2026-11-01-disclosure-day-ais-takeover-of-steam.html'
+  },
+  {
     slug: '2026-10-22-four-years-after-vampire-survivors',
     publishedAt: '2026-10-22',
     file: '/blog/2026-10-22-four-years-after-vampire-survivors.html'
@@ -9,12 +15,6 @@ const POSTS = [
     publishedAt: '2026-10-28',
     draft: true,
     file: '/blog/2026-10-28-farewell-bioware-the-impact-of-mass-effect.html'
-  },
-  {
-    slug: '2026-10-28-critical-mass-ais-takeover-of-steam',
-    publishedAt: '2026-10-28',
-    draft: true,
-    file: '/blog/2026-10-28-critical-mass-ais-takeover-of-steam.html'
   }
 ]
 
