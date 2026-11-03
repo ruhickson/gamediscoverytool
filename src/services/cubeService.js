@@ -141,7 +141,9 @@ const LS_EXCLUDE_TAG_PREFIX = 'gd_exclude_tag_v1:'
 const LS_CONTENT_DESC_KEY = 'gd_exclude_content_desc_v1'
 export const ADULT_CONTENT_TAGS = ['Sexual Content', 'Hentai']
 const tagAppIdCache = new Map() // tag -> { ts, appIds }
+const tagAppIdInFlight = new Map() // tag -> Promise<number[]>
 let contentDescriptorMemoryCache = null // { ts, appIds }
+let contentDescriptorInFlight = null // Promise<number[]> | null
 
 function readJsonCache(key, ttlMs) {
   try {
@@ -176,10 +178,22 @@ async function getCachedAppIdsForTag(tag) {
     return fromLs
   }
 
-  const appIds = await getAppIdsForTag(tag)
-  tagAppIdCache.set(tag, { ts: Date.now(), appIds })
-  writeJsonCache(`${LS_EXCLUDE_TAG_PREFIX}${tag}`, appIds)
-  return appIds
+  if (tagAppIdInFlight.has(tag)) {
+    return tagAppIdInFlight.get(tag)
+  }
+
+  const promise = getAppIdsForTag(tag)
+    .then((appIds) => {
+      tagAppIdCache.set(tag, { ts: Date.now(), appIds })
+      writeJsonCache(`${LS_EXCLUDE_TAG_PREFIX}${tag}`, appIds)
+      return appIds
+    })
+    .finally(() => {
+      tagAppIdInFlight.delete(tag)
+    })
+
+  tagAppIdInFlight.set(tag, promise)
+  return promise
 }
 
 async function getCachedContentDescriptorAppIds() {
@@ -196,10 +210,21 @@ async function getCachedContentDescriptorAppIds() {
     return fromLs
   }
 
-  const appIds = await getAppIdsForContentDescriptors()
-  contentDescriptorMemoryCache = { ts: Date.now(), appIds }
-  writeJsonCache(LS_CONTENT_DESC_KEY, appIds)
-  return appIds
+  if (contentDescriptorInFlight) {
+    return contentDescriptorInFlight
+  }
+
+  contentDescriptorInFlight = getAppIdsForContentDescriptors()
+    .then((appIds) => {
+      contentDescriptorMemoryCache = { ts: Date.now(), appIds }
+      writeJsonCache(LS_CONTENT_DESC_KEY, appIds)
+      return appIds
+    })
+    .finally(() => {
+      contentDescriptorInFlight = null
+    })
+
+  return contentDescriptorInFlight
 }
 
 /**
@@ -1144,7 +1169,6 @@ export async function getTagsForAppId(appId, limit = 5) {
 // Filters games that contain: sexual assault, non-consensual, BDSM, extreme violence, or rape
 export async function getAppIdsForContentDescriptors() {
   try {
-    // Define the problematic content descriptor patterns
     const problematicPatterns = [
       'sexual assault',
       'non-consensual',
@@ -1152,63 +1176,28 @@ export async function getAppIdsForContentDescriptors() {
       'extreme violence',
       'rape'
     ]
-    
-    // Try different possible dimension names for content_descriptors
-    const possibleDimensionNames = [
-      'Games.contentDescriptors',
-      'Games.content_descriptors',
-      'Games.contentDescriptor'
-    ]
-    
-    for (const dimensionName of possibleDimensionNames) {
-      try {
-        const query = {
-          dimensions: [
-            'Games.appId',
-            dimensionName
-          ],
-          filters: [
-            { member: 'Games.type', operator: 'equals', values: ['game'] }
-          ]
-        }
-        
-        const result = await queryCube(query)
-        
-        if (Array.isArray(result) && result.length > 0) {
-          // Filter results client-side based on content descriptor patterns
-          const excludedAppIds = []
-          
-          for (const row of result) {
-            const contentDescriptors = row[dimensionName]
-            if (!contentDescriptors) continue
-            
-            // Convert to lowercase string for case-insensitive matching
-            const descriptorsStr = String(contentDescriptors).toLowerCase()
-            
-            // Check if any problematic pattern matches
-            for (const pattern of problematicPatterns) {
-              if (descriptorsStr.includes(pattern.toLowerCase())) {
-                excludedAppIds.push(row['Games.appId'])
-                break // Only add once per game
-              }
-            }
-          }
-          
-          console.log(`Found ${excludedAppIds.length} games with problematic content descriptors using dimension: ${dimensionName}`)
-          return [...new Set(excludedAppIds)]
-        }
-      } catch (dimensionError) {
-        // Try next dimension name
-        continue
-      }
+
+    // Push the ILIKE filter down to Postgres via Cube's `contains` operator
+    // instead of pulling all 145k rows and spilling temp files to disk.
+    const query = {
+      dimensions: ['Games.appId'],
+      filters: [
+        { member: 'Games.type', operator: 'equals', values: ['game'] },
+        { member: 'Games.contentDescriptors', operator: 'contains', values: problematicPatterns }
+      ]
     }
-    
-    // If none of the dimension names worked, log a warning
-    console.warn('content_descriptors dimension not found. Content descriptor filtering may not work. Make sure content_descriptors is exposed as a Cube.js dimension.')
+
+    const result = await queryCube(query)
+    if (Array.isArray(result) && result.length > 0) {
+      const excludedAppIds = result
+        .map(row => row['Games.appId'])
+        .filter(id => id !== null && id !== undefined)
+      return [...new Set(excludedAppIds)]
+    }
+
     return []
   } catch (error) {
     console.error('Error fetching app IDs for content descriptors:', error)
-    // Return empty array on error to avoid breaking the filtering flow
     return []
   }
 }
