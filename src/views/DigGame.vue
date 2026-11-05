@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { drawFrame } from '../game/digRender.js'
 import {
   appendDiscover,
@@ -110,7 +110,6 @@ import {
   VIEW_W
 } from '../game/digWorld.js'
 import {
-  fetchEarliestReleaseDate,
   dealTagGroups,
   loadTagPool,
   TAG_ROUND_COUNT,
@@ -119,7 +118,7 @@ import {
   runDigSearch,
   warmAdultExclusion
 } from '../game/digQuery.js'
-import { formatDay, todayYmd } from '../game/digDates.js'
+import { todayYmd } from '../game/digDates.js'
 import { linkDetails, track } from '../services/analytics.js'
 import {
   applyEffect,
@@ -150,7 +149,6 @@ const shortfall = ref(null)
 const error = ref('')
 const status = ref('')
 const shareNote = ref('')
-const earliest = ref('')
 const picks = reactive(freshPicks())
 
 const totalStops = computed(() => TAG_ROUND_COUNT + 3)
@@ -187,7 +185,6 @@ let lastFrame = 0
 let nextMoveAt = 0
 let searchGen = 0
 let gameHits = []
-let earliestPromise = null
 let walkTarget = null
 let pendingBoxTaps = 0
 const held = new Set()
@@ -280,18 +277,6 @@ function advance() {
   beginSearch()
 }
 
-function ensureEarliest() {
-  if (!earliestPromise) {
-    earliestPromise = fetchEarliestReleaseDate()
-      .then((date) => {
-        if (date) earliest.value = date
-        return date || ''
-      })
-      .catch(() => '')
-  }
-  return earliestPromise
-}
-
 function playerInSlot(index) {
   const slot = world?.choice?.slots?.find((entry) => entry.optionIndex === index)
   if (!slot) return false
@@ -317,29 +302,7 @@ async function choose(index) {
   walkTarget = null
   phase.value = 'resolving'
   if (world.choice) world.choice.selected = index
-  let effect = { ...option.effect }
-  if (effect.type === 'recency' && effect.id === 'before-2020' && !effect.minDate) {
-    status.value = 'Reading the earliest release date…'
-    try {
-      const date = await ensureEarliest()
-      if (!date) throw new Error('Could not read the earliest release date.')
-      const detail = `${formatDay(date)} – ${formatDay('2019-12-31')}`
-      effect = {
-        ...effect,
-        minDate: date,
-        maxDate: '2019-12-31',
-        label: detail,
-        historyLabel: `Before 2020 (${detail})`
-      }
-    } catch (err) {
-      error.value = err.message || 'Could not read the earliest release date.'
-      status.value = ''
-      phase.value = 'choice'
-      if (world?.choice) world.choice.pending = false
-      return
-    }
-    status.value = ''
-  }
+  const effect = { ...option.effect }
   await wait(160)
   if (phase.value !== 'resolving') return
   applyEffect(picks, effect)
@@ -658,17 +621,6 @@ function loop(now) {
   raf = requestAnimationFrame(loop)
 }
 
-watch(earliest, (date) => {
-  if (!date || active.value?.kind !== 'recency' || phase.value === 'resolving') return
-  active.value = recencyEncounter(todayYmd(), date)
-  if (world?.choice && !world.choice.resolved) {
-    active.value.options.forEach((option, index) => {
-      const slot = world.choice.slots.find((entry) => entry.optionIndex === index)
-      if (slot) slot.label = option.label
-    })
-  }
-})
-
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
@@ -677,7 +629,6 @@ onMounted(async () => {
     startLevel()
     ready.value = true
     await nextTick()
-    ensureEarliest()
     warmAdultExclusion()
     lastFrame = performance.now()
     raf = requestAnimationFrame(loop)

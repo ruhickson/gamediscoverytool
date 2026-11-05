@@ -1028,9 +1028,7 @@ async function queryDigWindow({
   minDate = null,
   maxDate = null
 }) {
-  const filters = [
-    { member: 'Games.type', operator: 'equals', values: ['game'] }
-  ]
+  const filters = []
   if (tag) filters.push({ member: 'GameTags.tag', operator: 'equals', values: [tag] })
   if (appIds?.length) filters.push({ member: 'Games.appId', operator: 'equals', values: appIds })
   appendReviewScoreFilter(filters, { reviewScore: 'Any', reviewScoreOrBetter: false, reviewScores })
@@ -1048,9 +1046,9 @@ async function queryDigWindow({
       'Games.appId',
       'Games.totalReviewsValue'
     ],
-    filters,
     order: [['Games.totalReviewsValue', 'desc']]
   }
+  if (filters.length) query.filters = filters
   if (minDate && maxDate) {
     query.timeDimensions = [{ dimension: 'Games.releaseDate', dateRange: [minDate, maxDate] }]
   }
@@ -1058,10 +1056,35 @@ async function queryDigWindow({
   return shapeDigRows(await queryCube(query, 4, 1))
 }
 
+async function queryDigTagMatches(appIds, tags) {
+  if (!appIds?.length || !tags?.length) return new Map()
+  const rows = await queryCube({
+    dimensions: ['GameTags.appId', 'GameTags.tag'],
+    filters: [
+      { member: 'GameTags.appId', operator: 'equals', values: appIds },
+      { member: 'GameTags.tag', operator: 'equals', values: tags }
+    ],
+    limit: Math.min(50000, appIds.length * tags.length)
+  }, 4, 1)
+  const matchedByAppId = new Map()
+  for (const row of rows || []) {
+    const key = digAppKey(row['GameTags.appId'] ?? row.appId)
+    const tag = row['GameTags.tag'] ?? row.tag
+    if (!key || !tag) continue
+    let set = matchedByAppId.get(key)
+    if (!set) {
+      set = new Set()
+      matchedByAppId.set(key, set)
+    }
+    set.add(tag)
+  }
+  return matchedByAppId
+}
+
 /**
  * Top matches for DIIIG. One bounded query on the rarest tag, then the other
- * tags are checked only against those games. Adult games are dropped locally
- * so the request does not carry the full exclusion list.
+ * tags are checked against `GameTags` in a single request for newly fetched IDs.
+ * Adult games are dropped locally so the request does not carry the full exclusion list.
  */
 export async function findDigMatches({
   tags = null,
@@ -1070,9 +1093,10 @@ export async function findDigMatches({
   maxReviews = 10000000,
   minDate = null,
   maxDate = null,
-  limit = 3
+  limit = 3,
+  allowAnyDate = false
 }) {
-  if (!minDate || !maxDate) return []
+  if ((!minDate || !maxDate) && !allowAnyDate) return []
   const wanted = (Array.isArray(tags) ? tags : []).filter(Boolean)
   const excluded = new Set(
     (await resolveExcludedAppIds({ includeAdultGames: false })).map(digAppKey)
@@ -1090,22 +1114,24 @@ export async function findDigMatches({
   }
 
   const shared = { reviewScores, minReviews, maxReviews, minDate, maxDate }
+  const checkedHasAllRest = new Map()
   let matched = []
   for (const windowSize of DIG_WINDOWS) {
     const anchorRows = await queryDigWindow({ tag: anchor, limit: windowSize, ...shared })
     const eligible = anchorRows.filter((row) => !excluded.has(digAppKey(row['Games.appId'])))
     matched = eligible
     if (rest.length && eligible.length) {
-      const ids = eligible.map((row) => row['Games.appId'])
-      const others = await Promise.all(rest.map((tag) => (
-        queryDigWindow({ tag, appIds: ids, limit: ids.length, ...shared })
-      )))
-      let keep = new Set(eligible.map((row) => digAppKey(row['Games.appId'])))
-      for (const rows of others) {
-        const have = new Set(rows.map((row) => digAppKey(row['Games.appId'])))
-        keep = new Set([...keep].filter((id) => have.has(id)))
+      const uncheckedRows = eligible.filter((row) => !checkedHasAllRest.has(digAppKey(row['Games.appId'])))
+      if (uncheckedRows.length) {
+        const uncheckedIds = uncheckedRows.map((row) => row['Games.appId'])
+        const tagsByAppId = await queryDigTagMatches(uncheckedIds, rest)
+        for (const row of uncheckedRows) {
+          const key = digAppKey(row['Games.appId'])
+          const matchedTags = tagsByAppId.get(key)
+          checkedHasAllRest.set(key, Boolean(matchedTags && rest.every((tag) => matchedTags.has(tag))))
+        }
       }
-      matched = eligible.filter((row) => keep.has(digAppKey(row['Games.appId'])))
+      matched = eligible.filter((row) => checkedHasAllRest.get(digAppKey(row['Games.appId'])))
     }
     matched.sort((a, b) => (
       (Number(b['Games.totalReviewsValue']) || 0) - (Number(a['Games.totalReviewsValue']) || 0)

@@ -1,4 +1,4 @@
-import { findGames, findDigMatches, ADULT_CONTENT_TAGS, resolveExcludedAppIds } from '../services/cubeService.js'
+import { findDigMatches, ADULT_CONTENT_TAGS, resolveExcludedAppIds } from '../services/cubeService.js'
 import { getTopTagsByCount } from '../services/tagsSearchEngine.js'
 import { getItadUrl } from '../services/itadService.js'
 import { constraintsOf, queryFromConstraints } from './digRules.js'
@@ -65,28 +65,7 @@ function ymdFromCube(value) {
   return ''
 }
 
-export async function fetchEarliestReleaseDate() {
-  const rows = await findGames({
-    tags: null,
-    reviewScore: 'Any',
-    reviewScores: null,
-    minReviews: 0,
-    maxReviews: 10000000,
-    minDate: '1900-01-01',
-    maxDate: '2019-12-31',
-    limit: 1,
-    reviewScoreOrBetter: false,
-    hours: null,
-    aiDeclaration: 'any',
-    excludeTags: null,
-    includeAdultGames: false,
-    orderBy: 'release_date_asc',
-    strict: true
-  })
-  return ymdFromCube(rows[0]?.['Games.releaseDate'])
-}
-
-export async function runDigSearch(picks) {
+export async function runDigSearch(picks, options = {}) {
   const tags = (picks.tags || []).filter(Boolean)
   return findDigMatches({
     tags,
@@ -95,7 +74,8 @@ export async function runDigSearch(picks) {
     maxReviews: picks.maxReviews == null ? 10000000 : picks.maxReviews,
     minDate: picks.minDate || null,
     maxDate: picks.maxDate || null,
-    limit: 3
+    limit: options.limit ?? 3,
+    allowAnyDate: Boolean(options.allowAnyDate)
   })
 }
 
@@ -131,11 +111,14 @@ export async function nameEmptiedConstraint(picks, fullCount) {
   const target = fullCount === 0 ? 1 : 3
   for (let index = constraints.length - 1; index >= 0; index -= 1) {
     const relaxed = queryFromConstraints(constraints.filter((_, other) => other !== index))
-    const rows = await runDigSearch(relaxed)
+    const rows = await runDigSearch(relaxed, { limit: target, allowAnyDate: true })
     if (rows.length >= target) return constraints[index].name
   }
   for (let index = 0; index < constraints.length; index += 1) {
-    const rows = await runDigSearch(queryFromConstraints(constraints.slice(0, index + 1)))
+    const rows = await runDigSearch(
+      queryFromConstraints(constraints.slice(0, index + 1)),
+      { limit: target, allowAnyDate: true }
+    )
     if (rows.length < target) return constraints[index].name
   }
   return constraints[constraints.length - 1]?.name || 'the combined filters'

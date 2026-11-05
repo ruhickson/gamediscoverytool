@@ -265,12 +265,7 @@ function clonePicks(picks) {
 }
 
 export function constraintsOf(picks) {
-  const constraints = picks.tags.map((tag) => ({
-    name: `tag "${tag}"`,
-    apply(query) {
-      query.tags.push(tag)
-    }
-  }))
+  const constraints = []
   if (picks.minDate && picks.maxDate) {
     const minDate = picks.minDate
     const maxDate = picks.maxDate
@@ -279,6 +274,14 @@ export function constraintsOf(picks) {
       apply(query) {
         query.minDate = minDate
         query.maxDate = maxDate
+      }
+    })
+  }
+  for (const tag of picks.tags) {
+    constraints.push({
+      name: `tag "${tag}"`,
+      apply(query) {
+        query.tags.push(tag)
       }
     })
   }

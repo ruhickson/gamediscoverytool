@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <script>
+    if (window.top === window.self) {
+      window.location.replace("/blog/2026-11-05-itch-io-and-the-ai-problem");
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Open Gate: How Vibe-Coding and AI Slop Overtook itch.io in 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700;800&family=Figtree:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/essay.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+  <style>
+    .site {
+      max-width: none;
+    }
+
+    .lede {
+      max-width: none;
+    }
+
+    .hero {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 4px 0 22px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+    }
+
+    .copy {
+      max-width: none;
+      margin: 0 0 28px;
+      color: var(--ink);
+    }
+
+    .copy p {
+      margin: 0 0 1em;
+    }
+
+    .copy p:last-child {
+      margin-bottom: 0;
+    }
+
+    .copy h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin: 1.6em 0 0.55em;
+      color: var(--ink);
+    }
+
+    .copy.closing {
+      margin: 40px 0 0;
+      padding-top: 28px;
+      border-top: 1px solid var(--line);
+    }
+
+    .copy.closing h2:first-child {
+      margin-top: 0;
+    }
+
+    .chart {
+      width: 100%;
+      height: 360px;
+      margin-top: 10px;
+    }
+
+    .chart.tall {
+      height: 560px;
+    }
+
+    .chart.tags-tall {
+      height: 1120px;
+    }
+
+    .chart.short {
+      height: 320px;
+    }
+
+    .chart.square {
+      height: 520px;
+    }
+
+    .figure-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .axis-switch {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--paper);
+      flex-shrink: 0;
+    }
+
+    .axis-switch button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: 600 12px var(--font-body);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .axis-switch button[aria-pressed="true"] {
+      background: var(--signal-soft);
+      color: var(--accent-hover);
+    }
+
+    .table-wrap {
+      margin-top: 12px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+    }
+
+    .review-roll {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .review-roll th,
+    .review-roll td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(61, 74, 92, 0.55);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .review-roll th {
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--panel-alt);
+    }
+
+    .review-roll td.num,
+    .review-roll th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .review-roll td.game-cell {
+      white-space: normal;
+      min-width: 220px;
+    }
+
+    .review-roll tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .review-roll a,
+    .review-roll a:visited {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .review-roll a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge.ai {
+      background: rgba(212, 175, 55, 0.18);
+      color: #e6c45a;
+      border: 1px solid rgba(212, 175, 55, 0.45);
+    }
+
+    .badge.non {
+      background: rgba(34, 211, 238, 0.14);
+      color: #67e8f9;
+      border: 1px solid rgba(34, 211, 238, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="site">
+    <div class="kicker">
+      <span>Ru Hickson</span>
+    </div>
+    <img class="hero" width="100%" src="/Itch.io_logo.webp" alt="itch.io logo" />
+    <h1>itch.io and the AI problem</h1>
+    <p class="lede">Earlier this week, I posted about how October was the first month games with AI disclosure overtook
+      games without one on Steam. Bear in mind that Steam releases are gated behind a $100 application fee and store QA
+      review queue to act as a speed bump against automated
+      publishing. But on itch.io the barrier to submission does not exist. This is not a criticism of its approach.
+      itch.io is an incredible resource for aspiring developers to get their games published and playable. It just
+      highlights that whatever challenges Steam has, itch will have even greater ones.</p>
+
+    <div class="copy">
+      <p>Between January and October 2026, generative AI usage on itch.io went from 17.6% to 56.4% across the platform.
+      </p>
+      <p>In my article covering <a
+          href="https://gamediscoverytool.com/blog/2026-11-01-diclosure-day-ais-takeover-of-steam">Steam's AI
+          onslaught</a>, we watched AI-disclosed releases reach over 50% share of monthly launches by October 2026. But
+        Steam provides many hurdles for the developer to overcome, things like tax and banking verification, a $100
+        submission fee per title, and it must pass through manual build checks. What happens on a platform where
+        publishing a playable browser game or asset pack takes seconds and costs nothing?</p>
+      <p>To find out, I began indexing the entirety of itch.io, though all that's needed to compare to Steam is what has
+        been released so far in its 2026 catalog—<strong>496,929 storefront
+          releases</strong> published between January 1 and October 31, 2026 (plus another 2,530 dead or purged pages
+        already scrubbed from the servers). Also earlier this week, itch had a <a
+          href="https://bsky.app/profile/itch.io/post/3mzev6ghw5s2x">highly public removal of thousands of
+          projects that didn't meet their standards</a> and have begun to enforce more detail when it comes to what a
+        project's AI disclosure entails. Unlike Steam’s single free-text disclosure box, itch.io asks creators a
+        structured question when publishing: <em>Does this project contain the output of Generative AI?</em> If a
+        creator answers yes, itch.io prompts them to check which parts were generated: <strong>Code</strong>,
+        <strong>Graphics</strong>, <strong>Text</strong>, or <strong>Sounds</strong>.
+      </p>
+      <p>The resulting dataset is interesting in how it gives much more resolution than Steam does. We'll take a look at
+        that now.</p>
+    </div>
+
+    <section class="stats" aria-label="2026 itch.io summary figures">
+      <div class="stat">
+        <div class="n" id="stat-total">496,929</div>
+        <div class="l">2026 itch.io releases (Jan–Oct)</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="stat-ai">158,747</div>
+        <div class="l">AI-disclosed releases (31.9%)</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="stat-oct">56.4%</div>
+        <div class="l">October 2026 AI share (52,573)</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="stat-code">64.8%</div>
+        <div class="l">AI disclosures citing Code (102,906)</div>
+      </div>
+    </section>
+
+    <section class="figures">
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2 id="share-title">Share of 2026 itch.io releases by AI disclosure status</h2>
+            <p class="cap" id="cap-share"></p>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Disclosure grouping">
+            <button type="button" id="share-three" aria-pressed="true">3-way split</button>
+            <button type="button" id="share-two" aria-pressed="false">AI vs. Non-AI</button>
+          </div>
+        </div>
+        <div id="chart-share" class="chart"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>What we see in the above graph is AI disclosure and explicit "No generative AI" disclosure (transparent)
+            and "Undisclosed" (not-transparent). For the first seven months of 2026, non-AI releases comprised the
+            majority on itch.io. In January 2026, out of 37,572
+            releases, <strong>6,629 (17.6%)</strong> disclosed generative AI, while <strong>23,624 (62.9%)</strong>
+            explicitly declared <em>“No generative AI was used”</em> and 7,319 (19.5%) left the disclosure blank.</p>
+          <p>The number of games with AI disclosure was essentially growing at around 1,000 titles per month until July,
+            when it grew to 2,000 extra per month. Alarmingly, between September and October, the number <strong>more
+              than doubled</strong>.</p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2 id="count-title">Monthly AI-disclosed vs. Non-AI releases in 2026</h2>
+            <p class="cap" id="cap-count"></p>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Release filter">
+            <button type="button" id="count-all" aria-pressed="true">All releases</button>
+            <button type="button" id="count-web" aria-pressed="false">Browser-playable only</button>
+          </div>
+        </div>
+        <div id="chart-count" class="chart"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>The surge in growth is even more noticeable here. Look at the jump from September to October. The number of
+            releases went from 23k to 52k. That is an untenable level of growth. Of course, most of these submissions
+            were AI asset flips designed to flood and saturate the site in the hope of maximising monetisation, either
+            directly or indirectly.</p>
+          <p>itch.io were swift in removing many terabytes of "ai slop", but the reality is not all ~30,000 new games
+            were scythed from their pages. As already covered in the Steam article, a game being developed with the aid
+            of AI doesn't necessarily condemn it to the "slop" pile. And many of the last two years' most popular and
+            positively-reviewed titles used AI.</p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>itch.io Creators' Primary Use Cases</h2>
+            <p class="cap" id="cap-modalities"></p>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Modality view">
+            <button type="button" id="mod-any" aria-pressed="true">By category (any checkbox)</button>
+            <button type="button" id="mod-combo" aria-pressed="false">Exact combinations</button>
+          </div>
+        </div>
+        <div id="chart-modalities" class="chart"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>Here is where we can get a taste of what could be. With a few simple tickboxes, the extent of what an AI
+            disclosure should be is clear to see for everyone. Whereas on Steam, the declaration when it comes to the
+            use of AI is binary, itch's solution is already visibly more powerful.</p>
+          <p>When looking at the <strong>Exact combinations</strong>, you can see <em>Code-only</em> usage is at 22.2%
+            of all releases with AI disclosures. Anecdotally, I find this quite low, considering AI has been interwoven
+            into IDEs for almost five years now, and it is inarguably a means to accelerate coding. Why I find it low is
+            the multitude of loud voices online who claim all AI-assisted releases likely use it for code only and
+            nothing else, but it's clear to see AI has been used for so much more than just the code explicitly, and
+            14.1% (almost 1/7th) of all projects use AI for Code, Graphics, Sounds, and in-game Text. This 14.1% would
+            likely be considered <em>vibe-coded</em> by consensus.</p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>Craft tools and AI growth</h2>
+            <p class="cap" id="cap-engines"></p>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Engine scale">
+            <button type="button" id="eng-count" aria-pressed="true">Games</button>
+            <button type="button" id="eng-share" aria-pressed="false">% within tool</button>
+          </div>
+        </div>
+        <div id="chart-engines" class="chart tall"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>A worrying item from February this year came from <a
+              href="https://www.pcguide.com/news/godot-maintainers-swamped-by-ai-generated-code-branded-ai-slop-as-changes-often-make-no-sense/">Remi
+              Verschelde, the lead maintainer of Godot</a>, in how the PRs to their open source git repo were becoming
+            overwhelmed with AI-generated content, making it a monumental task to review code that probably hasn't been
+            looked at by those who submitted it. Looking at the growth in the usage of Godot, in both AI and non-AI
+            instances, we can see where the exponentiality of the AI growth has come from. Godot has overtaken Unity as
+            the #1 game development engine on itch.io, so when the AI growth scales with it, it scales faster than with
+            any other technology. </p>
+          <p>The game engine with the highest percentage of AI-assisted releases is actually RPG Maker. Again, this is
+            anecdotally interesting due to the streamlined and beginner-friendly manner in which RPG Maker games are
+            formatted and scripted, which intuitively would suggest AI would not be a particularly in-demand asset here.
+            And yet, the numbers are significant, with 26.8% of all games developed in RPG Maker using AI in some
+            capacity.
+          </p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>Top Tags</h2>
+            <p class="cap" id="cap-tags"></p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="axis-switch" role="group" aria-label="Tag sort">
+              <button type="button" id="tags-sort-common" aria-pressed="true">Most common</button>
+              <button type="button" id="tags-sort-gap" aria-pressed="false">Biggest gap</button>
+            </div>
+            <div class="axis-switch" role="group" aria-label="Tag scale">
+              <button type="button" id="tags-count" aria-pressed="false">Games</button>
+              <button type="button" id="tags-share" aria-pressed="true">% of releases</button>
+            </div>
+          </div>
+        </div>
+        <div id="chart-tags" class="chart tags-tall"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p><em>Disclaimer: The three broadest format tags—<code>2D</code> (78,363 non-AI · 42,831 AI),
+              <code>Singleplayer</code> (50,718 non-AI · 35,454 AI), and <code>3D</code> (34,361 non-AI · 18,626
+              AI)—have been removed from this chart so their volume does not compress the scale for more
+              descriptive tags.</em> Please be warned that some of them are NSFW.</p>
+          <p>It feels significant that 54,331 projects have applied the tag <code>No AI</code> to their store page,
+            making it the second most common tag on this chart behind only <code>Pixel Art</code> (and fourth overall on
+            itch.io). Hilariously, <strong>648 projects</strong> checked “Yes, generative AI was used” in the mandatory
+            compliance form while also tagging themselves as <code>No AI</code>. Here are the top 10 highest-rated 2026
+            releases that disclosed generative AI while simultaneously wearing the <code>No AI</code> tag. Please note
+            that some of these include 18+ content:</p>
+          <ol style="margin:0.4em 0 0.85em;padding-left:1.35em;color:var(--ink)">
+            <li><a href="https://blue6050.itch.io/possup" target="_blank" rel="noopener">Possup</a> by Blue_Elixir —
+              <strong>4.50★</strong> (15 ratings) · disclosed <code>AI Assisted: Sounds</code>
+            </li>
+            <li><a href="https://zegamez.itch.io/desperate-pleasure-free" target="_blank" rel="noopener">Desperate
+                Pleasure Free</a> by zegamez — <strong>4.00★</strong> (11 ratings) · disclosed
+              <code>AI Assisted: Sounds</code>
+            </li>
+            <li><a href="https://zegamez.itch.io/desperate-pleasure" target="_blank" rel="noopener">Desperate
+                Pleasure</a> by zegamez — <strong>3.70★</strong> (10 ratings) · disclosed
+              <code>AI Assisted: Sounds</code>
+            </li>
+            <li><a href="https://master-linkuei.itch.io/columns-ii-md" target="_blank" rel="noopener">Columns II The
+                Voyage Through Time For the SEGA Mega Drive</a> by Master Linkuei — <strong>5.00★</strong> (6 ratings) ·
+              disclosed <code>AI Assisted: Code</code></li>
+            <li><a href="https://moon-trilogy.itch.io/lewd-elevator" target="_blank" rel="noopener">Lewd Elevator
+                [v0.2.4]</a> by Moon Trilogy — <strong>4.00★</strong> (6 ratings) · disclosed
+              <code>AI Assisted: Code, Text</code>
+            </li>
+            <li><a href="https://wolkyen.itch.io/20s-till-dawn" target="_blank" rel="noopener">20s till dawn</a> by
+              Wolkyen — <strong>4.80★</strong> (5 ratings) · disclosed <code>AI Assisted</code></li>
+            <li><a href="https://1344538926qqcom.itch.io/bridge-of-voices" target="_blank" rel="noopener">Bridge of
+                Voices</a> by 1344538926@qq.com — <strong>4.40★</strong> (5 ratings) · disclosed
+              <code>AI Assisted: Code, Graphics, Sounds</code>
+            </li>
+            <li><a href="https://acul4321.itch.io/plan-it-planet" target="_blank" rel="noopener">Plan-it Planet</a> by
+              acul4321 — <strong>3.80★</strong> (4 ratings) · disclosed <code>AI Assisted: Code</code></li>
+            <li><a href="https://glitcher241.itch.io/thebigbang" target="_blank" rel="noopener">The Big Bang</a> by
+              Glitcher — <strong>5.00★</strong> (3 ratings) · disclosed <code>AI Assisted: Text</code>
+            </li>
+            <li><a href="https://inin-studio.itch.io/wanyam" target="_blank" rel="noopener">วันยาม | Wanyam - (Demo)</a>
+              by ININ_Studio — <strong>5.00★</strong> (3 ratings) · disclosed
+              <code>AI Assisted: Code, Graphics, Sounds</code>
+            </li>
+          </ol>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>Free vs. Paid: AI-disclosed uploads are more than twice as likely to charge money</h2>
+            <p class="cap" id="cap-free"></p>
+          </div>
+        </div>
+        <div id="chart-free" class="chart short"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>About 1 in every 9 games with no AI disclosure require you to pay for them, whereas that number increases
+            to
+            about 1 in every 4 for those that do use AI.</p>
+          <p>It's hard not to think that there's some kind of "get rich quick" scheme being tested here when, despite
+            making up the minority of titles, the number of games with AI disclosures that require you to pay actually
+            outnumbers the number of paid non-AI games (37,878 vs. 37,801).</p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>Initial price of paid 2026 itch.io releases (€1 to €30+)</h2>
+            <p class="cap" id="cap-price"></p>
+          </div>
+          <div class="axis-switch" role="group" aria-label="Price axis scale">
+            <button type="button" id="price-count" aria-pressed="false">Games</button>
+            <button type="button" id="price-share" aria-pressed="true">% of paid releases</button>
+          </div>
+        </div>
+        <div id="chart-price" class="chart short"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>Over 60% of all paid AI disclosure games are priced at under €5. There is a spike at €9.99 and, weirdly,
+            more games are priced at €30+ than between €15 and €30. Go big or go home, I guess.
+          </p>
+        </aside>
+      </section>
+
+      <section class="figure">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow"></p>
+            <h2>But are they any good? Game ratings:</h2>
+            <p class="cap" id="cap-reviews"></p>
+          </div>
+        </div>
+        <div id="chart-reviews" class="chart"></div>
+        <aside class="commentary">
+          <p class="label"></p>
+          <p>As always, the player is the best judge of what's good. Just because a game uses AI doesn't mean it's bad,
+            but it is a pretty strong indicator. The very best games on itch this year are overwhelmingly in the
+            highest-scoring region: 4.75 - 5 stars - over half. Conversely, the quality split for games with AI
+            disclosure comes around the 4.25 stars mark, with half of all AI-developed games falling above and below
+            that mark.</p>
+        </aside>
+      </section>
+    </section>
+
+    <div class="copy closing">
+      <p>I don't want to dwell too much here because what I wrote on Monday still applies here, just to add that itch's
+        approach is already notably healthier than Steam's when it comes to the handling of AI. There is no simple fix
+        for any of this, no silver bullet that works for everyone, but this is about as good as a first step can be.</p>
+      <p>And if you are a gamer, trust yourself - gamers are clearly much more discerning when it comes to the quality
+        of these products than the platforms themselves or any algorithm could ever be.</p>
+      <p>But if your main concern is the flood of AI games obscuring your ability to discover new games, well, you might
+        want to <a href="https://gamediscoverytool.com/find">check out our new AI disclosure filter</a> on the search
+        page.</p>
+    </div>
+
+    <footer class="note">
+      <p>
+        Thanks for reading. Please bookmark this site whenever you get bored and want to find new games. We try to keep
+        it updated daily and plan to have a blog post once every two weeks.
+      </p>
+      <p>
+        Data for this analysis was collected from itch.io's API, and complementary data that may or may not have been
+        used comes from other publically-available sources including Steam API, Is There Any Deal? and How Long To Beat.
+      </p>
+      <p>
+        Bluesky: <a href="https://bsky.app/profile/hotbottledog.com" target="_blank"
+          rel="noopener noreferrer">@hotbottledog.com</a>
+      </p>
+    </footer>
+  </main>
+
+  <script>
+    const DATA = { "monthly": [{ "month": "2026-01", "total": 37572, "ai": 6629, "noAiExplicit": 23624, "undisclosed": 7319, "other": 30943, "webAi": 2870, "webOther": 12281 }, { "month": "2026-02", "total": 38596, "ai": 7092, "noAiExplicit": 24111, "undisclosed": 7393, "other": 31504, "webAi": 3352, "webOther": 13533 }, { "month": "2026-03", "total": 39592, "ai": 8262, "noAiExplicit": 23579, "undisclosed": 7751, "other": 31330, "webAi": 4092, "webOther": 13272 }, { "month": "2026-04", "total": 42022, "ai": 9897, "noAiExplicit": 24361, "undisclosed": 7764, "other": 32125, "webAi": 4698, "webOther": 14206 }, { "month": "2026-05", "total": 42794, "ai": 10701, "noAiExplicit": 24234, "undisclosed": 7859, "other": 32093, "webAi": 5233, "webOther": 13803 }, { "month": "2026-06", "total": 44814, "ai": 11094, "noAiExplicit": 25952, "undisclosed": 7768, "other": 33720, "webAi": 5681, "webOther": 15133 }, { "month": "2026-07", "total": 54005, "ai": 13593, "noAiExplicit": 32010, "undisclosed": 8402, "other": 40412, "webAi": 7117, "webOther": 19899 }, { "month": "2026-08", "total": 48558, "ai": 15679, "noAiExplicit": 24780, "undisclosed": 8099, "other": 32879, "webAi": 7502, "webOther": 13918 }, { "month": "2026-09", "total": 55787, "ai": 23227, "noAiExplicit": 24711, "undisclosed": 7849, "other": 32560, "webAi": 10977, "webOther": 13829 }, { "month": "2026-10", "total": 93189, "ai": 52573, "noAiExplicit": 30135, "undisclosed": 10481, "other": 40616, "webAi": 23301, "webOther": 17213 }], "modalities": { "totalAi": 158747, "anyCode": 102906, "anyGraphics": 97713, "anyText": 55070, "anySounds": 40310, "combinations": [{ "name": "Code only", "count": 35254 }, { "name": "Graphics only", "count": 30320 }, { "name": "All four (Code + Graphics + Sounds + Text)", "count": 22814 }, { "name": "Code + Graphics", "count": 16013 }, { "name": "Code + Graphics + Text", "count": 12759 }, { "name": "Code + Text", "count": 7723 }, { "name": "Unspecified AI Assisted", "count": 6857 }, { "name": "Graphics + Text", "count": 5570 }, { "name": "Code + Graphics + Sounds", "count": 5354 }, { "name": "Text only", "count": 3924 }, { "name": "Sounds only", "count": 3920 }] }, "summaryByAi": { "other": { "total": 338182, "free": 300381, "paid": 37801, "web": 147087, "steam": 0, "rated": 51830, "rated10Plus": 3729, "totalRatings": 258093, "avgRatingAll": 4.63, "avgRating10Plus": 4.61 }, "ai": { "total": 158747, "free": 120869, "paid": 37878, "web": 74823, "steam": 0, "rated": 15520, "rated10Plus": 902, "totalRatings": 56786, "avgRatingAll": 4.24, "avgRating10Plus": 4.1 } }, "priceHist": { "labels": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30+"], "ai": [0, 5298, 5319, 5982, 4956, 3463, 1484, 1342, 895, 2170, 899, 203, 771, 58, 825, 516, 57, 85, 51, 647, 187, 18, 20, 15, 223, 65, 3, 14, 6, 257, 678], "other": [0, 5610, 4373, 3347, 3580, 4966, 1256, 1262, 1079, 1603, 1797, 302, 706, 223, 618, 995, 123, 92, 148, 474, 464, 32, 80, 37, 221, 258, 13, 25, 15, 255, 1399], "matchedAi": 36507, "matchedOther": 35353 }, "genres": [{ "name": "Action", "ai": 11710, "other": 22255 }, { "name": "Puzzle", "ai": 11040, "other": 19064 }, { "name": "Platformer", "ai": 4618, "other": 18707 }, { "name": "Adventure", "ai": 5807, "other": 16701 }, { "name": "Simulation", "ai": 9108, "other": 12780 }, { "name": "Role Playing", "ai": 8885, "other": 9752 }, { "name": "Visual Novel", "ai": 4534, "other": 9580 }, { "name": "Survival", "ai": 3957, "other": 9229 }, { "name": "Strategy", "ai": 5748, "other": 6634 }, { "name": "Shooter", "ai": 3351, "other": 7488 }, { "name": "Educational", "ai": 3009, "other": 4491 }, { "name": "Card Game", "ai": 2592, "other": 3033 }, { "name": "Interactive Fiction", "ai": 1585, "other": 4035 }, { "name": "Racing", "ai": 1878, "other": 2719 }, { "name": "Rhythm", "ai": 962, "other": 3569 }, { "name": "Fighting", "ai": 1053, "other": 2274 }, { "name": "Sports", "ai": 1473, "other": 1712 }, { "name": "Adventure,Role Playing", "ai": 854, "other": 1922 }], "engines": [{ "name": "Godot", "ai": 13121, "other": 43628 }, { "name": "Unity", "ai": 12028, "other": 42827 }, { "name": "Construct", "ai": 531, "other": 4857 }, { "name": "Ren'Py", "ai": 1283, "other": 3734 }, { "name": "GameMaker", "ai": 566, "other": 4437 }, { "name": "GDevelop", "ai": 690, "other": 3801 }, { "name": "Blender", "ai": 1068, "other": 3089 }, { "name": "Aseprite", "ai": 401, "other": 3194 }, { "name": "Twine", "ai": 568, "other": 2617 }, { "name": "RPG Maker", "ai": 690, "other": 1882 }, { "name": "Unreal Engine", "ai": 513, "other": 2034 }, { "name": "Audacity", "ai": 337, "other": 1460 }, { "name": "Adobe Photoshop", "ai": 390, "other": 1261 }, { "name": "PICO-8", "ai": 242, "other": 1323 }, { "name": "Krita", "ai": 240, "other": 1230 }, { "name": "bitsy", "ai": 39, "other": 1333 }, { "name": "GIMP", "ai": 230, "other": 844 }, { "name": "FL Studio", "ai": 113, "other": 924 }], "tags": [{ "name": "Pixel Art", "ai": 24565, "other": 46258 }, { "name": "No AI", "ai": 648, "other": 54331 }, { "name": "Indie", "ai": 10467, "other": 25903 }, { "name": "Horror", "ai": 9791, "other": 25345 }, { "name": "Short", "ai": 9582, "other": 24320 }, { "name": "Retro", "ai": 11083, "other": 20053 }, { "name": "Fantasy", "ai": 13147, "other": 14873 }, { "name": "Godot", "ai": 10407, "other": 16660 }, { "name": "Arcade", "ai": 12378, "other": 13415 }, { "name": "Casual", "ai": 13449, "other": 11229 }, { "name": "Unity", "ai": 7479, "other": 14514 }, { "name": "Asset Pack", "ai": 9227, "other": 8805 }, { "name": "Atmospheric", "ai": 6644, "other": 10126 }, { "name": "Top-Down", "ai": 6599, "other": 9266 }, { "name": "Cute", "ai": 5723, "other": 9254 }, { "name": "Low-poly", "ai": 5373, "other": 7752 }, { "name": "Sprites", "ai": 7640, "other": 5245 }, { "name": "Cozy", "ai": 5837, "other": 6069 }, { "name": "First-Person", "ai": 3783, "other": 7970 }, { "name": "Adult", "ai": 4319, "other": 6970 }, { "name": "Sci-fi", "ai": 5045, "other": 6164 }, { "name": "Tabletop role-playing game", "ai": 2581, "other": 8213 }, { "name": "Roguelike", "ai": 4420, "other": 5832 }, { "name": "Music", "ai": 3109, "other": 6540 }, { "name": "Multiplayer", "ai": 4785, "other": 4655 }, { "name": "Psychological Horror", "ai": 2735, "other": 6350 }, { "name": "Space", "ai": 3791, "other": 5059 }, { "name": "Relaxing", "ai": 5115, "other": 3513 }, { "name": "Funny", "ai": 3139, "other": 5199 }, { "name": "Story Rich", "ai": 4083, "other": 4167 }, { "name": "Characters", "ai": 4023, "other": 3528 }, { "name": "AI Assisted", "ai": 7213, "other": 282 }, { "name": "Anime", "ai": 4566, "other": 2906 }, { "name": "Narrative", "ai": 2612, "other": 4578 }, { "name": "Erotic", "ai": 2473, "other": 4176 }, { "name": "game-assets", "ai": 5241, "other": 1398 }, { "name": "Roguelite", "ai": 3643, "other": 2942 }, { "name": "Mystery", "ai": 2897, "other": 3634 }, { "name": "Incremental", "ai": 3306, "other": 3197 }, { "name": "RPG Maker", "ai": 3255, "other": 3203 }, { "name": "Idle", "ai": 3592, "other": 2616 }, { "name": "Physics", "ai": 3052, "other": 2986 }, { "name": "Icons", "ai": 4628, "other": 1391 }, { "name": "Minimalist", "ai": 2840, "other": 3118 }, { "name": "Exploration", "ai": 2554, "other": 3307 }, { "name": "Clicker", "ai": 2649, "other": 3140 }, { "name": "Comedy", "ai": 1920, "other": 3695 }, { "name": "Dark", "ai": 1901, "other": 3546 }, { "name": "Tabletop", "ai": 2098, "other": 3294 }, { "name": "Management", "ai": 3443, "other": 1946 }, { "name": "User Interface (UI)", "ai": 3690, "other": 1585 }, { "name": "Romance", "ai": 1655, "other": 3588 }, { "name": "Turn-based", "ai": 3195, "other": 2022 }, { "name": "Animation", "ai": 2412, "other": 2714 }, { "name": "Dark Fantasy", "ai": 2810, "other": 2236 }, { "name": "NSFW", "ai": 2273, "other": 2718 }, { "name": "PSX (PlayStation)", "ai": 1525, "other": 3249 }, { "name": "Point & Click", "ai": 1331, "other": 3414 }, { "name": "Medieval", "ai": 2565, "other": 2090 }, { "name": "Creepy", "ai": 1037, "other": 3466 }, { "name": "Monsters", "ai": 1820, "other": 2645 }, { "name": "mobile", "ai": 3113, "other": 1335 }, { "name": "Survival Horror", "ai": 1387, "other": 3009 }, { "name": "Unreal Engine", "ai": 1223, "other": 3167 }, { "name": "html5", "ai": 3179, "other": 1173 }], "ratingsDist": { "ai": { "1–4 ratings": 13562, "3.00–3.74★ (10+ ratings)": 171, "3.75–4.24★ (10+ ratings)": 216, "4.25–4.74★ (10+ ratings)": 307, "4.75–5.0★ (10+ ratings)": 147, "5–9 ratings": 1056, "No ratings": 143227, "Under 3.0★ (10+ ratings)": 61 }, "other": { "1–4 ratings": 43770, "3.00–3.74★ (10+ ratings)": 151, "3.75–4.24★ (10+ ratings)": 417, "4.25–4.74★ (10+ ratings)": 1225, "4.75–5.0★ (10+ ratings)": 1907, "5–9 ratings": 4331, "No ratings": 286352, "Under 3.0★ (10+ ratings)": 29 } }, "topGames": [{ "itchId": 4261576, "title": "Kingdom Of Marionettes (DEMO)", "url": "https://thepipiw.itch.io/kingdom-of-marionettes", "author": "Thepipi", "genre": "Visual Novel", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.9, "ratingCount": 2501, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4340743, "title": "Moss Moss", "url": "https://noelcody.itch.io/moss-moss", "author": "Noel Cody", "genre": "Platformer,Puzzle", "madeWith": ["PICO-8"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.9, "ratingCount": 1631, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4497433, "title": "The Archives of Trevosa", "url": "https://jamwitch.itch.io/trevosa", "author": "jamwitch", "genre": "Puzzle", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.9, "ratingCount": 1615, "madeWithAi": false, "aiDisclosure": null, "pubDate": null }, { "itchId": 4292650, "title": "Dating Killmulator 2", "url": "https://coolom-games.itch.io/dating-killmulator-2", "author": "Coolom Games", "genre": "Visual Novel,Interactive Fiction", "madeWith": ["Construct"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 5.0, "ratingCount": 1432, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": "2026-03-25" }, { "itchId": 4187351, "title": "Wife's Bedroom (18+)", "url": "https://aplovestudio.itch.io/wifes-bedroom", "author": "aplove", "genre": "Simulation", "madeWith": ["GameMaker"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.6, "ratingCount": 1384, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4420109, "title": "Horse Magnifier: Jam Edition", "url": "https://sketbordcat.itch.io/horse-magnifier", "author": "sketbordcat", "genre": "Puzzle", "madeWith": ["Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.9, "ratingCount": 1228, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4603679, "title": "The False Sun", "url": "https://oniray.itch.io/the-false-sun", "author": "Oniray", "genre": "Visual Novel", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.9, "ratingCount": 1156, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 5033215, "title": "Helping Your Boyfriend", "url": "https://zieelane.itch.io/helping-your-boyfriend", "author": "zieelane", "genre": "Visual Novel,Survival", "madeWith": ["Unity"], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.9, "ratingCount": 1069, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4421208, "title": "Home Is Where He Is (DAY 2 AVAILABLE)", "url": "https://echo0bat.itch.io/hiwhi", "author": "echobat", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.7, "ratingCount": 1065, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4716916, "title": "Death Spiral", "url": "https://kindanice.itch.io/death-spiral", "author": "kindanice", "genre": "Action", "madeWith": ["Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.8, "ratingCount": 939, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4210619, "title": "Stuck with my Ex's Family and ZOMBIES!?", "url": "https://puushi-sama.itch.io/stuck-with-my-exs-family-and-zombies", "author": "PuushiSama", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.4, "ratingCount": 856, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics", "pubDate": "2026-01-30" }, { "itchId": 4270919, "title": "WAN2TALK?", "url": "https://mirawakestudios.itch.io/wan2talk", "author": "mirawakestudios", "genre": "Visual Novel", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.9, "ratingCount": 814, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4345859, "title": "I Became an Evil Witch that Cursed the Male Lead", "url": "https://fluuen.itch.io/i-became-an-evil-witch-that-cursed-the-male-lead", "author": "fluuen", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.9, "ratingCount": 774, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4418834, "title": "A Date with Death 2: REMNANTS", "url": "https://twoandahalfstudios.itch.io/a-date-with-death-2-remnants", "author": "Two and a Half Studios", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.9, "ratingCount": 770, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4748702, "title": "Harem.exe", "url": "https://honey-sync.itch.io/haremexe", "author": "Honey Sync", "genre": "Simulation", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.5, "ratingCount": 744, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4378040, "title": "Conservation of Bass", "url": "https://emlise.itch.io/conservation-of-bass", "author": "emlise", "genre": "Puzzle", "madeWith": ["GameMaker", "Adobe Photoshop"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.8, "ratingCount": 722, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4800005, "title": "Keeping You Close", "url": "https://aiainaine.itch.io/keeping-you-close", "author": "aine", "genre": "Visual Novel,Interactive Fiction", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.6, "ratingCount": 701, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4724326, "title": "My Fiancé is a Fiend [DEMO]", "url": "https://akilargie.itch.io/my-fiance-is-a-fiend", "author": "akilargie", "genre": "Visual Novel", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.8, "ratingCount": 691, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4187249, "title": "Sinner Maker (demo)", "url": "https://sm-pantokrator.itch.io/sinner-maker", "author": "Pantokrator", "genre": null, "madeWith": ["Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.7, "ratingCount": 682, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }, { "itchId": 4534081, "title": "SURVIVE MIN", "url": "https://yaniswatching.itch.io/survive-min", "author": "𝐅𝐀𝐓𝐇𝐄𝐑", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.6, "ratingCount": 655, "madeWithAi": false, "aiDisclosure": "No generative AI was used", "pubDate": null }], "topAiGames": [{ "itchId": 4210619, "title": "Stuck with my Ex's Family and ZOMBIES!?", "url": "https://puushi-sama.itch.io/stuck-with-my-exs-family-and-zombies", "author": "PuushiSama", "genre": "Visual Novel", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.4, "ratingCount": 856, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics", "pubDate": "2026-01-30" }, { "itchId": 4395686, "title": "The MachinEGG", "url": "https://quantumgames-studio.itch.io/the-machinegg", "author": "JC - QuantumGames", "genre": "Simulation", "madeWith": ["PixiJS"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.7, "ratingCount": 594, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code", "pubDate": null }, { "itchId": 4377813, "title": "Touch The Wolf ♂", "url": "https://mrlodos.itch.io/touch-the-wolf", "author": "Mr_Lodos", "genre": "Simulation", "madeWith": ["Unity", "Aseprite"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.6, "ratingCount": 527, "madeWithAi": true, "aiDisclosure": "AI Assisted,Sounds", "pubDate": "2026-05-09" }, { "itchId": 4453889, "title": "Plapping Simulator", "url": "https://milkmelon69.itch.io/plapping-simulator", "author": "MilkMelon69", "genre": "Simulation", "madeWith": ["Unity"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.1, "ratingCount": 459, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics", "pubDate": null }, { "itchId": 4300149, "title": "Inn Over Your Head", "url": "https://minmaxwell.itch.io/inn-over-your-head", "author": "Tanner Maxwell", "genre": "Simulation,Strategy", "madeWith": ["Aseprite", "Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.2, "ratingCount": 323, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code,Graphics", "pubDate": null }, { "itchId": 4925218, "title": "The Grand Book Archive: Tidy Up", "url": "https://inbluegames.itch.io/the-grand-book-archive-tidy-up", "author": "Inblue Games", "genre": "Simulation,Puzzle", "madeWith": ["Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.5, "ratingCount": 313, "madeWithAi": true, "aiDisclosure": "AI Assisted,Text", "pubDate": null }, { "itchId": 4265612, "title": "PURE NIGHT : Futanari Infection RPG", "url": "https://pu-re-ga-me.itch.io/pure-night", "author": "pu-re ga-me", "genre": "Adventure", "madeWith": ["RPG Maker"], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.5, "ratingCount": 300, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code", "pubDate": null }, { "itchId": 4702752, "title": "Where is Starlingdive?", "url": "https://neokry.itch.io/where-is-starlingdive", "author": "neokry", "genre": "Puzzle", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.6, "ratingCount": 277, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code,Graphics,Text", "pubDate": null }, { "itchId": 4391398, "title": "Course to Venus!", "url": "https://noteverywitch.itch.io/course-to-venus", "author": "Not Every Witch", "genre": "Adventure", "madeWith": ["Unity"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.4, "ratingCount": 266, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics,Sounds", "pubDate": null }, { "itchId": 4268368, "title": "Dig Dan Dig!", "url": "https://dofugames.itch.io/dig-dan-dig", "author": "Dofu Games", "genre": "Simulation", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.8, "ratingCount": 253, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code", "pubDate": null }, { "itchId": 4493023, "title": "Late Pizza Delivery", "url": "https://bubu07.itch.io/late-pizza-delivery", "author": "BubuWorks", "genre": "Simulation", "madeWith": ["Unity", "Blender", "Audacity", "Paint.net"], "price": 1.99, "isFree": false, "isWeb": false, "ratingValue": 4.0, "ratingCount": 224, "madeWithAi": true, "aiDisclosure": "AI Assisted,Text", "pubDate": null }, { "itchId": 4308100, "title": "Kinky Phone - Swipe to Seduce", "url": "https://sugarsingames.itch.io/kinky-phone", "author": "Sugar & Sin Games", "genre": "Simulation", "madeWith": ["Ren'Py"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.1, "ratingCount": 216, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics", "pubDate": "2026-03-03" }, { "itchId": 4670464, "title": "SEWER CALL", "url": "https://v1to666.itch.io/sewer-call", "author": "v1to", "genre": "Adventure", "madeWith": ["Unity", "Blender", "GIMP"], "price": 0.0, "isFree": true, "isWeb": false, "ratingValue": 4.1, "ratingCount": 214, "madeWithAi": true, "aiDisclosure": "AI Assisted,Graphics", "pubDate": "2026-06-14" }, { "itchId": 4673702, "title": "Dungeons & Dynasties", "url": "https://bretticus82.itch.io/dungeons-dynasties", "author": "Bretticus82", "genre": "Simulation,Role Playing,Strategy", "madeWith": [], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.8, "ratingCount": 212, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code,Text", "pubDate": null }, { "itchId": 4507831, "title": "CatPhish", "url": "https://househorse.itch.io/catphish", "author": "househorse", "genre": "Simulation", "madeWith": ["Godot"], "price": 0.0, "isFree": true, "isWeb": true, "ratingValue": 4.5, "ratingCount": 211, "madeWithAi": true, "aiDisclosure": "AI Assisted,Code", "pubDate": null }], "aiTitleWords": [{ "name": "pixel", "value": 6684 }, { "name": "rpg", "value": 3306 }, { "name": "icons", "value": 3225 }, { "name": "fantasy", "value": 3061 }, { "name": "art", "value": 2844 }, { "name": "kit", "value": 2659 }, { "name": "asset", "value": 2412 }, { "name": "character", "value": 2337 }, { "name": "vol", "value": 2301 }, { "name": "animated", "value": 1805 }, { "name": "neon", "value": 1691 }, { "name": "anime", "value": 1588 }, { "name": "godot", "value": 1504 }, { "name": "props", "value": 1469 }, { "name": "last", "value": 1461 }, { "name": "dark", "value": 1369 }, { "name": "cozy", "value": 1346 }, { "name": "low", "value": 1328 }, { "name": "poly", "value": 1305 }, { "name": "assets", "value": 1179 }, { "name": "horror", "value": 1172 }, { "name": "space", "value": 1115 }, { "name": "simulator", "value": 1108 }, { "name": "one", "value": 1107 }, { "name": "dungeon", "value": 1085 }, { "name": "night", "value": 1077 }, { "name": "char", "value": 1056 }, { "name": "down", "value": 1032 }, { "name": "music", "value": 1022 }, { "name": "top", "value": 973 }, { "name": "effects", "value": 926 }, { "name": "world", "value": 925 }, { "name": "puzzle", "value": 924 }, { "name": "png", "value": 885 }, { "name": "rush", "value": 866 }, { "name": "escape", "value": 845 }, { "name": "adventure", "value": 830 }, { "name": "backgrounds", "value": 827 }, { "name": "maker", "value": 817 }, { "name": "retro", "value": 804 }, { "name": "battle", "value": 802 }, { "name": "tileset", "value": 796 }, { "name": "sfx", "value": 795 }, { "name": "psx", "value": 794 }, { "name": "printable", "value": 785 }, { "name": "city", "value": 767 }, { "name": "run", "value": 764 }, { "name": "survival", "value": 759 }, { "name": "idle", "value": 710 }, { "name": "sci", "value": 710 }, { "name": "models", "value": 695 }, { "name": "japanese", "value": 692 }, { "name": "collection", "value": 687 }, { "name": "sprite", "value": 684 }, { "name": "quest", "value": 680 }, { "name": "tower", "value": 675 }, { "name": "life", "value": 671 }, { "name": "bundle", "value": 668 }, { "name": "clicker", "value": 650 }, { "name": "vfx", "value": 650 }, { "name": "system", "value": 633 }, { "name": "sprites", "value": 617 }, { "name": "card", "value": 614 }, { "name": "halloween", "value": 604 }, { "name": "icon", "value": 602 }, { "name": "sampler", "value": 599 }, { "name": "project", "value": 592 }, { "name": "forest", "value": 591 }, { "name": "room", "value": 591 }, { "name": "defense", "value": 589 }, { "name": "runner", "value": 589 }, { "name": "three", "value": 588 }, { "name": "arena", "value": 586 }, { "name": "inventory", "value": 564 }, { "name": "tycoon", "value": 558 }], "otherTitleWords": [{ "name": "pixel", "value": 4612 }, { "name": "project", "value": 3479 }, { "name": "art", "value": 2986 }, { "name": "space", "value": 2755 }, { "name": "sprunki", "value": 2724 }, { "name": "tag", "value": 2637 }, { "name": "asset", "value": 2577 }, { "name": "rpg", "value": 2518 }, { "name": "adventure", "value": 2236 }, { "name": "simulator", "value": 2074 }, { "name": "last", "value": 2048 }, { "name": "horror", "value": 1995 }, { "name": "one", "value": 1986 }, { "name": "low", "value": 1954 }, { "name": "music", "value": 1906 }, { "name": "escape", "value": 1884 }, { "name": "time", "value": 1881 }, { "name": "poly", "value": 1874 }, { "name": "world", "value": 1826 }, { "name": "night", "value": 1699 }, { "name": "prototype", "value": 1672 }, { "name": "dungeon", "value": 1634 }, { "name": "down", "value": 1620 }, { "name": "run", "value": 1619 }, { "name": "fantasy", "value": 1595 }, { "name": "character", "value": 1580 }, { "name": "test", "value": 1452 }, { "name": "cat", "value": 1425 }, { "name": "taggers", "value": 1393 }, { "name": "vol", "value": 1378 }, { "name": "super", "value": 1348 }, { "name": "shooter", "value": 1345 }, { "name": "godot", "value": 1337 }, { "name": "basics", "value": 1333 }, { "name": "platformer", "value": 1299 }, { "name": "baldi", "value": 1295 }, { "name": "mod", "value": 1293 }, { "name": "dark", "value": 1284 }, { "name": "tower", "value": 1276 }, { "name": "quest", "value": 1266 }, { "name": "clicker", "value": 1246 }, { "name": "runner", "value": 1214 }, { "name": "out", "value": 1176 }, { "name": "rush", "value": 1173 }, { "name": "life", "value": 1123 }, { "name": "system", "value": 1122 }, { "name": "neon", "value": 1102 }, { "name": "house", "value": 1098 }, { "name": "forest", "value": 1092 }, { "name": "battle", "value": 1091 }, { "name": "lost", "value": 1083 }, { "name": "ball", "value": 1070 }, { "name": "little", "value": 1064 }, { "name": "day", "value": 1043 }, { "name": "city", "value": 1035 }, { "name": "flappy", "value": 1026 }, { "name": "assets", "value": 1000 }, { "name": "pong", "value": 993 }, { "name": "man", "value": 978 }, { "name": "retro", "value": 972 }, { "name": "animated", "value": 972 }, { "name": "bird", "value": 962 }, { "name": "maker", "value": 962 }, { "name": "don", "value": 951 }, { "name": "psx", "value": 927 }, { "name": "knight", "value": 907 }, { "name": "model", "value": 907 }, { "name": "dash", "value": 906 }, { "name": "unity", "value": 901 }, { "name": "kit", "value": 894 }, { "name": "icons", "value": 885 }, { "name": "monster", "value": 882 }, { "name": "phase", "value": 879 }, { "name": "puzzle", "value": 860 }, { "name": "android", "value": 855 }] };
+
+    const axisText = {
+      color: "#94a3b8",
+      fontFamily: "Figtree, sans-serif",
+      fontSize: 11
+    };
+    const tooltipBase = {
+      backgroundColor: "rgba(15, 23, 42, 0.96)",
+      borderColor: "#3d4a5c",
+      borderWidth: 1,
+      textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 12 }
+    };
+
+    const charts = {};
+
+    // 1. Figure 1: Monthly Share
+    let shareThreeWay = true;
+    charts.share = echarts.init(document.getElementById("chart-share"));
+    function renderShare() {
+      const labels = DATA.monthly.map((m) => m.month);
+      const aiPct = DATA.monthly.map((m) => (m.ai / m.total) * 100);
+      const noAiPct = DATA.monthly.map((m) => (m.noAiExplicit / m.total) * 100);
+      const undiscPct = DATA.monthly.map((m) => (m.undisclosed / m.total) * 100);
+      const otherPct = DATA.monthly.map((m) => (m.other / m.total) * 100);
+
+      document.getElementById("cap-share").textContent = shareThreeWay
+        ? ""
+        : "";
+
+      const series = shareThreeWay
+        ? [
+          {
+            name: "AI disclosure",
+            type: "line",
+            stack: "share",
+            data: aiPct,
+            symbol: "circle",
+            symbolSize: 6,
+            lineStyle: { width: 2, color: "#d4af37" },
+            itemStyle: { color: "#d4af37" },
+            areaStyle: { color: "rgba(212, 175, 55, 0.85)" }
+          },
+          {
+            name: "Explicit 'No generative AI'",
+            type: "line",
+            stack: "share",
+            data: noAiPct,
+            symbol: "none",
+            lineStyle: { width: 1.5, color: "#22d3ee" },
+            itemStyle: { color: "#22d3ee" },
+            areaStyle: { color: "rgba(34, 211, 238, 0.55)" }
+          },
+          {
+            name: "Undisclosed",
+            type: "line",
+            stack: "share",
+            data: undiscPct,
+            symbol: "none",
+            lineStyle: { width: 1, color: "#64748b" },
+            itemStyle: { color: "#64748b" },
+            areaStyle: { color: "#334155" }
+          }
+        ]
+        : [
+          {
+            name: "AI disclosure",
+            type: "line",
+            stack: "share",
+            data: aiPct,
+            symbol: "circle",
+            symbolSize: 6,
+            lineStyle: { width: 2, color: "#d4af37" },
+            itemStyle: { color: "#d4af37" },
+            areaStyle: { color: "rgba(212, 175, 55, 0.85)" }
+          },
+          {
+            name: "No AI disclosure",
+            type: "line",
+            stack: "share",
+            data: otherPct,
+            symbol: "none",
+            lineStyle: { width: 1.5, color: "#94a3b8" },
+            itemStyle: { color: "#64748b" },
+            areaStyle: { color: "#3d4d66" }
+          }
+        ];
+
+      charts.share.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const idx = params[0].dataIndex;
+            const m = DATA.monthly[idx];
+            const aiS = ((m.ai / m.total) * 100).toFixed(1);
+            const noS = ((m.noAiExplicit / m.total) * 100).toFixed(1);
+            const unS = ((m.undisclosed / m.total) * 100).toFixed(1);
+            return [
+              `<b>${m.month}</b> (${m.total.toLocaleString("en-US")} releases)`,
+              `AI disclosure: <b>${m.ai.toLocaleString("en-US")}</b> (${aiS}%)`,
+              `Explicit 'No AI': <b>${m.noAiExplicit.toLocaleString("en-US")}</b> (${noS}%)`,
+              `Undisclosed: <b>${m.undisclosed.toLocaleString("en-US")}</b> (${unS}%)`
+            ].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 48, right: 18, top: 36, bottom: 36 },
+        xAxis: {
+          type: "category",
+          data: labels,
+          boundaryGap: false,
+          axisLabel: axisText,
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          max: 100,
+          axisLabel: { ...axisText, formatter: (v) => v + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series
+      }, { notMerge: true });
+    }
+    document.getElementById("share-three").addEventListener("click", () => {
+      shareThreeWay = true;
+      document.getElementById("share-three").setAttribute("aria-pressed", "true");
+      document.getElementById("share-two").setAttribute("aria-pressed", "false");
+      renderShare();
+    });
+    document.getElementById("share-two").addEventListener("click", () => {
+      shareThreeWay = false;
+      document.getElementById("share-three").setAttribute("aria-pressed", "false");
+      document.getElementById("share-two").setAttribute("aria-pressed", "true");
+      renderShare();
+    });
+    renderShare();
+
+    // 2. Figure 2: Monthly Count
+    let countWebOnly = false;
+    charts.count = echarts.init(document.getElementById("chart-count"));
+    function renderCount() {
+      const labels = DATA.monthly.map((m) => m.month);
+      const aiVals = DATA.monthly.map((m) => countWebOnly ? m.webAi : m.ai);
+      const otherVals = DATA.monthly.map((m) => countWebOnly ? m.webOther : m.other);
+
+      document.getElementById("cap-count").textContent = countWebOnly
+        ? ""
+        : "";
+
+      charts.count.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter(params) {
+            const idx = params[0].dataIndex;
+            const ai = aiVals[idx];
+            const oth = otherVals[idx];
+            const tot = ai + oth;
+            const share = tot ? ((ai / tot) * 100).toFixed(1) : "0.0";
+            return [
+              `<b>${labels[idx]}</b> (${tot.toLocaleString("en-US")} ${countWebOnly ? "web " : ""}releases)`,
+              `AI disclosure: <b>${ai.toLocaleString("en-US")}</b> (${share}%)`,
+              `No AI disclosure: <b>${oth.toLocaleString("en-US")}</b> (${(100 - Number(share)).toFixed(1)}%)`
+            ].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 56, right: 20, top: 36, bottom: 36 },
+        xAxis: {
+          type: "category",
+          data: labels,
+          axisLabel: axisText,
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          axisLabel: axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: otherVals,
+            itemStyle: { color: "#22d3ee", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 22
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: aiVals,
+            itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+            barMaxWidth: 22
+          }
+        ]
+      }, { notMerge: true });
+    }
+    document.getElementById("count-all").addEventListener("click", () => {
+      countWebOnly = false;
+      document.getElementById("count-all").setAttribute("aria-pressed", "true");
+      document.getElementById("count-web").setAttribute("aria-pressed", "false");
+      renderCount();
+    });
+    document.getElementById("count-web").addEventListener("click", () => {
+      countWebOnly = true;
+      document.getElementById("count-all").setAttribute("aria-pressed", "false");
+      document.getElementById("count-web").setAttribute("aria-pressed", "true");
+      renderCount();
+    });
+    renderCount();
+
+    // 3. Figure 3: AI Modalities
+    let modByCategory = true;
+    charts.modalities = echarts.init(document.getElementById("chart-modalities"));
+    function renderModalities() {
+      const totalAi = DATA.modalities.totalAi;
+      const rows = modByCategory
+        ? [
+          { name: "Code (AI-generated scripts / logic)", count: DATA.modalities.anyCode },
+          { name: "Graphics (sprites, icons, 3D, art)", count: DATA.modalities.anyGraphics },
+          { name: "Text (dialogue, lore, store copy)", count: DATA.modalities.anyText },
+          { name: "Sounds (music, voice, SFX)", count: DATA.modalities.anySounds }
+        ]
+        : DATA.modalities.combinations;
+
+      document.getElementById("cap-modalities").textContent = modByCategory
+        ? ``
+        : ``;
+
+      charts.modalities.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter(params) {
+            const row = rows[params[0].dataIndex];
+            const pct = ((row.count / totalAi) * 100).toFixed(1);
+            return `<b>${row.name}</b><br/>AI-disclosed releases: <b>${row.count.toLocaleString("en-US")}</b> (${pct}%)`;
+          }
+        },
+        grid: { left: 12, right: 64, top: 16, bottom: 28, containLabel: true },
+        xAxis: {
+          type: "value",
+          max: modByCategory ? 75 : 26,
+          axisLabel: { ...axisText, formatter: (v) => v + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        yAxis: {
+          type: "category",
+          inverse: true,
+          data: rows.map((r) => r.name),
+          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 12 },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        series: [
+          {
+            type: "bar",
+            data: rows.map((r) => Number(((r.count / totalAi) * 100).toFixed(1))),
+            itemStyle: { color: "#d4af37", borderRadius: [0, 4, 4, 0] },
+            barMaxWidth: 26,
+            label: {
+              show: true,
+              position: "right",
+              color: "#e8eef7",
+              fontFamily: "Figtree, sans-serif",
+              fontSize: 11,
+              formatter: (p) => `${p.value}% (${rows[p.dataIndex].count.toLocaleString("en-US")})`
+            }
+          }
+        ]
+      }, { notMerge: true });
+    }
+    document.getElementById("mod-any").addEventListener("click", () => {
+      modByCategory = true;
+      document.getElementById("mod-any").setAttribute("aria-pressed", "true");
+      document.getElementById("mod-combo").setAttribute("aria-pressed", "false");
+      renderModalities();
+    });
+    document.getElementById("mod-combo").addEventListener("click", () => {
+      modByCategory = false;
+      document.getElementById("mod-any").setAttribute("aria-pressed", "false");
+      document.getElementById("mod-combo").setAttribute("aria-pressed", "true");
+      renderModalities();
+    });
+    renderModalities();
+
+    // 4. Figure 4: Engines & Tools
+    let engAsShare = false;
+    charts.engines = echarts.init(document.getElementById("chart-engines"));
+    function renderEngines() {
+      const rows = DATA.engines.slice(0, 16);
+      document.getElementById("cap-engines").textContent = engAsShare
+        ? "Percentage split between Non-AI (cyan) and AI-disclosed (gold) within each engine or tool."
+        : "Total 2026 releases listing each engine or tool in 'Made with'.";
+
+      const nonData = rows.map((r) => {
+        const tot = r.ai + r.other;
+        return engAsShare ? Number(((r.other / tot) * 100).toFixed(1)) : r.other;
+      });
+      const aiData = rows.map((r) => {
+        const tot = r.ai + r.other;
+        return engAsShare ? Number(((r.ai / tot) * 100).toFixed(1)) : r.ai;
+      });
+
+      charts.engines.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter(params) {
+            const r = rows[params[0].dataIndex];
+            const tot = r.ai + r.other;
+            const aiPct = ((r.ai / tot) * 100).toFixed(1);
+            const nonPct = ((r.other / tot) * 100).toFixed(1);
+            return [
+              `<b>${r.name}</b> (${tot.toLocaleString("en-US")} releases)`,
+              `No AI disclosure: <b>${r.other.toLocaleString("en-US")}</b> (${nonPct}%)`,
+              `AI disclosure: <b>${r.ai.toLocaleString("en-US")}</b> (${aiPct}%)`
+            ].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 12, right: 28, top: 36, bottom: 28, containLabel: true },
+        xAxis: {
+          type: "value",
+          max: engAsShare ? 100 : null,
+          axisLabel: engAsShare ? { ...axisText, formatter: (v) => v + "%" } : axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        yAxis: {
+          type: "category",
+          inverse: true,
+          data: rows.map((r) => r.name),
+          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 12 },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            stack: engAsShare ? "eng" : null,
+            data: nonData,
+            itemStyle: { color: "#22d3ee" },
+            barMaxWidth: 18
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            stack: engAsShare ? "eng" : null,
+            data: aiData,
+            itemStyle: { color: "#d4af37" },
+            barMaxWidth: 18
+          }
+        ]
+      }, { notMerge: true });
+    }
+    document.getElementById("eng-count").addEventListener("click", () => {
+      engAsShare = false;
+      document.getElementById("eng-count").setAttribute("aria-pressed", "true");
+      document.getElementById("eng-share").setAttribute("aria-pressed", "false");
+      renderEngines();
+    });
+    document.getElementById("eng-share").addEventListener("click", () => {
+      engAsShare = true;
+      document.getElementById("eng-count").setAttribute("aria-pressed", "false");
+      document.getElementById("eng-share").setAttribute("aria-pressed", "true");
+      renderEngines();
+    });
+    renderEngines();
+
+    // 5. Figure 5: Tags Dumbbell Chart
+    const aiTotal = DATA.summaryByAi.ai.total;
+    const otherTotal = DATA.summaryByAi.other.total;
+    const aiShare = (c) => (c / aiTotal) * 100;
+    const otherShare = (c) => (c / otherTotal) * 100;
+    const shareGap = (r) => Math.abs(aiShare(r.ai) - otherShare(r.other));
+
+    const omittedTags = new Set(["2D", "Singleplayer", "3D"]);
+    let tagsAsShare = true;
+    let tagsByGap = false;
+    charts.tags = echarts.init(document.getElementById("chart-tags"));
+    function renderTags() {
+      const rows = DATA.tags
+        .filter((r) => !omittedTags.has(r.name))
+        .sort((a, b) => tagsByGap ? shareGap(b) - shareGap(a) : (b.ai + b.other) - (a.ai + a.other))
+        .slice(0, 35);
+
+      document.getElementById("cap-tags").textContent = tagsAsShare
+        ? ""
+        : "";
+
+      charts.tags.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "item",
+          formatter(params) {
+            const r = rows.find((item) => item.name === params.data.name);
+            const gap = aiShare(r.ai) - otherShare(r.other);
+            const ahead = gap >= 0 ? "AI disclosure" : "No AI disclosure";
+            return [
+              `<b>${r.name}</b>`,
+              `No AI disclosure: <b>${r.other.toLocaleString("en-US")}</b> (${otherShare(r.other).toFixed(1)}%)`,
+              `AI disclosure: <b>${r.ai.toLocaleString("en-US")}</b> (${aiShare(r.ai).toFixed(1)}%)`,
+              `${ahead} is <b>${Math.abs(gap).toFixed(1)}</b> percentage points higher`
+            ].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 12, right: 28, top: 36, bottom: 36, containLabel: true },
+        xAxis: {
+          type: "value",
+          name: tagsAsShare ? "% of cohort releases" : "Games",
+          nameLocation: "middle",
+          nameGap: 26,
+          nameTextStyle: axisText,
+          axisLabel: tagsAsShare ? { ...axisText, formatter: (v) => v + "%" } : axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.45)" } }
+        },
+        yAxis: {
+          type: "category",
+          inverse: true,
+          data: rows.map((r) => r.name),
+          axisLabel: { ...axisText, color: "#e8eef7" },
+          axisLine: { lineStyle: { color: "#3d4a5c" } },
+          splitLine: { show: true, lineStyle: { color: "rgba(61, 74, 92, 0.35)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "scatter",
+            symbolSize: 13,
+            data: rows.map((r) => ({
+              name: r.name,
+              value: [tagsAsShare ? Number(otherShare(r.other).toFixed(2)) : r.other, r.name]
+            })),
+            itemStyle: { color: "#22d3ee", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+          },
+          {
+            name: "AI disclosure",
+            type: "scatter",
+            symbolSize: 13,
+            data: rows.map((r) => ({
+              name: r.name,
+              value: [tagsAsShare ? Number(aiShare(r.ai).toFixed(2)) : r.ai, r.name]
+            })),
+            itemStyle: { color: "#d4af37", opacity: 0.92, borderColor: "#e8eef7", borderWidth: 1 }
+          }
+        ]
+      }, { notMerge: true });
+    }
+    document.getElementById("tags-sort-common").addEventListener("click", () => {
+      tagsByGap = false;
+      document.getElementById("tags-sort-common").setAttribute("aria-pressed", "true");
+      document.getElementById("tags-sort-gap").setAttribute("aria-pressed", "false");
+      renderTags();
+    });
+    document.getElementById("tags-sort-gap").addEventListener("click", () => {
+      tagsByGap = true;
+      document.getElementById("tags-sort-common").setAttribute("aria-pressed", "false");
+      document.getElementById("tags-sort-gap").setAttribute("aria-pressed", "true");
+      renderTags();
+    });
+    document.getElementById("tags-count").addEventListener("click", () => {
+      tagsAsShare = false;
+      document.getElementById("tags-count").setAttribute("aria-pressed", "true");
+      document.getElementById("tags-share").setAttribute("aria-pressed", "false");
+      renderTags();
+    });
+    document.getElementById("tags-share").addEventListener("click", () => {
+      tagsAsShare = true;
+      document.getElementById("tags-count").setAttribute("aria-pressed", "false");
+      document.getElementById("tags-share").setAttribute("aria-pressed", "true");
+      renderTags();
+    });
+    renderTags();
+
+    // 6. Figure 6: Tag Scatter
+    if (document.getElementById("chart-scatter")) {
+      let scatterAsShare = true;
+      let scatterLabelsOn = true;
+      charts.scatter = echarts.init(document.getElementById("chart-scatter"));
+      function renderScatter() {
+        const points = DATA.tags.filter((t) => !omittedTags.has(t.name)).map((t) => {
+          const xS = otherShare(t.other);
+          const yS = aiShare(t.ai);
+          return {
+            name: t.name,
+            value: scatterAsShare ? [Number(xS.toFixed(2)), Number(yS.toFixed(2))] : [t.other, t.ai],
+            ai: t.ai,
+            other: t.other,
+            xS,
+            yS
+          };
+        });
+        const xMax = scatterAsShare ? 18 : 56000;
+        const yMax = scatterAsShare ? 18 : 28000;
+        const ratio = aiTotal / otherTotal;
+        const guideEnd = scatterAsShare ? [18, 18] : [56000, Math.round(56000 * ratio)];
+
+        document.getElementById("cap-scatter").textContent =
+          "Diagonal line marks equal proportion across AI-disclosed and Non-AI cohorts (2D, Singleplayer, and 3D omitted). Points above the line skew toward AI disclosure.";
+
+        charts.scatter.setOption({
+          animationDuration: 600,
+          tooltip: {
+            ...tooltipBase,
+            trigger: "item",
+            formatter(params) {
+              const d = params.data;
+              return `<b>${d.name}</b><br/>AI disclosure: <b>${d.yS.toFixed(1)}%</b> (${d.ai.toLocaleString("en-US")})<br/>No AI disclosure: <b>${d.xS.toFixed(1)}%</b> (${d.other.toLocaleString("en-US")})`;
+            }
+          },
+          grid: { left: 64, right: 24, top: 20, bottom: 48 },
+          xAxis: {
+            type: "value",
+            min: 0,
+            max: xMax,
+            name: "No AI disclosure",
+            nameLocation: "middle",
+            nameGap: 30,
+            nameTextStyle: axisText,
+            axisLabel: scatterAsShare ? { ...axisText, formatter: (v) => v + "%" } : axisText,
+            splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+          },
+          yAxis: {
+            type: "value",
+            min: 0,
+            max: yMax,
+            name: "AI disclosure",
+            nameLocation: "middle",
+            nameGap: 46,
+            nameTextStyle: axisText,
+            axisLabel: scatterAsShare ? { ...axisText, formatter: (v) => v + "%" } : axisText,
+            splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+          },
+          series: [
+            {
+              id: "tags",
+              type: "scatter",
+              data: points,
+              symbolSize: 11,
+              itemStyle: { color: "#d4af37", opacity: 0.95 },
+              label: {
+                show: scatterLabelsOn,
+                formatter: (p) => p.data.name,
+                position: "top",
+                color: "#e8eef7",
+                fontFamily: "Figtree, sans-serif",
+                fontSize: 10
+              },
+              labelLayout: { hideOverlap: true },
+              z: 3
+            },
+            {
+              id: "guide",
+              type: "line",
+              data: [[0, 0], guideEnd],
+              symbol: "none",
+              silent: true,
+              lineStyle: { color: "#22d3ee", width: 2, type: "dashed" },
+              z: 2
+            }
+          ]
+        }, { notMerge: true });
+      }
+      document.getElementById("scatter-count").addEventListener("click", () => {
+        scatterAsShare = false;
+        document.getElementById("scatter-count").setAttribute("aria-pressed", "true");
+        document.getElementById("scatter-share").setAttribute("aria-pressed", "false");
+        renderScatter();
+      });
+      document.getElementById("scatter-share").addEventListener("click", () => {
+        scatterAsShare = true;
+        document.getElementById("scatter-count").setAttribute("aria-pressed", "false");
+        document.getElementById("scatter-share").setAttribute("aria-pressed", "true");
+        renderScatter();
+      });
+      document.getElementById("scatter-labels").addEventListener("click", () => {
+        scatterLabelsOn = !scatterLabelsOn;
+        const btn = document.getElementById("scatter-labels");
+        btn.setAttribute("aria-pressed", String(scatterLabelsOn));
+        btn.textContent = scatterLabelsOn ? "Hide data labels" : "Show data labels";
+        renderScatter();
+      });
+      renderScatter();
+    }
+
+    // 7. Figure 7: Free vs Paid
+    charts.free = echarts.init(document.getElementById("chart-free"));
+    function renderFreePaid() {
+      const ai = DATA.summaryByAi.ai;
+      const other = DATA.summaryByAi.other;
+      document.getElementById("cap-free").textContent =
+        "Share of Free vs. Paid listings within Non-AI (338,182) and AI-disclosed (158,747) 2026 releases.";
+      charts.free.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            return params.map((p) => `${p.marker}${p.seriesName}: <b>${p.data.count.toLocaleString("en-US")}</b> (${p.value.toFixed(1)}%)`).join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 52, right: 16, top: 52, bottom: 28 },
+        xAxis: {
+          type: "category",
+          data: ["Free / $0 Floor", "Paid Required"],
+          axisLabel: { ...axisText, color: "#e8eef7", fontSize: 13 },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          min: 0,
+          max: 100,
+          axisLabel: { ...axisText, formatter: (v) => v + "%" },
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            barMaxWidth: 56,
+            data: [
+              { value: (other.free / other.total) * 100, count: other.free },
+              { value: (other.paid / other.total) * 100, count: other.paid }
+            ],
+            itemStyle: { color: "#22d3ee", borderRadius: [3, 3, 0, 0] },
+            label: { show: true, position: "top", color: "#e8eef7", formatter: (p) => p.value.toFixed(1) + "%" }
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            barMaxWidth: 56,
+            data: [
+              { value: (ai.free / ai.total) * 100, count: ai.free },
+              { value: (ai.paid / ai.total) * 100, count: ai.paid }
+            ],
+            itemStyle: { color: "#d4af37", borderRadius: [3, 3, 0, 0] },
+            label: { show: true, position: "top", color: "#e8eef7", formatter: (p) => p.value.toFixed(1) + "%" }
+          }
+        ]
+      });
+    }
+    renderFreePaid();
+
+    // 8. Figure 8: Price Histogram
+    let priceAsShare = true;
+    charts.price = echarts.init(document.getElementById("chart-price"));
+    function renderPrice() {
+      const spec = DATA.priceHist;
+      const otherVals = priceAsShare
+        ? spec.other.map((c) => (c / spec.matchedOther) * 100)
+        : spec.other;
+      const aiVals = priceAsShare
+        ? spec.ai.map((c) => (c / spec.matchedAi) * 100)
+        : spec.ai;
+
+      document.getElementById("cap-price").textContent =
+        ``;
+
+      charts.price.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          formatter(params) {
+            const idx = params[0].dataIndex;
+            const lbl = spec.labels[idx] === "30+" ? "€30 or more" : spec.labels[idx] === "0" ? "Under €1" : `€${spec.labels[idx]}–€${spec.labels[idx]}.99`;
+            const lines = params.map((p) => {
+              const rawCount = p.seriesName === "AI disclosure" ? spec.ai[idx] : spec.other[idx];
+              const txt = priceAsShare ? `${Number(p.value).toFixed(1)}% (${rawCount.toLocaleString("en-US")})` : rawCount.toLocaleString("en-US");
+              return `${p.marker}${p.seriesName}: <b>${txt}</b>`;
+            });
+            return [`<b>${lbl}</b>`, ...lines].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: { left: 52, right: 16, top: 36, bottom: 44 },
+        xAxis: {
+          type: "category",
+          data: spec.labels,
+          name: "Initial price (EUR)",
+          nameLocation: "middle",
+          nameGap: 28,
+          nameTextStyle: axisText,
+          axisLabel: {
+            ...axisText,
+            formatter: (v) => (v === "30+" ? "€30+" : "€" + v)
+          },
+          axisLine: { lineStyle: { color: "#3d4a5c" } }
+        },
+        yAxis: {
+          type: "value",
+          axisLabel: priceAsShare ? { ...axisText, formatter: (v) => v + "%" } : axisText,
+          splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+        },
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            data: otherVals,
+            itemStyle: { color: "#22d3ee" },
+            barMaxWidth: 9
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            data: aiVals,
+            itemStyle: { color: "#d4af37" },
+            barMaxWidth: 9
+          }
+        ]
+      }, { notMerge: true });
+    }
+    document.getElementById("price-count").addEventListener("click", () => {
+      priceAsShare = false;
+      document.getElementById("price-count").setAttribute("aria-pressed", "true");
+      document.getElementById("price-share").setAttribute("aria-pressed", "false");
+      renderPrice();
+    });
+    document.getElementById("price-share").addEventListener("click", () => {
+      priceAsShare = true;
+      document.getElementById("price-count").setAttribute("aria-pressed", "false");
+      document.getElementById("price-share").setAttribute("aria-pressed", "true");
+      renderPrice();
+    });
+    renderPrice();
+
+    // 9. Figure 9: Ratings Butterfly Chart (10+ ratings)
+    const ratingBands = [
+      "4.75–5.0★ (10+ ratings)",
+      "4.25–4.74★ (10+ ratings)",
+      "3.75–4.24★ (10+ ratings)",
+      "3.00–3.74★ (10+ ratings)",
+      "Under 3.0★ (10+ ratings)"
+    ];
+    charts.reviews = echarts.init(document.getElementById("chart-reviews"));
+    function renderReviews() {
+      const aiCounts = ratingBands.map((b) => DATA.ratingsDist.ai[b] || 0);
+      const otherCounts = ratingBands.map((b) => DATA.ratingsDist.other[b] || 0);
+      const aiTot = aiCounts.reduce((a, b) => a + b, 0);
+      const otherTot = otherCounts.reduce((a, b) => a + b, 0);
+      const aiShares = aiCounts.map((c) => (c / aiTot) * 100);
+      const otherShares = otherCounts.map((c) => (c / otherTot) * 100);
+
+      document.getElementById("cap-reviews").textContent =
+        `Star rating distribution across the ${otherTot.toLocaleString("en-US")} Non-AI and ${aiTot.toLocaleString("en-US")} AI-disclosed 2026 games with 10 or more ratings.`;
+
+      const labelCol = 165;
+      const chartWidth = charts.reviews.getWidth() || document.getElementById("chart-reviews").clientWidth || 640;
+      const side = Math.max(80, Math.floor((chartWidth - labelCol - 16) / 2));
+
+      charts.reviews.setOption({
+        animationDuration: 600,
+        tooltip: {
+          ...tooltipBase,
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter(params) {
+            const idx = params[0].dataIndex;
+            return [
+              `<b>${ratingBands[idx]}</b>`,
+              `No AI disclosure: <b>${otherCounts[idx].toLocaleString("en-US")}</b> (${otherShares[idx].toFixed(1)}%)`,
+              `AI disclosure: <b>${aiCounts[idx].toLocaleString("en-US")}</b> (${aiShares[idx].toFixed(1)}%)`
+            ].join("<br/>");
+          }
+        },
+        legend: { top: 0, textStyle: axisText },
+        grid: [
+          { left: 8, width: side, top: 36, bottom: 28 },
+          { left: 8 + side + labelCol, width: side, top: 36, bottom: 28 }
+        ],
+        xAxis: [
+          {
+            type: "value",
+            gridIndex: 0,
+            inverse: true,
+            min: 0,
+            max: 60,
+            axisLabel: { ...axisText, formatter: (v) => v + "%" },
+            splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+          },
+          {
+            type: "value",
+            gridIndex: 1,
+            min: 0,
+            max: 60,
+            axisLabel: { ...axisText, formatter: (v) => v + "%" },
+            splitLine: { lineStyle: { color: "rgba(61, 74, 92, 0.55)" } }
+          }
+        ],
+        yAxis: [
+          {
+            type: "category",
+            gridIndex: 0,
+            data: ratingBands.map((b) => b.replace(" (10+ ratings)", "")),
+            inverse: true,
+            position: "right",
+            axisTick: { show: false },
+            axisLine: { show: false },
+            axisLabel: { ...axisText, color: "#e8eef7", align: "center", margin: labelCol / 2, width: labelCol - 8 }
+          },
+          {
+            type: "category",
+            gridIndex: 1,
+            data: ratingBands.map((b) => b.replace(" (10+ ratings)", "")),
+            inverse: true,
+            axisTick: { show: false },
+            axisLine: { show: false },
+            axisLabel: { show: false }
+          }
+        ],
+        series: [
+          {
+            name: "No AI disclosure",
+            type: "bar",
+            xAxisIndex: 0,
+            yAxisIndex: 0,
+            data: otherShares,
+            itemStyle: { color: "#22d3ee", borderRadius: [3, 0, 0, 3] },
+            barMaxWidth: 20,
+            label: { show: true, position: "left", color: "#e8eef7", fontSize: 11, formatter: (p) => p.value.toFixed(1) + "%" }
+          },
+          {
+            name: "AI disclosure",
+            type: "bar",
+            xAxisIndex: 1,
+            yAxisIndex: 1,
+            data: aiShares,
+            itemStyle: { color: "#d4af37", borderRadius: [0, 3, 3, 0] },
+            barMaxWidth: 20,
+            label: { show: true, position: "right", color: "#e8eef7", fontSize: 11, formatter: (p) => p.value.toFixed(1) + "%" }
+          }
+        ]
+      }, { notMerge: true });
+    }
+    renderReviews();
+
+    window.addEventListener("resize", () => {
+      Object.values(charts).forEach((c) => c && c.resize());
+      renderReviews();
+    });
+  </script>
+</body>
+
+</html>

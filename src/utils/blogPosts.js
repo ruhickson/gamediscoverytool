@@ -1,5 +1,11 @@
 const POSTS = [
   {
+    slug: '2026-11-05-itch-io-and-the-ai-problem',
+    publishedAt: '2026-11-05',
+    draft: false,
+    file: '/blog/2026-11-05-itch-io-and-the-ai-problem.html'
+  },
+  {
     slug: '2026-11-01-diclosure-day-ais-takeover-of-steam',
     publishedAt: '2026-11-01',
     draft: false,
