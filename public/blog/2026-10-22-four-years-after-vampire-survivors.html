@@ -189,6 +189,24 @@
     }
     .chart.tall { height: 420px; }
     .chart.heatmap { height: 320px; }
+    .chart.buckets { height: 760px; }
+    .chart.compare { height: 860px; }
+    .chart-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 18px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .chart-key i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+      border-radius: 2px;
+      vertical-align: -1px;
+    }
     .commentary {
       margin-top: 16px;
       padding: 14px 16px 12px;
@@ -379,6 +397,43 @@
               <p>The debate over the use of ethical AI will not be explored in this article, however we're at the point where almost 40-50% of games on Steam are now developed using the technology in some capacity. The Survivors-likes are no exception, and we can see from the chart that more and more of them are being generated with AI, hovering in or around the 40% mark over the last 6 months.</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section class="figure" data-id="score-buckets">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">Every Steam game, not just this tag combo</p>
+            <h2>Review-score mix, in bands of 1,000 reviews</h2>
+            <p class="cap">Share of Steam reviews inside each band. A game with 1,400 reviews sits in 1,001–2,000, and its reviews are split by the store’s review-score label. Games with 10 or fewer reviews are excluded, so the first band starts at 11. Released 1 January 2020 through 31 October 2026.</p>
+          </div>
+        </div>
+        <div class="chart buckets" id="chart-buckets"></div>
+        <div class="commentary">
+          <p class="label">Same band, same shape</p>
+          <p>Inside a given band the two groups look alike. In 11–1,000, which holds 3,928 of the 4,128 games with an AI disclosure, Very Positive accounts for 47% of their reviews and 51% of the reviews on games with no disclosure. Mostly Positive, Mixed, and Overwhelmingly Positive sit within a few points of each other too.</p>
+          <p>The AI side thins out quickly. Past 4,000 reviews a bar is often fewer than ten games, and past 9,000 it is often one title, so the stack stops being a mix. The 21 bands drawn here are every 1,000-review step from 11 through 21,000. Above that line there are 23 disclosed games and 469 others, and those 492 games hold about two thirds of all reviews in the window.</p>
+        </div>
+      </section>
+
+      <section class="figure" data-id="ai-profile">
+        <div class="figure-head">
+          <div class="figure-meta">
+            <p class="eyebrow">AI disclosure against no disclosure</p>
+            <h2>Scores, review percentage, price, and tags</h2>
+            <p class="cap">Each bar is the AI-disclosed figure minus the figure for games with no disclosure, in percentage points. Review-score labels, Free, and Paid are shares of games. Tag rows are the share of games carrying that tag. The two review-percentage rows are the percent of reviews that are positive. Same window and same 10-review cutoff as the chart above.</p>
+          </div>
+        </div>
+        <div class="chart-key" aria-hidden="true">
+          <span><i style="background:#c084fc"></i>Higher among games with an AI disclosure</span>
+          <span><i style="background:#64748b"></i>Higher among games with no disclosure</span>
+        </div>
+        <div class="chart compare" id="chart-compare"></div>
+        <div class="commentary">
+          <p class="label">The gap is in the tags, and in a few huge games</p>
+          <p>Counted one game at a time, the positive rate is 79.5% with a disclosure and 80.9% without. Weight the same reviews by how many there are and the disclosed group falls to 74.3%, against 84.2%. That is not a worse score inside the same popularity band. It is because disclosed games rarely become the enormous, overwhelmingly positive hits, and because Call of Duty (717,339 reviews, Mixed, and an AI disclosure) is about a fifth of every review on a disclosed game.</p>
+          <p>Free and paid are the same shape: 20.9% of disclosed games are free, and 21.0% of the rest. The store has no dollar bracket on the game record, only Free, Paid, and a missing price (11 disclosed games and 188 others, Call of Duty among the 11).</p>
+          <p>Tags are where the catalog actually splits. Simulation is on 41.1% of disclosed games and 22.7% of the rest. Management, immersive sim, life sim, resource management, and economy lean the same way, and so does the Artificial Intelligence tag itself. Action, platformers, and hand-drawn games lean the other way.</p>
         </div>
       </section>
 
@@ -957,6 +1012,208 @@
           itemStyle: { color: "#c084fc", borderRadius: [3, 3, 0, 0] },
           barMaxWidth: 16,
           markLine: { silent: true, data: [] },
+        },
+      ],
+    });
+
+
+    const AI_PROFILE = {"buckets":[{"label":"11\u20131,000","ai":{"g":3928,"r":350405,"s":[0.0,0.1,0.1,2.1,17.6,21.2,8.8,47.0,3.1]},"non":{"g":44155,"r":4817802,"s":[0.0,0.0,0.1,1.2,16.5,19.4,7.1,51.2,4.5]}},{"label":"1,001\u20132,000","ai":{"g":94,"r":131562,"s":[0.0,0.0,0.0,2.4,15.7,16.8,0.0,52.7,12.4]},"non":{"g":1598,"r":2274240,"s":[0.1,0.0,0.0,0.8,13.1,17.3,0.0,52.4,16.3]}},{"label":"2,001\u20133,000","ai":{"g":27,"r":66456,"s":[0.0,0.0,0.0,0.0,14.0,16.7,0.0,61.4,7.9]},"non":{"g":663,"r":1633098,"s":[0.3,0.0,0.0,0.3,12.1,16.9,0.0,53.4,17.0]}},{"label":"3,001\u20134,000","ai":{"g":13,"r":46827,"s":[0.0,0.0,0.0,0.0,31.1,7.4,0.0,54.5,7.0]},"non":{"g":380,"r":1322445,"s":[0.0,0.0,0.0,0.9,11.2,17.5,0.0,52.6,17.8]}},{"label":"4,001\u20135,000","ai":{"g":8,"r":36112,"s":[0.0,0.0,0.0,0.0,12.2,36.7,0.0,26.4,24.7]},"non":{"g":266,"r":1189961,"s":[0.0,0.0,0.0,0.8,12.3,11.1,0.0,54.6,21.2]}},{"label":"5,001\u20136,000","ai":{"g":3,"r":16476,"s":[0.0,0.0,0.0,0.0,0.0,32.7,0.0,36.1,31.2]},"non":{"g":164,"r":901696,"s":[0.0,0.0,0.0,1.9,9.0,15.7,0.0,50.6,22.8]}},{"label":"6,001\u20137,000","ai":{"g":9,"r":58348,"s":[0.0,0.0,0.0,0.0,11.0,0.0,0.0,89.0,0.0]},"non":{"g":152,"r":984332,"s":[0.0,0.0,0.0,0.7,15.2,7.8,0.0,54.4,21.9]}},{"label":"7,001\u20138,000","ai":{"g":7,"r":52276,"s":[0.0,0.0,0.0,0.0,28.1,13.7,0.0,58.2,0.0]},"non":{"g":111,"r":823338,"s":[0.0,0.0,0.0,1.9,15.3,14.5,0.0,45.2,23.1]}},{"label":"8,001\u20139,000","ai":{"g":2,"r":16562,"s":[0.0,0.0,0.0,0.0,0.0,49.7,0.0,50.3,0.0]},"non":{"g":100,"r":852086,"s":[0.0,0.0,0.0,1.1,4.9,14.2,0.0,60.8,19.0]}},{"label":"9,001\u201310,000","ai":{"g":0,"r":0,"s":null},"non":{"g":66,"r":624113,"s":[0.0,0.0,0.0,0.0,12.1,15.0,0.0,57.6,15.3]}},{"label":"10,001\u201311,000","ai":{"g":3,"r":32481,"s":[0.0,0.0,0.0,0.0,33.6,33.2,0.0,33.2,0.0]},"non":{"g":49,"r":514553,"s":[0.0,0.0,0.0,0.0,10.2,12.2,0.0,53.1,24.5]}},{"label":"11,001\u201312,000","ai":{"g":0,"r":0,"s":null},"non":{"g":46,"r":529772,"s":[0.0,0.0,0.0,0.0,15.0,11.0,0.0,52.2,21.8]}},{"label":"12,001\u201313,000","ai":{"g":1,"r":12234,"s":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0]},"non":{"g":38,"r":475366,"s":[0.0,0.0,0.0,0.0,15.9,15.8,0.0,47.4,20.9]}},{"label":"13,001\u201314,000","ai":{"g":3,"r":40320,"s":[0.0,0.0,0.0,0.0,34.7,0.0,0.0,65.3,0.0]},"non":{"g":36,"r":485118,"s":[0.0,0.0,0.0,5.5,8.2,8.2,0.0,61.4,16.7]}},{"label":"14,001\u201315,000","ai":{"g":2,"r":29380,"s":[0.0,0.0,0.0,0.0,0.0,50.0,0.0,50.0,0.0]},"non":{"g":33,"r":475428,"s":[0.0,0.0,0.0,0.0,15.1,6.0,0.0,57.7,21.2]}},{"label":"15,001\u201316,000","ai":{"g":0,"r":0,"s":null},"non":{"g":38,"r":586399,"s":[0.0,0.0,0.0,2.7,7.9,15.9,0.0,55.0,18.5]}},{"label":"16,001\u201317,000","ai":{"g":2,"r":32512,"s":[0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,0.0]},"non":{"g":27,"r":444814,"s":[0.0,0.0,0.0,0.0,22.3,22.3,0.0,36.9,18.5]}},{"label":"17,001\u201318,000","ai":{"g":0,"r":0,"s":null},"non":{"g":19,"r":332381,"s":[0.0,0.0,0.0,0.0,5.2,10.5,0.0,57.8,26.5]}},{"label":"18,001\u201319,000","ai":{"g":1,"r":18487,"s":[0.0,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0]},"non":{"g":21,"r":388010,"s":[0.0,0.0,0.0,0.0,4.6,9.5,0.0,66.8,19.1]}},{"label":"19,001\u201320,000","ai":{"g":2,"r":39379,"s":[0.0,0.0,0.0,0.0,50.6,0.0,0.0,49.4,0.0]},"non":{"g":32,"r":625447,"s":[0.0,0.0,0.0,3.1,12.5,18.8,0.0,53.0,12.6]}},{"label":"20,001\u201321,000","ai":{"g":0,"r":0,"s":null},"non":{"g":21,"r":431684,"s":[0.0,0.0,0.0,4.7,4.7,9.6,0.0,57.0,24.0]}}],"compare":[{"group":"Review percentage","label":"Positive reviews, weighted","ai":74.3,"non":84.2},{"group":"Review percentage","label":"Positive reviews, per game","ai":79.5,"non":80.9},{"group":"Review score","label":"Overwhelmingly Positive","ai":0.9,"non":2.3,"aiN":36,"nonN":1101},{"group":"Review score","label":"Very Positive","ai":24.6,"non":29.6,"aiN":1014,"nonN":14342},{"group":"Review score","label":"Positive","ai":33.4,"non":30.1,"aiN":1378,"nonN":14599},{"group":"Review score","label":"Mostly Positive","ai":17.1,"non":16.3,"aiN":704,"nonN":7883},{"group":"Review score","label":"Mixed","ai":20.5,"non":19.2,"aiN":847,"nonN":9286},{"group":"Review score","label":"Mostly Negative","ai":3.2,"non":2.3,"aiN":131,"nonN":1107},{"group":"Review score","label":"Negative","ai":0.3,"non":0.3,"aiN":14,"nonN":144},{"group":"Review score","label":"Very Negative","ai":0.1,"non":0.0,"aiN":4,"nonN":16},{"group":"Review score","label":"Overwhelmingly Negative","ai":0.0,"non":0.0,"aiN":0,"nonN":6},{"group":"Price","label":"Free","ai":20.9,"non":21.0,"aiN":864,"nonN":10190},{"group":"Price","label":"Paid","ai":78.8,"non":78.6,"aiN":3253,"nonN":38106},{"group":"Tag","label":"Simulation","ai":41.1,"non":22.7,"aiN":1696,"nonN":10985},{"group":"Tag","label":"Management","ai":16.7,"non":7.1,"aiN":691,"nonN":3425},{"group":"Tag","label":"Immersive Sim","ai":15.7,"non":6.0,"aiN":649,"nonN":2925},{"group":"Tag","label":"First-Person","ai":27.9,"non":18.3,"aiN":1150,"nonN":8860},{"group":"Tag","label":"Realistic","ai":18.9,"non":9.6,"aiN":782,"nonN":4637},{"group":"Tag","label":"Resource Management","ai":14.3,"non":5.6,"aiN":590,"nonN":2731},{"group":"Tag","label":"Life Sim","ai":12.0,"non":4.0,"aiN":494,"nonN":1937},{"group":"Tag","label":"Economy","ai":10.9,"non":3.5,"aiN":449,"nonN":1721},{"group":"Tag","label":"Artificial Intelligence","ai":8.7,"non":1.7,"aiN":359,"nonN":831},{"group":"Tag","label":"Action","ai":29.9,"non":37.5,"aiN":1233,"nonN":18158},{"group":"Tag","label":"Platformer","ai":3.9,"non":9.7,"aiN":162,"nonN":4706},{"group":"Tag","label":"Hand-drawn","ai":4.3,"non":8.3,"aiN":177,"nonN":4017}],"aiGames":4128,"nonGames":48484,"aiReviews":3349117,"nonReviews":60798707};
+    const SCORE_BANDS = [
+      ["Overwhelmingly Negative", "#7f1d1d"],
+      ["Very Negative", "#ef4444"],
+      ["Negative", "#f87171"],
+      ["Mostly Negative", "#fb923c"],
+      ["Mixed", "#fbbf24"],
+      ["Mostly Positive", "#a3e635"],
+      ["Positive", "#34d399"],
+      ["Very Positive", "#2dd4bf"],
+      ["Overwhelmingly Positive", "#d4af37"],
+    ];
+
+    function bucketTooltip(side) {
+      return (params) => {
+        const row = Array.isArray(params) ? params[0] : params;
+        if (!row || row.data == null || row.data.value == null) return "";
+        const bucket = AI_PROFILE.buckets[row.dataIndex];
+        const pack = bucket[side];
+        const lines = SCORE_BANDS.map(([name], index) => {
+          const value = pack.s[index];
+          if (!value) return "";
+          const marker = name === row.seriesName ? row.marker || "" : "";
+          const weight = name === row.seriesName ? "700" : "500";
+          return `<div style="font-weight:${weight}">${marker}${name}: <b>${value.toFixed(1)}%</b></div>`;
+        }).filter(Boolean).join("");
+        const who = side === "ai" ? "AI disclosure" : "No AI disclosure";
+        return `<div style="margin-bottom:4px"><b>${bucket.label} reviews</b><br/>${who}</div>`
+          + `<div style="margin-bottom:6px">${pack.g.toLocaleString()} games · ${pack.r.toLocaleString()} reviews</div>`
+          + lines;
+      };
+    }
+
+    const bucketLabels = AI_PROFILE.buckets.map((bucket) => bucket.label);
+    const bucketGrids = [
+      { left: 52, right: 16, top: 78, height: "32%" },
+      { left: 52, right: 16, top: "56%", height: "30%", bottom: 64 },
+    ];
+    function bucketAxis(gridIndex) {
+      return {
+        type: "category",
+        gridIndex,
+        data: bucketLabels,
+        axisLabel: {
+          ...axisCommon.axisLabel,
+          fontSize: 10,
+          rotate: 55,
+          interval: 0,
+          hideOverlap: true,
+        },
+        axisLine: axisCommon.axisLine,
+        axisTick: { alignWithLabel: true },
+      };
+    }
+    function bucketValueAxis(gridIndex) {
+      return {
+        type: "value",
+        gridIndex,
+        min: 0,
+        max: 100,
+        name: gridIndex === 0 ? "Share of reviews" : "",
+        nameTextStyle: { color: "#94a3b8", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+        axisLabel: { ...axisCommon.axisLabel, formatter: (value) => `${value}%` },
+        axisLine: axisCommon.axisLine,
+        splitLine: axisCommon.splitLine,
+      };
+    }
+    function bucketSeries(side, stack, axisIndex) {
+      return SCORE_BANDS.map(([name, color], index) => ({
+        name,
+        type: "bar",
+        stack,
+        xAxisIndex: axisIndex,
+        yAxisIndex: axisIndex,
+        cursor: "default",
+        barMaxWidth: 18,
+        itemStyle: { color },
+        data: AI_PROFILE.buckets.map((bucket) => {
+          const pack = bucket[side];
+          if (!pack.s) return { value: null };
+          return { value: pack.s[index] };
+        }),
+      }));
+    }
+
+    charts.buckets = echarts.init(document.getElementById("chart-buckets"));
+    charts.buckets.setOption({
+      animationDuration: 650,
+      title: [
+        {
+          text: "No AI disclosure",
+          left: 0,
+          top: 28,
+          textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13, fontWeight: 600 },
+        },
+        {
+          text: "AI disclosure",
+          left: 0,
+          top: "51%",
+          textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif", fontSize: 13, fontWeight: 600 },
+        },
+      ],
+      legend: {
+        top: 0,
+        type: "scroll",
+        textStyle: { color: "#94a3b8", fontFamily: "Figtree, sans-serif", fontSize: 11 },
+      },
+      tooltip: {
+        trigger: "item",
+        confine: true,
+        backgroundColor: "#1a2438",
+        borderColor: "#3d4a5c",
+        borderWidth: 1,
+        textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+        formatter: (params) => bucketTooltip(params.seriesIndex < SCORE_BANDS.length ? "non" : "ai")(params),
+      },
+      grid: bucketGrids,
+      xAxis: [bucketAxis(0), bucketAxis(1)],
+      yAxis: [bucketValueAxis(0), bucketValueAxis(1)],
+      series: [...bucketSeries("non", "non", 0), ...bucketSeries("ai", "ai", 1)],
+    });
+
+    const compareRows = AI_PROFILE.compare.map((row) => ({
+      ...row,
+      diff: Math.round((row.ai - row.non) * 10) / 10,
+    }));
+    charts.compare = echarts.init(document.getElementById("chart-compare"));
+    charts.compare.setOption({
+      animationDuration: 650,
+      tooltip: {
+        trigger: "item",
+        confine: true,
+        backgroundColor: "#1a2438",
+        borderColor: "#3d4a5c",
+        borderWidth: 1,
+        textStyle: { color: "#e8eef7", fontFamily: "Figtree, sans-serif" },
+        formatter: (params) => {
+          const row = compareRows[params.dataIndex];
+          const unit = row.group === "Review percentage"
+            ? "positive"
+            : row.group === "Tag"
+              ? "of games carry this tag"
+              : "of games";
+          const counts = row.aiN != null
+            ? `<div style="margin-top:4px">${row.aiN.toLocaleString()} disclosed games · ${row.nonN.toLocaleString()} with no disclosure</div>`
+            : "";
+          const gap = row.diff > 0 ? `+${row.diff.toFixed(1)}` : row.diff.toFixed(1);
+          return `<div style="margin-bottom:4px"><b>${row.group}</b> · ${row.label}</div>`
+            + `AI disclosure: <b>${row.ai.toFixed(1)}%</b> ${unit}<br/>`
+            + `No disclosure: <b>${row.non.toFixed(1)}%</b> ${unit}<br/>`
+            + `Gap: <b>${gap} percentage points</b>`
+            + counts;
+        },
+      },
+      grid: { left: 12, right: 28, top: 12, bottom: 36, containLabel: true },
+      xAxis: {
+        type: "value",
+        min: -14,
+        max: 22,
+        name: "Percentage points",
+        nameLocation: "middle",
+        nameGap: 28,
+        nameTextStyle: { color: "#94a3b8", fontSize: 11, fontFamily: "Figtree, sans-serif" },
+        axisLabel: { ...axisCommon.axisLabel, formatter: (value) => `${value > 0 ? "+" : ""}${value}` },
+        axisLine: axisCommon.axisLine,
+        splitLine: axisCommon.splitLine,
+      },
+      yAxis: {
+        type: "category",
+        inverse: true,
+        data: compareRows.map((row) => `${row.group} · ${row.label}`),
+        axisLabel: { ...axisCommon.axisLabel, fontSize: 11, width: 250, overflow: "truncate" },
+        axisLine: axisCommon.axisLine,
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          name: "AI disclosure minus no disclosure",
+          type: "bar",
+          cursor: "default",
+          barMaxWidth: 16,
+          data: compareRows.map((row) => ({
+            value: row.diff,
+            itemStyle: { color: row.diff >= 0 ? "#c084fc" : "#64748b" },
+          })),
+          label: {
+            show: true,
+            position: (params) => (compareRows[params.dataIndex].diff >= 0 ? "right" : "left"),
+            color: "#94a3b8",
+            fontFamily: "Figtree, sans-serif",
+            fontSize: 10,
+            formatter: (params) => {
+              const value = compareRows[params.dataIndex].diff;
+              if (Math.abs(value) < 0.5) return "";
+              return `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
+            },
+          },
         },
       ],
     });
